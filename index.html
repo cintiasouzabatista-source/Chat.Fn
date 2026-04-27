@@ -2,34 +2,35 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bank Day Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --input-bg: #1e293b; }
-        .light-mode { --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --input-bg: #ffffff; }
+       .light-mode { --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --input-bg: #ffffff; }
 
         body { background-color: var(--bg); color: var(--text); transition: 0.3s; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .header-bg { background-color: var(--card); border-bottom: 1px solid rgba(0,0,0,0.1); }
+       .header-bg { background-color: var(--card); border-bottom: 1px solid rgba(0,0,0,0.1); }
         
-        /* Área do Chat Dinâmica */
         #chat-box { flex-grow: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
         
-        .message-fade { animation: fadeOut 1s forwards 7s; }
+       .message-fade { animation: fadeOut 1s forwards 7s; }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
         
-        .hidden-val { filter: blur(6px); }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
+       .hidden-val { filter: blur(6px); }
+       .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
         
-        /* Ajuste dos cards 2x2 */
-        .grid-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+       .grid-3-2 { display: grid; grid-template-columns: repeat(6,1fr); gap: 0.5rem; }
+       .grid-3-2 > div { grid-column: span 2; }
+       .grid-3-2 > div:nth-child(4) { grid-column: 2 / span 2; }
+       .grid-3-2 > div:nth-child(5) { grid-column: 4 / span 2; }
     </style>
 </head>
 <body>
 
     <header class="p-3 header-bg shadow-sm shrink-0">
-        <div class="flex justify-between items-center mb-2">
+        <div class="flex justify-between items-center mb-3">
             <h1 class="text-lg font-black text-blue-500 italic">BANK DAY PRO</h1>
             <div class="flex gap-4">
                 <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
@@ -37,27 +38,38 @@
             </div>
         </div>
         
-        <div class="mb-2 p-2 rounded-xl bg-blue-600 text-white text-center shadow-md">
-            <p class="text-[9px] uppercase font-bold opacity-80">Líquido Disponível</p>
-            <p id="card-liquido" class="text-xl font-black val-field">R$ 0,00</p>
+        <!-- Seletor de Mês -->
+        <div class="flex justify-center items-center gap-4 mb-3">
+            <button onclick="mudarMes(-1)" class="bg-black/10 light-mode:bg-slate-200 w-8 h-8 rounded-full text-sm">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <h2 id="mesAtual" class="font-bold text-sm min-w-[120px] text-center"></h2>
+            <button onclick="mudarMes(1)" class="bg-black/10 light-mode:bg-slate-200 w-8 h-8 rounded-full text-sm">
+                <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
 
-        <div class="grid-cards">
+        <!-- Cards 3+2 -->
+        <div class="grid-3-2">
             <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-                <p class="text-[8px] uppercase font-bold text-slate-500">Entrada</p>
+                <p class="text-[8px] uppercase font-bold text-slate-500">Entradas</p>
                 <p id="card-entradas" class="text-xs font-bold text-emerald-500 val-field">R$ 0,00</p>
             </div>
             <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-                <p class="text-[8px] uppercase font-bold text-slate-500">Saída</p>
+                <p class="text-[8px] uppercase font-bold text-slate-500">Saídas</p>
                 <p id="card-saidas" class="text-xs font-bold text-orange-500 val-field">R$ 0,00</p>
+            </div>
+            <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
+                <p class="text-[8px] uppercase font-bold text-slate-500">Fatura</p>
+                <p id="card-cartoes" class="text-xs font-bold text-rose-500 val-field">R$ 0,00</p>
             </div>
             <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
                 <p class="text-[8px] uppercase font-bold text-slate-500">Saldo</p>
                 <p id="card-saldo" class="text-xs font-bold text-blue-500 val-field">R$ 0,00</p>
             </div>
             <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-                <p class="text-[8px] uppercase font-bold text-slate-500">Cartão</p>
-                <p id="card-cartoes" class="text-xs font-bold text-rose-500 val-field">R$ 0,00</p>
+                <p class="text-[8px] uppercase font-bold text-slate-500">Saldo Final</p>
+                <p id="card-liquido" class="text-xs font-bold text-cyan-500 val-field">R$ 0,00</p>
             </div>
         </div>
     </header>
@@ -66,8 +78,9 @@
 
     <footer class="p-3 bg-transparent shrink-0">
         <div class="flex gap-2 items-center bg-[var(--input-bg)] rounded-full px-4 py-1 shadow-2xl border border-slate-700/30">
-            <input type="text" id="user-input" placeholder="O que aconteceu?" 
-                class="w-full bg-transparent py-3 focus:outline-none text-sm text-inherit">
+            <input type="text" id="user-input" placeholder="Ex: Recebi 1000 | Gastei 50" 
+                class="w-full bg-transparent py-3 focus:outline-none text-sm text-inherit"
+                onkeydown="if(event.key==='Enter') processarMensagem()">
             <button onclick="processarMensagem()" class="text-blue-500 p-2">
                 <i class="fas fa-paper-plane text-xl"></i>
             </button>
@@ -86,15 +99,40 @@
     </div>
 
     <script>
-        let transacoes = [];
+        let transacoes = JSON.parse(localStorage.getItem('bankday_transacoes') || '[]');
         let idEditando = null;
+        let mesAtual = localStorage.getItem('bankday_mesAtual');
+        
+        if (!mesAtual) {
+            const hoje = new Date();
+            mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+            localStorage.setItem('bankday_mesAtual', mesAtual);
+        }
+
+        function mudarMes(direcao) {
+            const [ano, mes] = mesAtual.split('-').map(Number);
+            const data = new Date(ano, mes - 1 + direcao, 1);
+            mesAtual = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+            localStorage.setItem('bankday_mesAtual', mesAtual);
+            atualizarMes();
+            atualizarCalculos();
+        }
+
+        function atualizarMes() {
+            const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+            const [ano, mes] = mesAtual.split('-');
+            document.getElementById('mesAtual').textContent = `${meses[parseInt(mes)-1]} ${ano}`;
+        }
 
         function processarMensagem() {
             const input = document.getElementById('user-input');
-            if (!input.value) return;
+            if (!input.value.trim()) return;
 
             const id = Date.now();
-            transacoes.push({ id, texto: input.value });
+            const data = new Date().toISOString();
+            transacoes.push({ id, texto: input.value, data });
+            localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+            
             adicionarMensagemNaTela(input.value, id);
             atualizarCalculos();
             input.value = '';
@@ -115,34 +153,42 @@
 
         function atualizarCalculos() {
             let e = 0, s = 0, c = 0;
-            const inK = ['recebi', 'entrou', 'ganhei', 'quitei'];
+            const inK = ['recebi', 'entrou', 'ganhei', 'salario', 'pagamento'];
             const outK = ['gastei', 'comprei', 'paguei'];
+            
+            const [ano, mesNum] = mesAtual.split('-').map(Number);
+            const transacoesMes = transacoes.filter(t => {
+                const dt = new Date(t.data);
+                return dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
+            });
 
-            transacoes.forEach(t => {
+            transacoesMes.forEach(t => {
                 const txt = t.texto.toLowerCase();
-                const valorMatch = txt.match(/\d+([.,]\d{2})?/);
+                const valorMatch = txt.match(/\d+([.,]\d{1,2})?/);
                 if (!valorMatch) return;
                 const valor = parseFloat(valorMatch[0].replace(',', '.'));
 
                 if (inK.some(k => txt.includes(k))) e += valor;
                 else if (outK.some(k => txt.includes(k))) {
-                    if (txt.includes('cartão') || txt.includes('cartao') || txt.includes('3x')) c += valor;
+                    if (txt.includes('cartão') || txt.includes('cartao') || txt.includes('x')) c += valor;
                     else s += valor;
                 }
             });
 
             const saldo = e - s;
-            document.getElementById('card-entradas').innerText = `R$ ${e.toFixed(2)}`;
-            document.getElementById('card-saidas').innerText = `R$ ${s.toFixed(2)}`;
-            document.getElementById('card-saldo').innerText = `R$ ${saldo.toFixed(2)}`;
-            document.getElementById('card-cartoes').innerText = `R$ ${c.toFixed(2)}`;
-            document.getElementById('card-liquido').innerText = `R$ ${(saldo - c).toFixed(2)}`;
+            const formatar = v => `R$ ${v.toFixed(2).replace('.',',')}`;
+            
+            document.getElementById('card-entradas').innerText = formatar(e);
+            document.getElementById('card-saidas').innerText = formatar(s);
+            document.getElementById('card-saldo').innerText = formatar(saldo);
+            document.getElementById('card-cartoes').innerText = formatar(c);
+            document.getElementById('card-liquido').innerText = formatar(saldo - c);
         }
 
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
             const isLight = document.body.classList.contains('light-mode');
-            document.getElementById('theme-icon').className = isLight ? 'fas fa-sun text-orange-500' : 'fas fa-moon text-blue-500';
+            document.getElementById('theme-icon').className = isLight? 'fas fa-sun text-orange-500' : 'fas fa-moon text-blue-500';
         }
 
         function toggleVisibility() {
@@ -161,17 +207,23 @@
             const novoTxt = document.getElementById('edit-input').value;
             const t = transacoes.find(x => x.id === idEditando);
             if(t) t.texto = novoTxt;
+            localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
             atualizarCalculos();
             document.getElementById('modal').style.display = 'none';
         }
 
         function excluirMensagem() {
-            transacoes = transacoes.filter(x => x.id !== idEditando);
+            transacoes = transacoes.filter(x => x.id!== idEditando);
+            localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
             const el = document.getElementById(`msg-${idEditando}`);
             if(el) el.remove();
             atualizarCalculos();
             document.getElementById('modal').style.display = 'none';
         }
+
+        // Init
+        atualizarMes();
+        atualizarCalculos();
     </script>
 </body>
 </html>
