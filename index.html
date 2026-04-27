@@ -192,12 +192,12 @@ footer {
             cartao: ['Alimentação', 'Transporte', 'Lazer', 'Saúde', 'Compras', 'Educação', 'Assinaturas', 'Pets', 'Outras Despesas']
         };
 
-        function normalizar(texto) {
-            return texto.toLowerCase()
-               .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-               .replace(/[^a-z0-9\s]/g, '')
-               .trim();
-        }
+       function normalizar(texto) {
+    return texto.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\sx]/g, '') // Mantém o X
+      .trim();
+}
 
         function mudarMes(direcao) {
             const [ano, mes] = mesAtual.split('-').map(Number);
@@ -278,11 +278,12 @@ footer {
     let tipo = 'saida';
     if (inK.some(k => txtNorm.includes(normalizar(k)))) tipo = 'entrada';
     
-    // Parcelado OU palavra cartao = tipo cartao
-    const parcMatch = txtNorm.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
-    const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
-    const temCartao = txtNorm.includes('cartao');
-    if (parcelas > 1 || temCartao) tipo = 'cartao';
+   // Parcelado: 3x, 3 x, 3vezes, em 3x, em 3 vezes
+const txtOriginal = texto.toLowerCase(); // Usa texto original, não normalizado
+const parcMatch = txtOriginal.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
+const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
+const temCartao = txtOriginal.includes('cartão') || txtOriginal.includes('cartao');
+if (parcelas > 1 || temCartao) tipo = 'cartao';
     
     // Detecta Conta/Cartão EM QUALQUER LUGAR do texto
     let conta = null;
