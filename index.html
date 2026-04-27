@@ -3,75 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Day Pro - Premium</title>
+    <title>Bank Day Pro - Slim</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #0f172a; --text: #f8fafc; --card: rgba(30, 41, 59, 0.7); }
-        .light-mode { --bg: #f1f5f9; --text: #1e293b; --card: rgba(255, 255, 255, 0.8); }
-        body { background-color: var(--bg); color: var(--text); transition: all 0.3s ease; }
-        .glass { background: var(--card); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .chat-container { height: calc(100vh - 300px); overflow-y: auto; }
+        :root { --bg: #0f172a; --header: #1e293b; --text: #f8fafc; --card-inner: #334155; }
+        .light-mode { --bg: #f8fafc; --header: #ffffff; --text: #0f172a; --card-inner: #e2e8f0; }
+
+        body { background-color: var(--bg); color: var(--text); transition: background 0.3s ease; }
+        header { background-color: var(--header); border-bottom: 1px solid rgba(0,0,0,0.1); }
+        
+        .chat-container { height: calc(100vh - 220px); overflow-y: auto; }
         .message-fade { animation: fadeOut 1s forwards 7s; }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; }
-        .hidden-val { filter: blur(5px); pointer-events: none; }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; align-items: center; justify-content: center; }
+        .hidden-val { filter: blur(5px) grayscale(1); }
+        .card-mini { background-color: var(--card-inner); }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
 
-    <header class="p-4 glass sticky top-0 z-10">
-        <div class="flex justify-between items-center mb-4">
-            <h1 class="text-xl font-bold text-blue-500">Bank Day Pro</h1>
+    <header class="p-3 shadow-md">
+        <div class="flex justify-between items-center mb-2">
+            <h1 class="text-lg font-bold text-blue-500">Bank Day Pro</h1>
             <div class="flex gap-4">
-                <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
-                <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon text-blue-400"></i></button>
+                <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye"></i></button>
+                <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon"></i></button>
             </div>
         </div>
         
-        <div class="mb-3 p-4 rounded-2xl bg-blue-600 shadow-lg shadow-blue-900/20 text-center">
-            <p class="text-xs uppercase text-blue-100 font-bold mb-1">Líquido Disponível</p>
-            <p id="card-liquido" class="text-3xl font-black text-white val-field">R$ 0,00</p>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2 text-center text-[10px]">
-            <div class="p-2 rounded-xl bg-slate-800/40 border-b-2 border-emerald-500">
-                <p class="text-slate-400 uppercase">Entrada</p>
-                <p id="card-entradas" class="text-emerald-400 font-bold val-field">R$ 0,00</p>
+        <div class="grid grid-cols-4 gap-2">
+            <div class="col-span-2 p-2 rounded-lg bg-blue-600 text-white text-center">
+                <p class="text-[9px] uppercase opacity-80">Líquido</p>
+                <p id="card-liquido" class="text-lg font-black val-field leading-tight">R$ 0,00</p>
             </div>
-            <div class="p-2 rounded-xl bg-slate-800/40 border-b-2 border-orange-500">
-                <p class="text-slate-400 uppercase">Saída</p>
-                <p id="card-saidas" class="text-orange-400 font-bold val-field">R$ 0,00</p>
+            <div class="card-mini p-1 rounded-lg text-center">
+                <p class="text-[8px] uppercase opacity-70">Saldo</p>
+                <p id="card-saldo" class="text-xs font-bold text-blue-400 val-field">R$ 0,00</p>
             </div>
-            <div class="p-2 rounded-xl bg-slate-800/40 border-b-2 border-rose-500">
-                <p class="text-slate-400 uppercase">Cartão</p>
-                <p id="card-cartoes" class="text-rose-400 font-bold val-field">R$ 0,00</p>
+            <div class="card-mini p-1 rounded-lg text-center">
+                <p class="text-[8px] uppercase opacity-70">Cartão</p>
+                <p id="card-cartoes" class="text-xs font-bold text-rose-500 val-field">R$ 0,00</p>
             </div>
         </div>
     </header>
 
-    <main id="chat-box" class="chat-container p-4 space-y-3 flex flex-col"></main>
+    <main id="chat-box" class="chat-container p-4 space-y-2 flex flex-col"></main>
 
-    <footer class="p-4 glass mt-auto">
-        <div class="flex gap-2">
-            <input type="text" id="user-input" placeholder="O que aconteceu?" 
-                class="w-full bg-slate-900 border border-slate-700 rounded-full px-4 py-3 focus:outline-none text-white">
-            <button onclick="processarMensagem()" class="bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
-                <i class="fas fa-paper-plane text-white"></i>
+    <footer class="p-3 bg-transparent">
+        <div class="flex gap-2 bg-slate-800 light-mode:bg-white rounded-full px-4 py-1 border border-slate-700 light-mode:border-slate-300 items-center shadow-lg">
+            <input type="text" id="user-input" placeholder="Gastei 50..." 
+                class="w-full bg-transparent py-2 focus:outline-none text-inherit">
+            <button onclick="processarMensagem()" class="text-blue-500 text-xl p-2">
+                <i class="fas fa-paper-plane"></i>
             </button>
         </div>
     </footer>
 
     <div id="modal" class="modal">
-        <div class="bg-slate-800 p-6 rounded-2xl w-80 shadow-2xl border border-slate-700">
-            <h3 class="text-lg font-bold mb-4">Editar Lançamento</h3>
-            <input type="text" id="edit-input" class="w-full p-2 rounded bg-slate-900 border border-slate-700 mb-4">
+        <div class="bg-slate-800 light-mode:bg-white p-6 rounded-2xl w-80 border border-slate-700">
+            <h3 class="font-bold mb-4">Editar</h3>
+            <input type="text" id="edit-input" class="w-full p-2 rounded border mb-4 bg-transparent text-inherit">
             <div class="flex justify-between">
-                <button onclick="excluirMensagem()" class="text-rose-500 font-bold">Excluir</button>
-                <div class="flex gap-2">
-                    <button onclick="fecharModal()" class="text-slate-400 px-2">Cancelar</button>
-                    <button onclick="salvarEdicao()" class="bg-blue-600 px-4 py-1 rounded font-bold">Salvar</button>
-                </div>
+                <button onclick="excluirMensagem()" class="text-rose-500">Excluir</button>
+                <button onclick="fecharModal()" class="font-bold text-blue-500">Salvar</button>
             </div>
         </div>
     </div>
@@ -82,15 +78,12 @@
 
         function processarMensagem() {
             const input = document.getElementById('user-input');
-            const texto = input.value;
-            if (!texto) return;
+            if (!input.value) return;
 
             const id = Date.now();
-            transacoes.push({ id, texto });
-            
-            adicionarMensagemNaTela(texto, id);
+            transacoes.push({ id, texto: input.value });
+            adicionarMensagemNaTela(input.value, id);
             atualizarCalculos();
-            
             input.value = '';
         }
 
@@ -98,19 +91,12 @@
             const chat = document.getElementById('chat-box');
             const div = document.createElement('div');
             div.id = `msg-${id}`;
-            div.className = "bg-slate-700 self-end p-3 rounded-2xl rounded-tr-none max-w-[80%] text-sm relative group cursor-pointer message-fade";
-            
-            div.innerHTML = `
-                <span>${texto}</span>
-                <div class="hidden group-hover:block absolute -left-10 top-1 text-blue-400" onclick="abrirModal(${id})">
-                    <i class="fas fa-edit"></i>
-                </div>
-            `;
+            div.className = "bg-blue-500 text-white self-end p-3 rounded-2xl rounded-tr-none max-w-[85%] text-sm relative group message-fade";
+            div.onclick = () => abrirModal(id);
+            div.innerHTML = `<span>${texto}</span>`;
             
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
-
-            // Remove do DOM após 8 segundos (coincidindo com a animação CSS)
             setTimeout(() => { if(div) div.remove(); }, 8000);
         }
 
@@ -132,59 +118,42 @@
                 }
             });
 
-            const saldo = e - s;
-            document.getElementById('card-entradas').innerText = `R$ ${e.toFixed(2)}`;
-            document.getElementById('card-saidas').innerText = `R$ ${s.toFixed(2)}`;
+            document.getElementById('card-saldo').innerText = `R$ ${(e - s).toFixed(2)}`;
             document.getElementById('card-cartoes').innerText = `R$ ${c.toFixed(2)}`;
-            document.getElementById('card-liquido').innerText = `R$ ${(saldo - c).toFixed(2)}`;
-        }
-
-        // Funções de Interface (Olho e Tema)
-        function toggleVisibility() {
-            const fields = document.querySelectorAll('.val-field');
-            const icon = document.getElementById('eye-icon');
-            fields.forEach(f => f.classList.toggle('hidden-val'));
-            icon.classList.toggle('fa-eye');
-            icon.classList.toggle('fa-eye-slash');
+            document.getElementById('card-liquido').innerText = `R$ ${(e - s - c).toFixed(2)}`;
         }
 
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
-            const icon = document.getElementById('theme-icon');
-            icon.classList.toggle('fa-moon');
-            icon.classList.toggle('fa-sun');
+            const isLight = document.body.classList.contains('light-mode');
+            document.getElementById('theme-icon').className = isLight ? 'fas fa-sun' : 'fas fa-moon';
         }
 
-        // Modal de Edição
+        function toggleVisibility() {
+            document.querySelectorAll('.val-field').forEach(f => f.classList.toggle('hidden-val'));
+        }
+
         function abrirModal(id) {
             idEditando = id;
-            const transacao = transacoes.find(t => t.id === id);
-            document.getElementById('edit-input').value = transacao.texto;
+            const t = transacoes.find(x => x.id === id);
+            document.getElementById('edit-input').value = t.texto;
             document.getElementById('modal').style.display = 'flex';
         }
 
         function fecharModal() {
+            const novoTxt = document.getElementById('edit-input').value;
+            const t = transacoes.find(x => x.id === idEditando);
+            if(t) t.texto = novoTxt;
+            atualizarCalculos();
             document.getElementById('modal').style.display = 'none';
         }
 
-        function salvarEdicao() {
-            const novoTexto = document.getElementById('edit-input').value;
-            const index = transacoes.findIndex(t => t.id === idEditando);
-            if (index !== -1) {
-                transacoes[index].texto = novoTexto;
-                const msgEl = document.querySelector(`#msg-${idEditando} span`);
-                if(msgEl) msgEl.innerText = novoTexto;
-                atualizarCalculos();
-            }
-            fecharModal();
-        }
-
         function excluirMensagem() {
-            transacoes = transacoes.filter(t => t.id !== idEditando);
-            const msgEl = document.getElementById(`msg-${idEditando}`);
-            if(msgEl) msgEl.remove();
+            transacoes = transacoes.filter(x => x.id !== idEditando);
+            const el = document.getElementById(`msg-${idEditando}`);
+            if(el) el.remove();
             atualizarCalculos();
-            fecharModal();
+            document.getElementById('modal').style.display = 'none';
         }
     </script>
 </body>
