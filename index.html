@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Day Pro - Chat</title>
+    <title>Bank Day Pro - Fluxo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #0f172a; color: #f8fafc; }
-        .chat-container { height: calc(100vh - 180px); }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .chat-container { height: calc(100vh - 280px); } /* Ajustado para caber mais cards */
     </style>
 </head>
-<body class="flex flex-col h-screen font-sans">
+<body class="flex flex-col h-screen">
 
     <header class="p-4 glass sticky top-0 z-10">
         <div class="flex justify-between items-center mb-4">
@@ -23,41 +23,46 @@
             </div>
         </div>
         
-        <div class="grid grid-cols-2 gap-3 text-center">
-            <div class="p-2 rounded-lg bg-slate-800/50">
-                <p class="text-xs text-slate-400">Saldo Geral</p>
-                <p id="total-saldo" class="text-lg font-semibold text-emerald-400">R$ 0,00</p>
+        <div class="grid grid-cols-2 gap-2 text-center">
+            <div class="p-2 rounded-lg bg-slate-800/50 border-l-4 border-emerald-500">
+                <p class="text-[10px] uppercase text-slate-400">Entradas (+)</p>
+                <p id="card-entradas" class="text-md font-bold text-emerald-400">R$ 0,00</p>
             </div>
-            <div class="p-2 rounded-lg bg-slate-800/50">
-                <p class="text-xs text-slate-400">Cartões</p>
-                <p id="total-cartao" class="text-lg font-semibold text-rose-400">R$ 0,00</p>
+            <div class="p-2 rounded-lg bg-slate-800/50 border-l-4 border-orange-500">
+                <p class="text-[10px] uppercase text-slate-400">Saídas (-)</p>
+                <p id="card-saidas" class="text-md font-bold text-orange-400">R$ 0,00</p>
             </div>
-            <div class="col-span-2 p-2 rounded-lg bg-blue-900/20 border border-blue-500/30">
-                <p class="text-xs text-slate-400">Líquido Disponível</p>
-                <p id="total-liquido" class="text-xl font-bold text-white">R$ 0,00</p>
+            <div class="p-2 rounded-lg bg-blue-900/20 border border-blue-500/30">
+                <p class="text-[10px] uppercase text-slate-400">Saldo Atual (=)</p>
+                <p id="card-saldo" class="text-md font-bold text-blue-400">R$ 0,00</p>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-800/50 border-l-4 border-rose-500">
+                <p class="text-[10px] uppercase text-slate-400">Cartões</p>
+                <p id="card-cartoes" class="text-md font-bold text-rose-400">R$ 0,00</p>
+            </div>
+            <div class="col-span-2 p-3 rounded-lg bg-white/5 border-t-2 border-blue-500">
+                <p class="text-xs uppercase text-slate-300 font-semibold text-center">Líquido Final (Saldo - Cartões)</p>
+                <p id="card-liquido" class="text-2xl font-black text-white text-center">R$ 0,00</p>
             </div>
         </div>
     </header>
 
-    <main id="chat-box" class="chat-container overflow-y-auto p-4 space-y-4 flex flex-col">
-        <div class="bg-blue-600 self-start p-3 rounded-2xl rounded-tl-none max-w-[80%] text-sm">
-            Olá! Digite suas movimentações. Ex: "Gastei 50 no mercado" ou "Comprei 300 cartão 3x".
-        </div>
-    </main>
+    <main id="chat-box" class="chat-container overflow-y-auto p-4 space-y-3 flex flex-col"></main>
 
     <footer class="p-4 glass mt-auto">
         <div class="flex gap-2">
-            <input type="text" id="user-input" placeholder="O que aconteceu agora?" 
-                class="w-full bg-slate-900 border border-slate-700 rounded-full px-4 py-3 focus:outline-none focus:border-blue-500 text-white">
-            <button onclick="processarMensagem()" class="bg-blue-600 hover:bg-blue-500 w-12 h-12 rounded-full flex items-center justify-center transition">
-                <i class="fas fa-paper-plane"></i>
+            <input type="text" id="user-input" placeholder="Ex: Ganhei 2000 ou Gastei 50 cartão" 
+                class="w-full bg-slate-900 border border-slate-700 rounded-full px-4 py-3 focus:outline-none text-white">
+            <button onclick="processarMensagem()" class="bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center">
+                <i class="fas fa-paper-plane text-white"></i>
             </button>
         </div>
     </footer>
 
     <script>
-        let saldo = 0;
-        let cartoes = 0;
+        let vEntradas = 0;
+        let vSaidas = 0;
+        let vCartoes = 0;
 
         function processarMensagem() {
             const input = document.getElementById('user-input');
@@ -66,67 +71,56 @@
 
             adicionarMensagem(input.value, 'user');
 
-            // Regex para extrair valores numéricos
             const valorMatch = texto.match(/\d+([.,]\d{2})?/);
             if (!valorMatch) {
-                adicionarMensagem("Não entendi o valor. Tente algo como 'Gastei 50'.", 'bot');
+                adicionarMensagem("Informe um valor. Ex: 'Recebi 100'", 'bot');
                 input.value = '';
                 return;
             }
 
             const valor = parseFloat(valorMatch[0].replace(',', '.'));
-            
-            // Palavras-chave
-            const entradaKeywords = ['recebi', 'entrou', 'ganhei', 'quitei'];
-            const saidaKeywords = ['gastei', 'comprei', 'paguei'];
             const eCartao = texto.includes('cartão') || texto.includes('cartao') || texto.includes('3x');
+            const ehEntrada = ['recebi', 'entrou', 'ganhei', 'quitei'].some(k => texto.includes(k));
+            const ehSaida = ['gastei', 'comprei', 'paguei'].some(k => texto.includes(k));
 
-            let tipo = "";
-
-            if (entradaKeywords.some(k => texto.includes(k))) {
-                saldo += valor;
-                tipo = "entrada";
-            } else if (saidaKeywords.some(k => texto.includes(k))) {
+            if (ehEntrada) {
+                vEntradas += valor;
+            } else if (ehSaida) {
                 if (eCartao) {
-                    cartoes += valor;
-                    tipo = "cartao";
+                    vCartoes += valor;
                 } else {
-                    saldo -= valor;
-                    tipo = "saida";
+                    vSaidas += valor;
                 }
             }
 
-            atualizarDashboard();
-            responderBot(tipo, valor, eCartao);
+            atualizarTudo();
             input.value = '';
             
             const chat = document.getElementById('chat-box');
             chat.scrollTop = chat.scrollHeight;
         }
 
+        function atualizarTudo() {
+            // 1. Entradas - Saídas = Saldo
+            const saldoCalculado = vEntradas - vSaidas;
+            // 2. Saldo - Cartões = Líquido
+            const liquidoCalculado = saldoCalculado - vCartoes;
+
+            document.getElementById('card-entradas').innerText = `R$ ${vEntradas.toFixed(2)}`;
+            document.getElementById('card-saidas').innerText = `R$ ${vSaidas.toFixed(2)}`;
+            document.getElementById('card-saldo').innerText = `R$ ${saldoCalculado.toFixed(2)}`;
+            document.getElementById('card-cartoes').innerText = `R$ ${vCartoes.toFixed(2)}`;
+            document.getElementById('card-liquido').innerText = `R$ ${liquidoCalculado.toFixed(2)}`;
+        }
+
         function adicionarMensagem(texto, autor) {
             const chat = document.getElementById('chat-box');
             const div = document.createElement('div');
             div.className = autor === 'user' 
-                ? "bg-slate-700 self-end p-3 rounded-2xl rounded-tr-none max-w-[80%] text-sm"
-                : "bg-blue-600 self-start p-3 rounded-2xl rounded-tl-none max-w-[80%] text-sm";
+                ? "bg-slate-700 self-end p-3 rounded-xl max-w-[80%] text-sm mb-1"
+                : "bg-blue-600 self-start p-3 rounded-xl max-w-[80%] text-sm mb-1";
             div.innerText = texto;
             chat.appendChild(div);
-        }
-
-        function responderBot(tipo, valor, eCartao) {
-            let msg = "";
-            if (tipo === "entrada") msg = `Boa! Adicionei R$ ${valor.toFixed(2)} ao seu saldo.`;
-            else if (tipo === "cartao") msg = `Registrado no crédito: R$ ${valor.toFixed(2)}.`;
-            else if (tipo === "saida") msg = `Ok, debitei R$ ${valor.toFixed(2)} do seu saldo.`;
-            
-            setTimeout(() => adicionarMensagem(msg, 'bot'), 500);
-        }
-
-        function atualizarDashboard() {
-            document.getElementById('total-saldo').innerText = `R$ ${saldo.toFixed(2)}`;
-            document.getElementById('total-cartao').innerText = `R$ ${cartoes.toFixed(2)}`;
-            document.getElementById('total-liquido').innerText = `R$ ${(saldo - cartoes).toFixed(2)}`;
         }
     </script>
 </body>
