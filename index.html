@@ -78,56 +78,55 @@
 </head>
 <body>
 
-   <header class="p-3 header-bg shadow-sm">
-        <div class="flex justify-between items-center mb-3">
-            <h1 class="text-lg font-black text-black-200">Chat Financeiro</h1>
-            <div class="flex gap-4">
-                <div class="flex items-center gap-3">
-    <button id="btnSaldoProjetado" onclick="toggleSaldoProjetado()" 
-        class="text-slate-400 hover:text-blue-400 transition-colors" 
-        title="Projetar saldo pro próximo mês">
-        <i class="fas fa-forward-step"></i>
-    </button>
-    <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
-</div>
-             <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon text-blue-500"></i></button>
-   
-        </div>
-        
-        <div class="flex justify-center items-center gap-4 mb-3">
-            <button onclick="mudarMes(-1)" class="bg-black/10 light-mode:bg-slate-200 w-8 h-8 rounded-full text-sm">
-                <i class="fas fa-chevron-left"></i>
+  <header class="p-3 header-bg shadow-sm">
+    <div class="flex justify-between items-center mb-3">
+        <h1 class="text-lg font-black text-black-200">Chat Financeiro</h1>
+        <div class="flex items-center gap-3">
+            <button id="btnSaldoProjetado" onclick="toggleSaldoProjetado()"
+                class="text-slate-400 hover:text-blue-400 transition-colors"
+                title="Projetar saldo pro próximo mês">
+                <i class="fas fa-forward-step"></i>
             </button>
-            <h2 id="mesAtual" class="font-bold text-sm min-w-[120px] text-center"></h2>
-            <button onclick="mudarMes(1)" class="bg-black/10 light-mode:bg-slate-200 w-8 h-8 rounded-full text-sm">
-                <i class="fas fa-chevron-right"></i>
-            </button>
+            <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
+            <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon text-blue-500"></i></button>
         </div>
+    </div>
 
-        <div class="mb-2 p-3 rounded-xl bg-slate-700 text-white text-center shadow-md">
-           <p class="text-[10px] uppercase font-black opacity-80">LÍQUIDO DISPONÍVEL</p>
-            <p id="card-liquido" class="text-2xl font-black val-field">R$ 0,00</p>
-        </div>
+    <div class="flex justify-center items-center gap-4 mb-3">
+        <button onclick="mudarMes(-1)" class="bg-black/10 light-mode:bg-slate-200 w-8 h-8 rounded-full text-sm">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <h2 id="mesAtual" class="font-bold text-sm min-w-[120px] text-center"></h2>
+        <button onclick="mudarMes(1)" class="bg-black/10 light-mode:bg-slate-200 w-8 h-8 rounded-full text-sm">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
 
-        <div class="grid grid-cols-2 gap-2">
-            <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-             <p class="text-[10px] uppercase font-black text-slate-400">ENTRADA</p>
-                <p id="card-entradas" class="text-sm font-bold text-emerald-500 val-field">R$ 0,00</p>
-            </div>
-            <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-              <p class="text-[10px] uppercase font-black text-slate-400">SAÍDA</p>
-                <p id="card-saidas" class="text-sm font-bold text-orange-500 val-field">R$ 0,00</p>
-            </div>
-            <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-                <p class="text-[10px] uppercase font-black text-slate-400">SALDO ATUAL</p>
-                <p id="card-saldo" class="text-sm font-bold text-blue-500 val-field">R$ 0,00</p>
-            </div>
-            <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-               <p class="text-[10px] uppercase font-black text-slate-400">CARTÕES</p>
-                <p id="card-cartoes" class="text-sm font-bold text-rose-500 val-field">R$ 0,00</p>
-            </div>
+    <div class="mb-2 p-3 rounded-xl bg-slate-700 text-white text-center shadow-md">
+       <p class="text-[10px] uppercase font-black opacity-80">LÍQUIDO DISPONÍVEL</p>
+        <p id="card-liquido" class="text-2xl font-black val-field">R$ 0,00</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2">
+        <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
+         <p class="text-[10px] uppercase font-black text-slate-400">ENTRADA</p>
+            <p id="card-entradas" class="text-sm font-bold text-emerald-500 val-field">R$ 0,00</p>
         </div>
-    </header>
+        <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
+          <p class="text-[10px] uppercase font-black text-slate-400">SAÍDA</p>
+            <p id="card-saidas" class="text-sm font-bold text-orange-500 val-field">R$ 0,00</p>
+        </div>
+        <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
+            <p class="text-[10px] uppercase font-black text-slate-400">SALDO ATUAL</p>
+            <p id="card-saldo" class="text-sm font-bold text-blue-500 val-field">R$ 0,00</p>
+        </div>
+        <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
+           <p class="text-[10px] uppercase font-black text-slate-400">CARTÕES</p>
+            <p id="card-cartoes" class="text-sm font-bold text-rose-500 val-field">R$ 0,00</p>
+        </div>
+    </div>
+</header>
+    
 
     <main id="chat-box"></main>
 
