@@ -3,71 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Day Pro - Slim</title>
+    <title>Bank Day Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #0f172a; --header: #1e293b; --text: #f8fafc; --card-inner: #334155; }
-        .light-mode { --bg: #f8fafc; --header: #ffffff; --text: #0f172a; --card-inner: #e2e8f0; }
+        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --input: #1e293b; }
+        .light-mode { --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --input: #ffffff; }
 
-        body { background-color: var(--bg); color: var(--text); transition: background 0.3s ease; }
-        header { background-color: var(--header); border-bottom: 1px solid rgba(0,0,0,0.1); }
-        
-        .chat-container { height: calc(100vh - 220px); overflow-y: auto; }
+        body { background-color: var(--bg); color: var(--text); transition: 0.3s; font-family: sans-serif; }
+        .header-bg { background-color: var(--card); border-bottom: 1px solid rgba(0,0,0,0.1); }
+        .card-inner { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.05); }
+        .light-mode .card-inner { background: #f8fafc; border: 1px solid #e2e8f0; }
+
+        .chat-container { height: calc(100vh - 240px); overflow-y: auto; }
         .message-fade { animation: fadeOut 1s forwards 7s; }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
         
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 50; align-items: center; justify-content: center; }
-        .hidden-val { filter: blur(5px) grayscale(1); }
-        .card-mini { background-color: var(--card-inner); }
+        .hidden-val { filter: blur(6px); pointer-events: none; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
 
-    <header class="p-3 shadow-md">
-        <div class="flex justify-between items-center mb-2">
-            <h1 class="text-lg font-bold text-blue-500">Bank Day Pro</h1>
-            <div class="flex gap-4">
-                <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye"></i></button>
-                <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon"></i></button>
+    <header class="p-3 header-bg shadow-sm">
+        <div class="flex justify-between items-center mb-3">
+            <h1 class="text-lg font-black text-blue-500 italic">BANK DAY PRO</h1>
+            <div class="flex gap-4 items-center">
+                <button onclick="toggleVisibility()" class="p-2"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
+                <button onclick="toggleTheme()" class="p-2"><i id="theme-icon" class="fas fa-moon text-blue-500"></i></button>
             </div>
         </div>
         
-        <div class="grid grid-cols-4 gap-2">
-            <div class="col-span-2 p-2 rounded-lg bg-blue-600 text-white text-center">
-                <p class="text-[9px] uppercase opacity-80">Líquido</p>
-                <p id="card-liquido" class="text-lg font-black val-field leading-tight">R$ 0,00</p>
+        <div class="mb-3 p-3 rounded-xl bg-blue-600 text-white text-center shadow-lg">
+            <p class="text-[10px] uppercase font-bold opacity-80">Líquido Disponível</p>
+            <p id="card-liquido" class="text-2xl font-black val-field">R$ 0,00</p>
+        </div>
+
+        <div class="grid grid-cols-4 gap-1.5">
+            <div class="card-inner p-2 rounded-lg text-center">
+                <p class="text-[8px] uppercase font-bold text-slate-500">Entrada</p>
+                <p id="card-entradas" class="text-[11px] font-bold text-emerald-500 val-field">R$ 0,00</p>
             </div>
-            <div class="card-mini p-1 rounded-lg text-center">
-                <p class="text-[8px] uppercase opacity-70">Saldo</p>
-                <p id="card-saldo" class="text-xs font-bold text-blue-400 val-field">R$ 0,00</p>
+            <div class="card-inner p-2 rounded-lg text-center">
+                <p class="text-[8px] uppercase font-bold text-slate-500">Saída</p>
+                <p id="card-saidas" class="text-[11px] font-bold text-orange-500 val-field">R$ 0,00</p>
             </div>
-            <div class="card-mini p-1 rounded-lg text-center">
-                <p class="text-[8px] uppercase opacity-70">Cartão</p>
-                <p id="card-cartoes" class="text-xs font-bold text-rose-500 val-field">R$ 0,00</p>
+            <div class="card-inner p-2 rounded-lg text-center">
+                <p class="text-[8px] uppercase font-bold text-slate-500">Saldo</p>
+                <p id="card-saldo" class="text-[11px] font-bold text-blue-500 val-field">R$ 0,00</p>
+            </div>
+            <div class="card-inner p-2 rounded-lg text-center">
+                <p class="text-[8px] uppercase font-bold text-slate-500">Cartão</p>
+                <p id="card-cartoes" class="text-[11px] font-bold text-rose-500 val-field">R$ 0,00</p>
             </div>
         </div>
     </header>
 
-    <main id="chat-box" class="chat-container p-4 space-y-2 flex flex-col"></main>
+    <main id="chat-box" class="chat-container p-4 space-y-3 flex flex-col"></main>
 
-    <footer class="p-3 bg-transparent">
-        <div class="flex gap-2 bg-slate-800 light-mode:bg-white rounded-full px-4 py-1 border border-slate-700 light-mode:border-slate-300 items-center shadow-lg">
-            <input type="text" id="user-input" placeholder="Gastei 50..." 
-                class="w-full bg-transparent py-2 focus:outline-none text-inherit">
-            <button onclick="processarMensagem()" class="text-blue-500 text-xl p-2">
-                <i class="fas fa-paper-plane"></i>
+    <footer class="p-4">
+        <div class="flex gap-2 items-center bg-[var(--input)] rounded-full px-4 py-1 shadow-xl border border-slate-700/30">
+            <input type="text" id="user-input" placeholder="O que aconteceu agora?" 
+                class="w-full bg-transparent py-3 focus:outline-none text-sm text-inherit">
+            <button onclick="processarMensagem()" class="text-blue-500 p-2">
+                <i class="fas fa-paper-plane text-xl"></i>
             </button>
         </div>
     </footer>
 
     <div id="modal" class="modal">
-        <div class="bg-slate-800 light-mode:bg-white p-6 rounded-2xl w-80 border border-slate-700">
-            <h3 class="font-bold mb-4">Editar</h3>
-            <input type="text" id="edit-input" class="w-full p-2 rounded border mb-4 bg-transparent text-inherit">
-            <div class="flex justify-between">
-                <button onclick="excluirMensagem()" class="text-rose-500">Excluir</button>
-                <button onclick="fecharModal()" class="font-bold text-blue-500">Salvar</button>
+        <div class="bg-[var(--card)] p-6 rounded-2xl w-80 shadow-2xl border border-slate-500/20">
+            <h3 class="font-bold mb-4">Editar Transação</h3>
+            <input type="text" id="edit-input" class="w-full p-3 rounded-lg border bg-transparent mb-4 text-inherit">
+            <div class="flex justify-between items-center">
+                <button onclick="excluirMensagem()" class="text-rose-500 font-semibold">Excluir</button>
+                <button onclick="fecharModal()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">Salvar</button>
             </div>
         </div>
     </div>
@@ -91,7 +101,7 @@
             const chat = document.getElementById('chat-box');
             const div = document.createElement('div');
             div.id = `msg-${id}`;
-            div.className = "bg-blue-500 text-white self-end p-3 rounded-2xl rounded-tr-none max-w-[85%] text-sm relative group message-fade";
+            div.className = "bg-blue-600 text-white self-end p-3 rounded-2xl rounded-tr-none max-w-[85%] text-sm shadow-md message-fade cursor-pointer";
             div.onclick = () => abrirModal(id);
             div.innerHTML = `<span>${texto}</span>`;
             
@@ -102,8 +112,8 @@
 
         function atualizarCalculos() {
             let e = 0, s = 0, c = 0;
-            const entradaKeywords = ['recebi', 'entrou', 'ganhei', 'quitei'];
-            const saidaKeywords = ['gastei', 'comprei', 'paguei'];
+            const inK = ['recebi', 'entrou', 'ganhei', 'quitei'];
+            const outK = ['gastei', 'comprei', 'paguei'];
 
             transacoes.forEach(t => {
                 const txt = t.texto.toLowerCase();
@@ -111,26 +121,33 @@
                 if (!valorMatch) return;
                 const valor = parseFloat(valorMatch[0].replace(',', '.'));
 
-                if (entradaKeywords.some(k => txt.includes(k))) e += valor;
-                else if (saidaKeywords.some(k => txt.includes(k))) {
+                if (inK.some(k => txt.includes(k))) e += valor;
+                else if (outK.some(k => txt.includes(k))) {
                     if (txt.includes('cartão') || txt.includes('cartao') || txt.includes('3x')) c += valor;
                     else s += valor;
                 }
             });
 
-            document.getElementById('card-saldo').innerText = `R$ ${(e - s).toFixed(2)}`;
+            const saldo = e - s;
+            document.getElementById('card-entradas').innerText = `R$ ${e.toFixed(2)}`;
+            document.getElementById('card-saidas').innerText = `R$ ${s.toFixed(2)}`;
+            document.getElementById('card-saldo').innerText = `R$ ${saldo.toFixed(2)}`;
             document.getElementById('card-cartoes').innerText = `R$ ${c.toFixed(2)}`;
-            document.getElementById('card-liquido').innerText = `R$ ${(e - s - c).toFixed(2)}`;
+            document.getElementById('card-liquido').innerText = `R$ ${(saldo - c).toFixed(2)}`;
         }
 
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
             const isLight = document.body.classList.contains('light-mode');
-            document.getElementById('theme-icon').className = isLight ? 'fas fa-sun' : 'fas fa-moon';
+            document.getElementById('theme-icon').className = isLight ? 'fas fa-sun text-orange-500' : 'fas fa-moon text-blue-500';
         }
 
         function toggleVisibility() {
-            document.querySelectorAll('.val-field').forEach(f => f.classList.toggle('hidden-val'));
+            const fields = document.querySelectorAll('.val-field');
+            fields.forEach(f => f.classList.toggle('hidden-val'));
+            const icon = document.getElementById('eye-icon');
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
         }
 
         function abrirModal(id) {
