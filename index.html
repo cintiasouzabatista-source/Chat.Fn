@@ -47,7 +47,18 @@
        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
        .modal-content { background: var(--card); padding: 1.5rem; border-radius: 1rem; width: 100%; max-width: 400px; }
        .modal input,.modal select { background: var(--input-bg); color: var(--text); }
-       .menu-dropdown { position: absolute; bottom: 60px; left: 12px; background: var(--card); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; flex-direction: column; min-width: 180px; z-index: 50; }
+      .menu-dropdown { 
+    position: absolute; 
+    bottom: 60px; 
+    left: 12px; 
+    background: var(--card); 
+    border-radius: 0.5rem; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
+    display: none; /* ESSA LINHA SOME COM O MENU */
+    flex-direction: column; 
+    min-width: 180px; 
+    z-index: 50; 
+}
        .menu-dropdown button { padding: 0.75rem 1rem; text-align: left; font-size: 0.875rem; }
        .menu-dropdown button:hover { background: rgba(0,0,0,0.1); }
     </style>
@@ -118,7 +129,7 @@
         </button>
     </div>
 </footer>
-
+    
 <!-- MODAL EXTRATO TEM QUE FICAR AQUI FORA, NÃO DENTRO DO MENU -->
 <div id="modal-extrato" class="modal">
     <div class="modal-content">
