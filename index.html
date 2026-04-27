@@ -263,7 +263,7 @@ footer {
             input.value = '';
         }
 
-        function interpretarTexto(texto) {
+  function interpretarTexto(texto) {
     const id = Date.now();
     const data = new Date().toISOString();
     const txtNorm = normalizar(texto);
@@ -290,7 +290,6 @@ footer {
     // 1. Procura nas contas cadastradas
     contas.forEach(c => { 
         const cNorm = normalizar(c);
-        // Remove "banco" pra facilitar: "banco itau" casa com "itau"
         const txtSemBanco = txtNorm.replace(/banco\s+/g, '');
         if (txtSemBanco.includes(cNorm)) conta = c; 
     });
@@ -306,7 +305,7 @@ footer {
         const bancosComuns = ['itau', 'nubank', 'inter', 'bradesco', 'caixa', 'santander', 'bb', 'c6', 'picpay'];
         bancosComuns.forEach(b => {
             if (txtNorm.includes(b)) {
-                conta = b.charAt(0).toUpperCase() + b.slice(1); // Capitaliza
+                conta = b.charAt(0).toUpperCase() + b.slice(1);
                 if (tipo === 'cartao' &&!cartoes.some(c => normalizar(c) === b)) {
                     cartoes.push(conta);
                     localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
@@ -318,17 +317,39 @@ footer {
         });
     }
     
-    // Descrição limpa: só o objeto da compra
+    // Descrição limpa: remove TUDO que não é o objeto da compra
     let descricao = texto;
-    descricao = descricao.replace(/\d+([.,]\d{1,2})?/g, ''); // valor
-    descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, ''); // parcelado
-    descricao = descricao.replace(/cart[aã]o/gi, '');
-    descricao = descricao.replace(/banco/gi, '');
+    
+    // 1. Remove valor e parcelado
+    descricao = descricao.replace(/\d+([.,]\d{1,2})?/g, '');
+    descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, '');
+    
+    // 2. Remove palavras-chave de ação
     [...inK,...outK].forEach(k => {
         descricao = descricao.replace(new RegExp(k, 'gi'), '');
     });
-    contas.forEach(c => descricao = descricao.replace(new RegExp(c, 'gi'), ''));
-    cartoes.forEach(c => descricao = descricao.replace(new RegExp(c, 'gi'), ''));
+    
+    // 3. Remove "cartao" e "banco"
+    descricao = descricao.replace(/cart[aã]o/gi, '');
+    descricao = descricao.replace(/banco/gi, '');
+    
+    // 4. Remove nomes de contas/cartões - AGORA NORMALIZADO
+    const descNorm = normalizar(descricao);
+    let palavrasRemover = [];
+    
+    contas.forEach(c => {
+        if (descNorm.includes(normalizar(c))) palavrasRemover.push(c);
+    });
+    cartoes.forEach(c => {
+        if (descNorm.includes(normalizar(c))) palavrasRemover.push(c);
+    });
+    
+    // Remove as palavras achadas, ignorando maiúscula/acento
+    palavrasRemover.forEach(p => {
+        descricao = descricao.replace(new RegExp(p, 'gi'), '');
+    });
+    
+    // 5. Limpa espaços duplos
     descricao = descricao.replace(/\s+/g, ' ').trim();
     if (!descricao || descricao.length < 2) descricao = tipo === 'entrada'? 'Entrada' : 'Gasto';
     
