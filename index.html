@@ -7,63 +7,66 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --input: #1e293b; }
-        .light-mode { --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --input: #ffffff; }
+        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --input-bg: #1e293b; }
+        .light-mode { --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --input-bg: #ffffff; }
 
-        body { background-color: var(--bg); color: var(--text); transition: 0.3s; font-family: sans-serif; }
+        body { background-color: var(--bg); color: var(--text); transition: 0.3s; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         .header-bg { background-color: var(--card); border-bottom: 1px solid rgba(0,0,0,0.1); }
-        .card-inner { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.05); }
-        .light-mode .card-inner { background: #f8fafc; border: 1px solid #e2e8f0; }
-
-        .chat-container { height: calc(100vh - 240px); overflow-y: auto; }
+        
+        /* Área do Chat Dinâmica */
+        #chat-box { flex-grow: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        
         .message-fade { animation: fadeOut 1s forwards 7s; }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
         
-        .hidden-val { filter: blur(6px); pointer-events: none; }
+        .hidden-val { filter: blur(6px); }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
+        
+        /* Ajuste dos cards 2x2 */
+        .grid-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
     </style>
 </head>
-<body class="flex flex-col h-screen overflow-hidden">
+<body>
 
-    <header class="p-3 header-bg shadow-sm">
-        <div class="flex justify-between items-center mb-3">
+    <header class="p-3 header-bg shadow-sm shrink-0">
+        <div class="flex justify-between items-center mb-2">
             <h1 class="text-lg font-black text-blue-500 italic">BANK DAY PRO</h1>
-            <div class="flex gap-4 items-center">
-                <button onclick="toggleVisibility()" class="p-2"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
-                <button onclick="toggleTheme()" class="p-2"><i id="theme-icon" class="fas fa-moon text-blue-500"></i></button>
+            <div class="flex gap-4">
+                <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
+                <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon text-blue-500"></i></button>
             </div>
         </div>
         
-        <div class="mb-3 p-3 rounded-xl bg-blue-600 text-white text-center shadow-lg">
-            <p class="text-[10px] uppercase font-bold opacity-80">Líquido Disponível</p>
-            <p id="card-liquido" class="text-2xl font-black val-field">R$ 0,00</p>
+        <div class="mb-2 p-2 rounded-xl bg-blue-600 text-white text-center shadow-md">
+            <p class="text-[9px] uppercase font-bold opacity-80">Líquido Disponível</p>
+            <p id="card-liquido" class="text-xl font-black val-field">R$ 0,00</p>
         </div>
 
-        <div class="grid grid-cols-4 gap-1.5">
-            <div class="card-inner p-2 rounded-lg text-center">
+        <div class="grid-cards">
+            <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
                 <p class="text-[8px] uppercase font-bold text-slate-500">Entrada</p>
-                <p id="card-entradas" class="text-[11px] font-bold text-emerald-500 val-field">R$ 0,00</p>
+                <p id="card-entradas" class="text-xs font-bold text-emerald-500 val-field">R$ 0,00</p>
             </div>
-            <div class="card-inner p-2 rounded-lg text-center">
+            <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
                 <p class="text-[8px] uppercase font-bold text-slate-500">Saída</p>
-                <p id="card-saidas" class="text-[11px] font-bold text-orange-500 val-field">R$ 0,00</p>
+                <p id="card-saidas" class="text-xs font-bold text-orange-500 val-field">R$ 0,00</p>
             </div>
-            <div class="card-inner p-2 rounded-lg text-center">
+            <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
                 <p class="text-[8px] uppercase font-bold text-slate-500">Saldo</p>
-                <p id="card-saldo" class="text-[11px] font-bold text-blue-500 val-field">R$ 0,00</p>
+                <p id="card-saldo" class="text-xs font-bold text-blue-500 val-field">R$ 0,00</p>
             </div>
-            <div class="card-inner p-2 rounded-lg text-center">
+            <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
                 <p class="text-[8px] uppercase font-bold text-slate-500">Cartão</p>
-                <p id="card-cartoes" class="text-[11px] font-bold text-rose-500 val-field">R$ 0,00</p>
+                <p id="card-cartoes" class="text-xs font-bold text-rose-500 val-field">R$ 0,00</p>
             </div>
         </div>
     </header>
 
-    <main id="chat-box" class="chat-container p-4 space-y-3 flex flex-col"></main>
+    <main id="chat-box"></main>
 
-    <footer class="p-4">
-        <div class="flex gap-2 items-center bg-[var(--input)] rounded-full px-4 py-1 shadow-xl border border-slate-700/30">
-            <input type="text" id="user-input" placeholder="O que aconteceu agora?" 
+    <footer class="p-3 bg-transparent shrink-0">
+        <div class="flex gap-2 items-center bg-[var(--input-bg)] rounded-full px-4 py-1 shadow-2xl border border-slate-700/30">
+            <input type="text" id="user-input" placeholder="O que aconteceu?" 
                 class="w-full bg-transparent py-3 focus:outline-none text-sm text-inherit">
             <button onclick="processarMensagem()" class="text-blue-500 p-2">
                 <i class="fas fa-paper-plane text-xl"></i>
@@ -72,11 +75,11 @@
     </footer>
 
     <div id="modal" class="modal">
-        <div class="bg-[var(--card)] p-6 rounded-2xl w-80 shadow-2xl border border-slate-500/20">
-            <h3 class="font-bold mb-4">Editar Transação</h3>
+        <div class="bg-[var(--card)] p-6 rounded-2xl w-80 shadow-2xl">
+            <h3 class="font-bold mb-4">Editar</h3>
             <input type="text" id="edit-input" class="w-full p-3 rounded-lg border bg-transparent mb-4 text-inherit">
             <div class="flex justify-between items-center">
-                <button onclick="excluirMensagem()" class="text-rose-500 font-semibold">Excluir</button>
+                <button onclick="excluirMensagem()" class="text-rose-500">Excluir</button>
                 <button onclick="fecharModal()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">Salvar</button>
             </div>
         </div>
@@ -103,7 +106,7 @@
             div.id = `msg-${id}`;
             div.className = "bg-blue-600 text-white self-end p-3 rounded-2xl rounded-tr-none max-w-[85%] text-sm shadow-md message-fade cursor-pointer";
             div.onclick = () => abrirModal(id);
-            div.innerHTML = `<span>${texto}</span>`;
+            div.innerText = texto;
             
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
@@ -143,11 +146,8 @@
         }
 
         function toggleVisibility() {
-            const fields = document.querySelectorAll('.val-field');
-            fields.forEach(f => f.classList.toggle('hidden-val'));
-            const icon = document.getElementById('eye-icon');
-            icon.classList.toggle('fa-eye');
-            icon.classList.toggle('fa-eye-slash');
+            document.querySelectorAll('.val-field').forEach(f => f.classList.toggle('hidden-val'));
+            document.getElementById('eye-icon').classList.toggle('fa-eye-slash');
         }
 
         function abrirModal(id) {
