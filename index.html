@@ -1,347 +1,133 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Bank Day</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Day Pro - Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --bg: #0f2d24;
-            --bg-light: #164a3c;
-            --card: #1e5a47;
-            --text: #ffffff;
-            --text-muted: #b8d4cc;
-            --primary: #2dd4bf;
-            --danger: #ef4444;
-            --success: #22c55e;
-            --border: #2a6b5a;
-        }
-        
-        body.dark {
-            --bg: #0f172a;
-            --bg-light: #1e293b;
-            --card: #334155;
-            --text: #f1f5f9;
-            --text-muted: #94a3b8;
-            --border: #475569;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        .app { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .app-header { padding: 16px; background: var(--bg-light); border-bottom: 1px solid var(--border); }
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .header-top h1 { font-size: 20px; }
-        .header-actions { display: flex; gap: 8px; }
-        .icon-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 8px; cursor: pointer; }
-        
-        .mes-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .mes-nav button { background: var(--card); border: 1px solid var(--border); color: var(--text); width: 32px; height: 32px; border-radius: 6px; cursor: pointer; }
-        .mes-nav h2 { font-size: 16px; text-transform: capitalize; }
-        
-        .totais { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .card { background: var(--card); padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
-        .card span { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
-        .valor-grande { font-size: 18px; font-weight: 600; }
-        .card-entrada strong { color: var(--success); }
-        .card-saida strong, .card-fatura strong { color: var(--danger); }
-        .card-saldo { cursor: pointer; grid-column: span 2; }
-        .oculto { filter: blur(5px); }
-        
-        #chat-area { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-        #extrato-area, #graficos-area { flex: 1; overflow-y: auto; padding: 16px; display: none; flex-direction: column; gap: 12px; }
-        
-        .msg { display: flex; margin-bottom: 8px; }
-        .msg-bubble { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 14px; background: var(--card); border: 1px solid var(--border); }
-        .msg.user { justify-content: flex-end; }
-        .msg.user .msg-bubble { background: var(--primary); color: #0f172a; }
-        .msg.system .msg-bubble { background: var(--bg-light); opacity: 0.8; font-size: 13px; }
-        .msg-time { font-size: 10px; opacity: 0.6; margin-top: 4px; }
-        .msg-info { font-size: 11px; opacity: 0.7; margin-top: 2px; }
-        
-        #input-area { padding: 12px; background: var(--bg-light); border-top: 1px solid var(--border); display: flex; gap: 8px; }
-        #input-area input { flex: 1; padding: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; }
-        #input-area button { width: 44px; background: var(--primary); border: none; border-radius: 8px; color: #0f172a; font-size: 18px; cursor: pointer; }
-        
-        .bottom-nav { display: flex; background: var(--bg-light); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { flex: 1; padding: 10px 4px; background: none; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; cursor: pointer; }
-        .nav-item.active { color: var(--primary); }
-        
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
-        .modal.active { display: flex; }
-        .modal-content { background: var(--bg-light); padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; max-height: 80vh; overflow-y: auto; }
-        .modal-content input, .modal-content select { padding: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; color: var(--text); }
-        .modal-botoes { display: flex; gap: 8px; margin-top: 8px; }
-        .modal-botoes button { flex: 1; padding: 10px; border-radius: 6px; border: none; cursor: pointer; background: var(--card); color: var(--text); }
-        .danger { background: var(--danger) !important; color: white !important; }
-        
-        .item-temp { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--card); border-radius: 6px; margin-bottom: 6px; }
-        .item-temp span { cursor: pointer; flex: 1; }
-        .item-temp button { background: var(--danger); color: white; border: none; width: 24px; height: 24px; border-radius: 4px; cursor: pointer; }
-        
-        .filtros { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-        .filtros input, .filtros select { padding: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; }
-        
-        .resumo-filtro { display: flex; gap: 8px; margin-bottom: 12px; }
-        .resumo-card { flex: 1; background: var(--card); padding: 10px; border-radius: 8px; text-align: center; }
-        .resumo-card span { display: block; font-size: 11px; color: var(--text-muted); }
-        .resumo-card strong { font-size: 16px; }
-        
-        .transacao-item { display: flex; justify-content: space-between; padding: 12px; background: var(--card); border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
-        .transacao-desc { font-weight: 500; margin-bottom: 2px; }
-        .transacao-cat { font-size: 12px; color: var(--text-muted); }
-        .transacao-valor { font-weight: 600; }
-        .transacao-valor.positivo { color: var(--success); }
-        .transacao-valor.negativo { color: var(--danger); }
-        
-        .tabs-graficos { display: flex; gap: 8px; margin-bottom: 16px; }
-        .tab-grafico { flex: 1; padding: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; color: var(--text); cursor: pointer; }
-        .tab-grafico.active { background: var(--primary); color: #0f172a; border-color: var(--primary); }
-        
-        .menu-dropdown { position: fixed; background: var(--bg-light); border: 1px solid var(--border); border-radius: 8px; padding: 8px; display: none; flex-direction: column; gap: 4px; z-index: 50; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        .menu-dropdown button { padding: 10px 14px; background: none; border: none; color: var(--text); text-align: left; cursor: pointer; border-radius: 6px; }
-        .menu-dropdown button:hover { background: var(--card); }
+        body { background-color: #0f172a; color: #f8fafc; }
+        .chat-container { height: calc(100vh - 180px); }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
-<body>
-    <div class="app">
-        <div class="app-header">
-            <div class="header-top">
-                <h1>Bank Day</h1>
-                <div class="header-actions">
-                    <button class="icon-btn" onclick="alternarTema()" id="btnTema">🌙</button>
-                    <button class="icon-btn" onclick="alternarValores()" id="olho">👁️</button>
-                </div>
-            <div class="mes-nav">
-                <button onclick="mudarMes(-1)">&lt;</button>
-                <h2 id="mesAtual"></h2>
-                <button onclick="mudarMes(1)">&gt;</button>
-            </div>
-            <div class="totais">
-                <div class="card card-entrada">
-                    <span>Entradas</span>
-                    <strong id="totalEntradas" class="valor-grande">R$ 0,00</strong>
-                </div>
-                <div class="card card-saida">
-                    <span>Saídas</span>
-                    <strong id="totalSaidas" class="valor-grande">R$ 0,00</strong>
-                </div>
-                <div class="card card-fatura">
-                    <span>Fatura</span>
-                    <strong id="totalFatura" class="valor-grande">R$ 0,00</strong>
-                </div>
-                <div class="card card-saldo" onclick="toggleSaldoFinal()">
-                    <span>Saldo do Mês</span>
-                    <strong id="saldoMes" class="valor-grande">R$ 0,00</strong>
-                    <div id="saldoFinal" style="display:none;font-size:12px;margin-top:4px;opacity:0.9;text-align:center">
-                        Após fatura: <span id="saldoAposFatura">R$ 0,00</span>
-                    </div>
-                </div>
+<body class="flex flex-col h-screen font-sans">
+
+    <header class="p-4 glass sticky top-0 z-10">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-xl font-bold text-blue-400">Bank Day Pro</h1>
+            <div class="flex gap-4">
+                <i class="fas fa-eye text-slate-400 cursor-pointer"></i>
+                <i class="fas fa-moon text-blue-400"></i>
             </div>
         </div>
-
-        <div id="chat-area">
-            <div id="chat-mensagens"></div>
-        </div>
-
-        <div id="extrato-area">
-            <div class="filtros">
-                <input type="date" id="filtro-inicio" onchange="aplicarFiltros()">
-                <input type="date" id="filtro-fim" onchange="aplicarFiltros()">
-                <select id="filtro-categoria" onchange="aplicarFiltros()"></select>
-                <select id="filtro-banco" onchange="aplicarFiltros()"></select>
+        
+        <div class="grid grid-cols-2 gap-3 text-center">
+            <div class="p-2 rounded-lg bg-slate-800/50">
+                <p class="text-xs text-slate-400">Saldo Geral</p>
+                <p id="total-saldo" class="text-lg font-semibold text-emerald-400">R$ 0,00</p>
             </div>
-            <div class="resumo-filtro" id="resumoFiltro" style="display:none">
-                <div class="resumo-card"><span>Entradas</span><strong id="resumoEntradas">R$ 0,00</strong></div>
-                <div class="resumo-card"><span>Saídas</span><strong id="resumoSaidas">R$ 0,00</strong></div>
-                <div class="resumo-card"><span>Saldo</span><strong id="resumoSaldo">R$ 0,00</strong></div>
+            <div class="p-2 rounded-lg bg-slate-800/50">
+                <p class="text-xs text-slate-400">Cartões</p>
+                <p id="total-cartao" class="text-lg font-semibold text-rose-400">R$ 0,00</p>
             </div>
-            <div id="lista-transacoes"></div>
-        </div>
-
-        <div id="graficos-area">
-            <div class="tabs-graficos">
-                <button class="tab-grafico active" onclick="mostrarGrafico('despesas')">Despesas</button>
-                <button class="tab-grafico" onclick="mostrarGrafico('receitas')">Receitas x Despesas</button>
-                <button class="tab-grafico" onclick="mostrarGrafico('bancos')">Por Banco</button>
-            </div>
-            <canvas id="chartCanvas"></canvas>
-        </div>
-
-        <div id="input-area">
-            <input type="text" id="inputMsg" placeholder="Cole SMS ou digite: Uber 45 | Recebi 1000 | Cartao 100" onkeydown="if(event.key==='Enter') enviar()">
-            <button id="btnEnviar" onclick="enviar()">➤</button>
-        </div>
-    </div>
-
-    <nav class="bottom-nav">
-        <button class="nav-item active" onclick="trocarAba('chat')"><span>💬</span><span>Chat</span></button>
-        <button class="nav-item" onclick="trocarAba('extrato')"><span>📊</span><span>Extrato</span></button>
-        <button class="nav-item" onclick="trocarAba('graficos')"><span>📈</span><span>Gráficos</span></button>
-        <button class="nav-item" onclick="toggleMenuMais()"><span>⋮</span><span>Mais</span></button>
-    </nav>
-
-    <div id="modal-conta" class="modal">
-        <div class="modal-content">
-            <h3>Configure suas contas</h3>
-            <div id="lista-contas-temp" style="max-height:120px;overflow-y:auto;margin-bottom:8px"></div>
-            <input type="text" id="conta-nome" placeholder="Nome: Nubank, Pix, Dinheiro">
-            <input type="number" step="0.01" id="conta-saldo" placeholder="Saldo inicial">
-            <button onclick="addTempConta()" style="padding:10px;background:var(--border);border:none;border-radius:6px;color:var(--text);margin-bottom:8px">+ Adicionar Conta</button>
-            
-            <h3>Cartões</h3>
-            <div id="lista-cartoes-temp" style="max-height:120px;overflow-y:auto;margin-bottom:8px"></div>
-            <input type="text" id="cartao-nome" placeholder="Nome do cartão">
-            <div style="display:flex;gap:8px">
-                <input type="number" id="cartao-fechamento" placeholder="Fecha dia" min="1" max="31" style="flex:1">
-                <input type="number" id="cartao-vencimento" placeholder="Vence dia" min="1" max="31" style="flex:1">
-            </div>
-            <button onclick="addTempCartao()" style="padding:10px;background:var(--border);border:none;border-radius:6px;color:var(--text)">+ Adicionar Cartão</button>
-
-            <div class="modal-botoes">
-                <button onclick="fecharModal('modal-conta')">Cancelar</button>
-                <button onclick="finalizarCadastro()" style="background:var(--primary);color:#0f172a">Finalizar</button>
+            <div class="col-span-2 p-2 rounded-lg bg-blue-900/20 border border-blue-500/30">
+                <p class="text-xs text-slate-400">Líquido Disponível</p>
+                <p id="total-liquido" class="text-xl font-bold text-white">R$ 0,00</p>
             </div>
         </div>
-    </div>
+    </header>
 
-    <div id="modal-editar" class="modal">
-        <div class="modal-content">
-            <h3>Editar Transação</h3>
-            <input type="text" id="edit-desc" placeholder="Descrição">
-            <input type="number" step="0.01" id="edit-valor" placeholder="Valor">
-            <select id="edit-tipo" onchange="atualizarCategoriasEdit()">
-                <option value="entrada">Entrada</option>
-                <option value="saida">Saída</option>
-            </select>
-            <select id="edit-metodo" onchange="atualizarBancosEdit()">
-                <option value="conta">Conta/Débito</option>
-                <option value="cartao">Cartão de Crédito</option>
-                <option value="dinheiro">Dinheiro</option>
-                <option value="pix">Pix</option>
-            </select>
-            <select id="edit-banco"></select>
-            <select id="edit-categoria"></select>
-            <input type="date" id="edit-data">
-            <div class="modal-botoes">
-                <button class="danger" onclick="deletarTransacao()">Excluir</button>
-                <button onclick="salvarEdicao()">Salvar</button>
-            </div>
+    <main id="chat-box" class="chat-container overflow-y-auto p-4 space-y-4 flex flex-col">
+        <div class="bg-blue-600 self-start p-3 rounded-2xl rounded-tl-none max-w-[80%] text-sm">
+            Olá! Digite suas movimentações. Ex: "Gastei 50 no mercado" ou "Comprei 300 cartão 3x".
         </div>
-    </div>
+    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <footer class="p-4 glass mt-auto">
+        <div class="flex gap-2">
+            <input type="text" id="user-input" placeholder="O que aconteceu agora?" 
+                class="w-full bg-slate-900 border border-slate-700 rounded-full px-4 py-3 focus:outline-none focus:border-blue-500 text-white">
+            <button onclick="processarMensagem()" class="bg-blue-600 hover:bg-blue-500 w-12 h-12 rounded-full flex items-center justify-center transition">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </footer>
+
     <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW erro:', err));
-        }
+        let saldo = 0;
+        let cartoes = 0;
 
-        let dados = JSON.parse(localStorage.getItem('bankday') || '[]');
-        let contas = JSON.parse(localStorage.getItem('bankday_contas') || '[]');
-        let cartoes = JSON.parse(localStorage.getItem('bankday_cartoes') || '[]');
-        let config = JSON.parse(localStorage.getItem('bankday_config') || '{"projetarSaldo":false}');
-        
-        let mesAtual = localStorage.getItem('bankday_mesAtual');
-        if (!mesAtual) {
-            const hoje = new Date();
-            mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
-            localStorage.setItem('bankday_mesAtual', mesAtual);
-        }
-        
-        let valoresOcultos = false;
-        let editandoId = null;
-        let tempContas = [];
-        let tempCartoes = [];
-        let editandoContaCartao = {tipo: null, index: -1};
-        let chartInstance = null;
+        function processarMensagem() {
+            const input = document.getElementById('user-input');
+            const texto = input.value.toLowerCase();
+            if (!texto) return;
 
-        const formatar = v => {
-            v = Number(v) || 0;
-            return valoresOcultos ? 'R$ ••••' : `R$ ${v.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
-        };
-        const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+            adicionarMensagem(input.value, 'user');
 
-        const CATEGORIAS = {
-            entrada: {
-                'Salário': ['salario', 'pagamento', 'pensao', 'freela', 'bonus', '13', 'ferias', 'comissao'],
-                'Vendas': ['venda', 'vendi', 'mercado livre', 'olx', 'shopee', 'pix recebido'],
-                'Presente': ['presente', 'doacao', 'deu'],
-                'Investimento': ['rendimento', 'dividendo', 'juros', 'cdb', 'tesouro', 'acao'],
-                'Reembolso': ['reembolso', 'estorno', 'voltou'],
-                'Outras Receitas': []
-            },
-            saida: {
-                'Alimentação': ['ifood', 'rappi', 'uber eats', 'restaurante', 'padaria', 'mercado', 'acougue', 'feira', 'lanche', 'pizza'],
-                'Transporte': ['uber', '99', 'posto', 'gasolina', 'estacionamento', 'metro', 'onibus', 'pedagio', 'mecanico'],
-                'Moradia': ['aluguel', 'condominio', 'luz', 'agua', 'internet', 'enel', 'sabesp', 'iptu', 'gas'],
-                'Lazer': ['cinema', 'netflix', 'spotify', 'jogo', 'bar', 'show', 'viagem', 'praia', 'clube'],
-                'Saúde': ['farmacia', 'drogaria', 'medico', 'dentista', 'hospital', 'unimed', 'academia', 'terapia'],
-                'Compras': ['shopee', 'mercado livre', 'amazon', 'sapatos', 'americanas', 'shopping', 'roupa', 'calcado', 'tenis'],
-                'Educação': ['faculdade', 'curso', 'livro', 'udemy', 'alura', 'material'],
-                'Assinaturas': ['netflix', 'spotify', 'youtube', 'globoplay', 'prime', 'disney'],
-                'Pets': ['petshop', 'racao', 'veterinario', 'banho', 'tosa'],
-                'Outras Despesas': []
+            // Regex para extrair valores numéricos
+            const valorMatch = texto.match(/\d+([.,]\d{2})?/);
+            if (!valorMatch) {
+                adicionarMensagem("Não entendi o valor. Tente algo como 'Gastei 50'.", 'bot');
+                input.value = '';
+                return;
             }
-        };
 
-        function salvar() {
-            localStorage.setItem('bankday', JSON.stringify(dados));
-            localStorage.setItem('bankday_contas', JSON.stringify(contas));
-            localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
-            localStorage.setItem('bankday_config', JSON.stringify(config));
-        }
+            const valor = parseFloat(valorMatch[0].replace(',', '.'));
+            
+            // Palavras-chave
+            const entradaKeywords = ['recebi', 'entrou', 'ganhei', 'quitei'];
+            const saidaKeywords = ['gastei', 'comprei', 'paguei'];
+            const eCartao = texto.includes('cartão') || texto.includes('cartao') || texto.includes('3x');
 
-        function mudarMes(direcao) {
-            const [ano, mes] = mesAtual.split('-').map(Number);
-            const data = new Date(ano, mes - 1 + direcao, 1);
-            mesAtual = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
-            localStorage.setItem('bankday_mesAtual', mesAtual);
-            atualizarMes();
-            atualizar();
-        }
+            let tipo = "";
 
-        function atualizarMes() {
-            const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-            const [ano, mes] = mesAtual.split('-');
-            document.getElementById('mesAtual').textContent = `${meses[parseInt(mes)-1]} ${ano}`;
-        }
-
-        function identificarCategoria(descricao, tipo = 'saida') {
-            if (!descricao) return tipo === 'entrada' ? 'Outras Receitas' : 'Outras Despesas';
-            const desc = descricao.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const cats = CATEGORIAS[tipo] || CATEGORIAS['saida'];
-            for (const [categoria, palavras] of Object.entries(cats)) {
-                if (palavras.some(p => desc.includes(p))) return categoria;
+            if (entradaKeywords.some(k => texto.includes(k))) {
+                saldo += valor;
+                tipo = "entrada";
+            } else if (saidaKeywords.some(k => texto.includes(k))) {
+                if (eCartao) {
+                    cartoes += valor;
+                    tipo = "cartao";
+                } else {
+                    saldo -= valor;
+                    tipo = "saida";
+                }
             }
-            return tipo === 'entrada' ? 'Outras Receitas' : 'Outras Despesas';
-        }
 
-        function addMensagem(texto, tipo = 'system', info = '', autoLimpar = true, id = null) {
-            const chat = document.getElementById("chat-mensagens");
-            const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            const div = document.createElement("div");
-            div.className = `msg ${tipo}`;
-            if (id) div.onclick = () => abrirModalEditar(id);
-            div.innerHTML = `<div class="msg-bubble">${texto}${info ? `<div class="msg-info">${info}</div>` : ''}<div class="msg-time">${hora}</div></div>`;
-            chat.appendChild(div);
+            atualizarDashboard();
+            responderBot(tipo, valor, eCartao);
+            input.value = '';
+            
+            const chat = document.getElementById('chat-box');
             chat.scrollTop = chat.scrollHeight;
-            if (autoLimpar) {
-                setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 8000);
-            }
         }
 
-        function toggleMenuMais() {
-            let m = document.getElementById('menuDropdown');
-            if (!m) {
-                m = document.createElement('div');
-                m.id = 'menuDro
+        function adicionarMensagem(texto, autor) {
+            const chat = document.getElementById('chat-box');
+            const div = document.createElement('div');
+            div.className = autor === 'user' 
+                ? "bg-slate-700 self-end p-3 rounded-2xl rounded-tr-none max-w-[80%] text-sm"
+                : "bg-blue-600 self-start p-3 rounded-2xl rounded-tl-none max-w-[80%] text-sm";
+            div.innerText = texto;
+            chat.appendChild(div);
+        }
+
+        function responderBot(tipo, valor, eCartao) {
+            let msg = "";
+            if (tipo === "entrada") msg = `Boa! Adicionei R$ ${valor.toFixed(2)} ao seu saldo.`;
+            else if (tipo === "cartao") msg = `Registrado no crédito: R$ ${valor.toFixed(2)}.`;
+            else if (tipo === "saida") msg = `Ok, debitei R$ ${valor.toFixed(2)} do seu saldo.`;
+            
+            setTimeout(() => adicionarMensagem(msg, 'bot'), 500);
+        }
+
+        function atualizarDashboard() {
+            document.getElementById('total-saldo').innerText = `R$ ${saldo.toFixed(2)}`;
+            document.getElementById('total-cartao').innerText = `R$ ${cartoes.toFixed(2)}`;
+            document.getElementById('total-liquido').innerText = `R$ ${(saldo - cartoes).toFixed(2)}`;
+        }
+    </script>
+</body>
+</html>
