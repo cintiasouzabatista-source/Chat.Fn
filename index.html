@@ -47,30 +47,33 @@
        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
        .modal-content { background: var(--card); padding: 1.5rem; border-radius: 1rem; width: 100%; max-width: 400px; }
        .modal input,.modal select { background: var(--input-bg); color: var(--text); }
-    .menu-dropdown {
-    display: none; /* começa fechado */
+ .menu-dropdown {
+    display: none;
     position: absolute;
-    bottom: 60px;
+    bottom: 70px; /* subi um pouco pra garantir */
     left: 16px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
+    background: #1e293b; /* cinza escuro fixo pra teste */
+    border: 1px solid #334155;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    z-index: 50; /* aumenta pra ficar na frente de tudo */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+    z-index: 999; /* joguei lá em cima */
     flex-direction: column;
+    min-width: 180px; /* força largura */
     overflow: hidden;
 }
 .menu-dropdown button {
-    padding: 12px 16px;
+    padding: 14px 18px;
     text-align: left;
-    font-size: 14px;
+    font-size: 15px;
     border: none;
     background: transparent;
-    color: var(--text-color);
+    color: #e2e8f0; /* texto claro fixo */
+    cursor: pointer;
 }
 .menu-dropdown button:hover {
-    background: rgba(255,255,255,0.05);
+    background: #334155;
 }
+        
     </style>
 </head>
 <body>
