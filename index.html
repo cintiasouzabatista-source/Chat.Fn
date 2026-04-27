@@ -130,7 +130,26 @@
     </div>
 </footer>
     
-<!-- MODAL EXTRATO TEM QUE FICAR AQUI FORA, NÃO DENTRO DO MENU -->
+<footer class="p-3 relative">
+    <div class="menu-dropdown" id="menuDropdown">
+        <button onclick="abrirExtrato()">Extrato</button> 
+        <button onclick="resetarTudo()">Resetar Tudo</button>
+        <button onclick="resetarTransacoes()">Resetar Transações</button>
+    </div>
+    <div class="flex gap-2 items-center bg-[var(--input-bg)] rounded-full px-4 py-1 shadow-2xl border border-slate-700/30">
+        <button onclick="toggleMenu()" class="text-slate-400 p-2 text-2xl font-black">
+            <i class="fas fa-ellipsis-v"></i>
+        </button>
+        <input type="text" id="user-input" placeholder="Ex: Recebi 1000 | Gastei 50 | Cartão 300 3x" 
+            class="w-full bg-transparent py-3 focus:outline-none text-sm text-inherit"
+            onkeydown="if(event.key==='Enter') processarMensagem()">
+        <button onclick="processarMensagem()" class="text-blue-500 p-2">
+            <i class="fas fa-paper-plane text-xl"></i>
+        </button>
+    </div>
+</footer>
+
+<!-- MODAL EXTRATO -->
 <div id="modal-extrato" class="modal">
     <div class="modal-content">
         <div class="flex justify-between items-center mb-4">
@@ -157,23 +176,9 @@
         <div id="lista-extrato" class="max-h-96 overflow-y-auto space-y-2"></div>
         <div id="total-extrato" class="mt-3 pt-3 border-t border-slate-600 text-right font-bold"></div>
     </div>
-</div>            <button onclick="abrirExtrato()">Extrato</button>        
-            <button onclick="resetarTudo()">Resetar Tudo</button>
-            <button onclick="resetarTransacoes()">Resetar Transações</button>
-        </div>
-        <div class="flex gap-2 items-center bg-[var(--input-bg)] rounded-full px-4 py-1 shadow-2xl border border-slate-700/30">
-            <button onclick="toggleMenu()" class="text-slate-400 p-2">
-                <i class="fas fa-ellipsis-v"></i>
-            </button>
-            <input type="text" id="user-input" placeholder="Ex: Recebi 1000 | Gastei 50 | Cartão 300 3x" 
-                class="w-full bg-transparent py-3 focus:outline-none text-sm text-inherit"
-                onkeydown="if(event.key==='Enter') processarMensagem()">
-            <button onclick="processarMensagem()" class="text-blue-500 p-2">
-                <i class="fas fa-paper-plane text-xl"></i>
-            </button>
-        </div>
-    </footer>
+</div>
 
+    
     <div id="modal" class="modal" onclick="if(event.target===this) fecharModalSemSalvar()">
         <div class="modal-content">
             <h3 class="font-bold mb-4 text-lg">Editar Transação</h3>
