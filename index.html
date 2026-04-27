@@ -264,63 +264,87 @@ footer {
         }
 
         function interpretarTexto(texto) {
-            const id = Date.now();
-            const data = new Date().toISOString();
-            const txtNorm = normalizar(texto);
-            
-            // Valor
-            const valorMatch = texto.match(/\d+([.,]\d{1,2})?/);
-            const valor = valorMatch? parseFloat(valorMatch[0].replace(',', '.')) : 0;
-            
-            // Tipo
-            const inK = ['recebi', 'entrou', 'ganhei', 'salario', 'pagamento', 'saldo'];
-            const outK = ['gastei', 'comprei', 'paguei'];
-            let tipo = 'saida';
-            if (inK.some(k => txtNorm.includes(normalizar(k)))) tipo = 'entrada';
-            
-            // Parcelado: 3x, 3 vezes, em 3x, em 3 vezes, cartão
-            const parcMatch = txtNorm.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
-            const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
-            if (parcelas > 1 || txtNorm.includes('cartao')) tipo = 'cartao';
-            
-            // Conta/Cartão - busca por nome exato normalizado
-            let conta = null;
-            contas.forEach(c => { 
-                const cNorm = normalizar(c);
-                if (txtNorm.includes(cNorm) || txtNorm.includes('banco ' + cNorm)) conta = c; 
-            });
-            cartoes.forEach(c => { 
-                const cNorm = normalizar(c);
-                if (txtNorm.includes(cNorm) || txtNorm.includes('cartao ' + cNorm)) conta = c; 
-            });
-            
-            // Descrição limpa: só o objeto da compra
-            let descricao = texto;
-            descricao = descricao.replace(/\d+([.,]\d{1,2})?/g, ''); // valor
-            descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, ''); // parcelado
-            descricao = descricao.replace(/cart[aã]o/gi, '');
-            descricao = descricao.replace(/banco/gi, '');
-            [...inK,...outK].forEach(k => {
-                descricao = descricao.replace(new RegExp(k, 'gi'), '');
-            });
-            contas.forEach(c => descricao = descricao.replace(new RegExp(c, 'gi'), ''));
-            cartoes.forEach(c => descricao = descricao.replace(new RegExp(c, 'gi'), ''));
-            descricao = descricao.replace(/\s+/g, ' ').trim();
-            if (!descricao || descricao.length < 2) descricao = tipo === 'entrada'? 'Entrada' : 'Gasto';
-            
-            // Categoria automática
-            let categoria = tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
-            if (txtNorm.includes('ifood') || txtNorm.includes('mercado') || txtNorm.includes('restaurante')) categoria = 'Alimentação';
-            if (txtNorm.includes('uber') || txtNorm.includes('gasolina') || txtNorm.includes('posto')) categoria = 'Transporte';
-            if (txtNorm.includes('salario') || txtNorm.includes('pagamento')) categoria = 'Salário';
-            
-            return {
-                id, descricao, valor, tipo, categoria, conta, parcelas,
-                valorParcela: valor / parcelas,
-                data
-            };
-        }
-
+    const id = Date.now();
+    const data = new Date().toISOString();
+    const txtNorm = normalizar(texto);
+    
+    // Valor
+    const valorMatch = texto.match(/\d+([.,]\d{1,2})?/);
+    const valor = valorMatch? parseFloat(valorMatch[0].replace(',', '.')) : 0;
+    
+    // Tipo: entrada, saida ou cartao
+    const inK = ['recebi', 'entrou', 'ganhei', 'salario', 'pagamento', 'saldo'];
+    const outK = ['gastei', 'comprei', 'paguei'];
+    let tipo = 'saida';
+    if (inK.some(k => txtNorm.includes(normalizar(k)))) tipo = 'entrada';
+    
+    // Parcelado OU palavra cartao = tipo cartao
+    const parcMatch = txtNorm.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
+    const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
+    const temCartao = txtNorm.includes('cartao');
+    if (parcelas > 1 || temCartao) tipo = 'cartao';
+    
+    // Detecta Conta/Cartão EM QUALQUER LUGAR do texto
+    let conta = null;
+    
+    // 1. Procura nas contas cadastradas
+    contas.forEach(c => { 
+        const cNorm = normalizar(c);
+        // Remove "banco" pra facilitar: "banco itau" casa com "itau"
+        const txtSemBanco = txtNorm.replace(/banco\s+/g, '');
+        if (txtSemBanco.includes(cNorm)) conta = c; 
+    });
+    
+    // 2. Procura nos cartões cadastrados
+    cartoes.forEach(c => { 
+        const cNorm = normalizar(c);
+        if (txtNorm.includes(cNorm) || txtNorm.includes('cartao ' + cNorm)) conta = c; 
+    });
+    
+    // 3. Se não achou mas tem palavra chave, cria automático
+    if (!conta) {
+        const bancosComuns = ['itau', 'nubank', 'inter', 'bradesco', 'caixa', 'santander', 'bb', 'c6', 'picpay'];
+        bancosComuns.forEach(b => {
+            if (txtNorm.includes(b)) {
+                conta = b.charAt(0).toUpperCase() + b.slice(1); // Capitaliza
+                if (tipo === 'cartao' &&!cartoes.some(c => normalizar(c) === b)) {
+                    cartoes.push(conta);
+                    localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
+                } else if (tipo!== 'cartao' &&!contas.some(c => normalizar(c) === b)) {
+                    contas.push(conta);
+                    localStorage.setItem('bankday_contas', JSON.stringify(contas));
+                }
+            }
+        });
+    }
+    
+    // Descrição limpa: só o objeto da compra
+    let descricao = texto;
+    descricao = descricao.replace(/\d+([.,]\d{1,2})?/g, ''); // valor
+    descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, ''); // parcelado
+    descricao = descricao.replace(/cart[aã]o/gi, '');
+    descricao = descricao.replace(/banco/gi, '');
+    [...inK,...outK].forEach(k => {
+        descricao = descricao.replace(new RegExp(k, 'gi'), '');
+    });
+    contas.forEach(c => descricao = descricao.replace(new RegExp(c, 'gi'), ''));
+    cartoes.forEach(c => descricao = descricao.replace(new RegExp(c, 'gi'), ''));
+    descricao = descricao.replace(/\s+/g, ' ').trim();
+    if (!descricao || descricao.length < 2) descricao = tipo === 'entrada'? 'Entrada' : 'Gasto';
+    
+    // Categoria automática
+    let categoria = tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
+    if (txtNorm.includes('ifood') || txtNorm.includes('mercado') || txtNorm.includes('restaurante') || txtNorm.includes('lanche')) categoria = 'Alimentação';
+    if (txtNorm.includes('uber') || txtNorm.includes('99') || txtNorm.includes('gasolina') || txtNorm.includes('posto')) categoria = 'Transporte';
+    if (txtNorm.includes('salario') || txtNorm.includes('pagamento')) categoria = 'Salário';
+    if (txtNorm.includes('aluguel') || txtNorm.includes('condominio')) categoria = 'Moradia';
+    
+    return {
+        id, descricao, valor, tipo, categoria, conta, parcelas,
+        valorParcela: valor / parcelas,
+        data
+    };
+}
         function adicionarMensagemNaTela(texto, id) {
             const chat = document.getElementById('chat-box');
             const div = document.createElement('div');
@@ -428,7 +452,7 @@ footer {
                 const opt = document.createElement('option');
                 opt.value = c;
                 opt.textContent = c;
-                if (c === selecionada) opt.selected = true;
+               if (normalizar(c) === normalizar(selecionada || '')) opt.selected = true;
                 grupoContas.appendChild(opt);
             });
             select.appendChild(grupoContas);
