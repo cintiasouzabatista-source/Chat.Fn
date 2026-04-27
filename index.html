@@ -8,20 +8,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --input-bg: #1e293b; }
-     .light-mode { --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --input-bg: #ffffff; }
+    .light-mode { --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --input-bg: #ffffff; }
 
         body { background-color: var(--bg); color: var(--text); transition: 0.3s; height: 100vh; display: flex; flex-direction: column; }
-     .header-bg { background-color: var(--card); border-bottom: 1px solid rgba(0,0,0,0.1); }
+    .header-bg { background-color: var(--card); border-bottom: 1px solid rgba(0,0,0,0.1); }
         
         #chat-box { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
         
-     .message-fade { animation: fadeOut 1s forwards 7s; }
+    .message-fade { animation: fadeOut 1s forwards 7s; }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
         
-     .hidden-val { filter: blur(6px); }
-     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
-     .modal-content { background: var(--card); padding: 1.5rem; border-radius: 1rem; width: 100%; max-width: 400px; }
-     .modal input,.modal select { background: var(--input-bg); color: var(--text); }
+    .hidden-val { filter: blur(6px); }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-content { background: var(--card); padding: 1.5rem; border-radius: 1rem; width: 100%; max-width: 400px; }
+    .modal input,.modal select { background: var(--input-bg); color: var(--text); }
+    .menu-dropdown { position: absolute; bottom: 60px; left: 12px; background: var(--card); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; flex-direction: column; min-width: 180px; z-index: 50; }
+    .menu-dropdown button { padding: 0.75rem 1rem; text-align: left; font-size: 0.875rem; }
+    .menu-dropdown button:hover { background: rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -72,8 +75,15 @@
 
     <main id="chat-box"></main>
 
-    <footer class="p-3">
+    <footer class="p-3 relative">
+        <div class="menu-dropdown" id="menuDropdown">
+            <button onclick="resetarTudo()">Resetar Tudo</button>
+            <button onclick="resetarTransacoes()">Resetar Transações</button>
+        </div>
         <div class="flex gap-2 items-center bg-[var(--input-bg)] rounded-full px-4 py-1 shadow-2xl border border-slate-700/30">
+            <button onclick="toggleMenu()" class="text-slate-400 p-2">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
             <input type="text" id="user-input" placeholder="Ex: Recebi 1000 | Gastei 50 | Cartão 300 3x" 
                 class="w-full bg-transparent py-3 focus:outline-none text-sm text-inherit"
                 onkeydown="if(event.key==='Enter') processarMensagem()">
@@ -83,8 +93,8 @@
         </div>
     </footer>
 
-    <!-- Modal de Edição Completo -->
-    <div id="modal" class="modal">
+    <!-- Modal de Edição -->
+    <div id="modal" class="modal" onclick="if(event.target===this) fecharModalSemSalvar()">
         <div class="modal-content">
             <h3 class="font-bold mb-4 text-lg">Editar Transação</h3>
             
@@ -123,7 +133,7 @@
         let cartoes = JSON.parse(localStorage.getItem('bankday_cartoes') || '[]');
         let idEditando = null;
         let mesAtual = localStorage.getItem('bankday_mesAtual');
-        let aguardandoConta = null;
+        let transacaoPendente = null;
         
         if (!mesAtual) {
             const hoje = new Date();
@@ -157,39 +167,37 @@
             const texto = input.value.trim();
             if (!texto) return;
 
-            // Se está aguardando definir conta/cartão
-            if (aguardandoConta) {
+            // Se está completando conta/cartão pendente
+            if (transacaoPendente) {
                 const nome = texto;
-                if (aguardandoConta.tipo === 'conta') {
-                    if (!contas.includes(nome)) {
-                        contas.push(nome);
-                        localStorage.setItem('bankday_contas', JSON.stringify(contas));
-                    }
-                    aguardandoConta.transacao.conta = nome;
-                } else {
+                if (transacaoPendente.tipo === 'cartao') {
                     if (!cartoes.includes(nome)) {
                         cartoes.push(nome);
                         localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
                     }
-                    aguardandoConta.transacao.conta = nome;
+                } else {
+                    if (!contas.includes(nome)) {
+                        contas.push(nome);
+                        localStorage.setItem('bankday_contas', JSON.stringify(contas));
+                    }
                 }
-                transacoes.push(aguardandoConta.transacao);
+                transacaoPendente.conta = nome;
+                transacaoPendente.textoOriginal += ` ${nome}`;
+                
+                transacoes.push(transacaoPendente);
                 localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-                adicionarMensagemNaTela(aguardandoConta.transacao.textoOriginal, aguardandoConta.transacao.id);
+                adicionarMensagemNaTela(transacaoPendente.textoOriginal, transacaoPendente.id);
                 atualizarCalculos();
-                aguardandoConta = null;
+                transacaoPendente = null;
                 input.value = '';
                 return;
             }
 
             const transacao = interpretarTexto(texto);
             
-            // Se não especificou conta/cartão, pergunta
+            // Se não especificou conta/cartão, pergunta mas não perde a transação
             if (!transacao.conta) {
-                aguardandoConta = {
-                    tipo: transacao.tipo === 'cartao'? 'cartao' : 'conta',
-                    transacao: transacao
-                };
+                transacaoPendente = transacao;
                 const tipoNome = transacao.tipo === 'cartao'? 'cartão' : 'conta';
                 adicionarMensagemSistema(`Qual ${tipoNome}? Digite o nome:`);
                 input.value = '';
@@ -218,8 +226,8 @@
             let tipo = 'saida';
             if (inK.some(k => txt.includes(k))) tipo = 'entrada';
             
-            // Parcelado - reconhece 3x, 3 vezes, em 3x, em 3 vezes
-            const parcMatch = txt.match(/(\d+)\s*(x|vezes)/i);
+            // Parcelado - CORRIGIDO: reconhece 3x, 3 vezes, em 3x, em 3 vezes
+            const parcMatch = txt.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
             const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
             if (parcelas > 1 || txt.includes('cartão') || txt.includes('cartao')) tipo = 'cartao';
             
@@ -229,8 +237,8 @@
             cartoes.forEach(c => { if (txt.includes(c.toLowerCase())) conta = c; });
             
             // Categoria automática
-            const cats = CATEGORIAS[tipo] || CATEGORIAS.saida;
-            let categoria = cats[cats.length - 1]; // Outras
+            let categoria = 'Outras Despesas';
+            if (tipo === 'entrada') categoria = 'Outras Receitas';
             if (txt.includes('ifood') || txt.includes('mercado') || txt.includes('restaurante')) categoria = 'Alimentação';
             if (txt.includes('uber') || txt.includes('gasolina') || txt.includes('posto')) categoria = 'Transporte';
             if (txt.includes('salario') || txt.includes('pagamento')) categoria = 'Salário';
@@ -371,6 +379,10 @@
             document.getElementById('modal').style.display = 'none';
         }
 
+        function fecharModalSemSalvar() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
         function excluirMensagem() {
             transacoes = transacoes.filter(x => x.id!== idEditando);
             localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
@@ -380,9 +392,38 @@
             document.getElementById('modal').style.display = 'none';
         }
 
+        function toggleMenu() {
+            const menu = document.getElementById('menuDropdown');
+            menu.style.display = menu.style.display === 'flex'? 'none' : 'flex';
+        }
+
+        function resetarTudo() {
+            if (!confirm('Apagar TUDO? Não tem volta.')) return;
+            transacoes = [];
+            contas = ['Conta Principal'];
+            cartoes = [];
+            localStorage.clear();
+            location.reload();
+        }
+
+        function resetarTransacoes() {
+            if (!confirm('Apagar todas as transações? Contas e cartões serão mantidos.')) return;
+            transacoes = [];
+            localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+            atualizarCalculos();
+            toggleMenu();
+        }
+
         // Init
         atualizarMes();
         atualizarCalculos();
+        
+        // Fecha menu clicando fora
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.fa-ellipsis-v') &&!e.target.closest('#menuDropdown')) {
+                document.getElementById('menuDropdown').style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>
