@@ -144,7 +144,9 @@ footer {
             <input type="text" id="edit-desc" class="w-full p-2 rounded-lg border mb-3 text-sm">
             
             <label class="text-xs opacity-70">Valor</label>
+            <div id="info-parcela" class="text-xs text-blue-400 mb-3 hidden"></div>
             <input type="number" id="edit-valor" step="0.01" class="w-full p-2 rounded-lg border mb-3 text-sm">
+            
             
             <label class="text-xs opacity-70">Data</label>
             <input type="date" id="edit-data" class="w-full p-2 rounded-lg border mb-3 text-sm">
@@ -192,11 +194,11 @@ footer {
             cartao: ['Alimentação', 'Transporte', 'Lazer', 'Saúde', 'Compras', 'Educação', 'Assinaturas', 'Pets', 'Outras Despesas']
         };
 
-       function normalizar(texto) {
+   function normalizar(texto) {
     return texto.toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9\sx]/g, '') // Mantém o X
-      .trim();
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\sx]/g, '') // Mantém X pro parcelado
+    .trim();
 }
 
         function mudarMes(direcao) {
@@ -263,45 +265,41 @@ footer {
             input.value = '';
         }
 
-  function interpretarTexto(texto) {
+ function interpretarTexto(texto) {
     const id = Date.now();
     const data = new Date().toISOString();
     const txtNorm = normalizar(texto);
+    const txtLower = texto.toLowerCase(); // Usa original pra pegar o X
     
-    // Valor
+    // Valor - pega o primeiro número
     const valorMatch = texto.match(/\d+([.,]\d{1,2})?/);
     const valor = valorMatch? parseFloat(valorMatch[0].replace(',', '.')) : 0;
     
     // Tipo: entrada, saida ou cartao
     const inK = ['recebi', 'entrou', 'ganhei', 'salario', 'pagamento', 'saldo'];
-    const outK = ['gastei', 'comprei', 'paguei'];
+    const outK = ['gastei', 'comprei', 'paguei', 'parcelei'];
     let tipo = 'saida';
     if (inK.some(k => txtNorm.includes(normalizar(k)))) tipo = 'entrada';
     
-   // Parcelado: 3x, 3 x, 3vezes, em 3x, em 3 vezes
-const txtOriginal = texto.toLowerCase(); // Usa texto original, não normalizado
-const parcMatch = txtOriginal.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
-const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
-const temCartao = txtOriginal.includes('cartão') || txtOriginal.includes('cartao');
-if (parcelas > 1 || temCartao) tipo = 'cartao';
+    // Parcelado: 3x, 3 x, 3vezes, em 3x - USA TEXTO ORIGINAL
+    const parcMatch = txtLower.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
+    const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
+    const temCartao = txtLower.includes('cartão') || txtLower.includes('cartao');
+    if (parcelas > 1 || temCartao) tipo = 'cartao';
     
-    // Detecta Conta/Cartão EM QUALQUER LUGAR do texto
+    // Detecta Conta/Cartão EM QUALQUER LUGAR
     let conta = null;
-    
-    // 1. Procura nas contas cadastradas
     contas.forEach(c => { 
         const cNorm = normalizar(c);
         const txtSemBanco = txtNorm.replace(/banco\s+/g, '');
         if (txtSemBanco.includes(cNorm)) conta = c; 
     });
-    
-    // 2. Procura nos cartões cadastrados
     cartoes.forEach(c => { 
         const cNorm = normalizar(c);
         if (txtNorm.includes(cNorm) || txtNorm.includes('cartao ' + cNorm)) conta = c; 
     });
     
-    // 3. Se não achou mas tem palavra chave, cria automático
+    // Se não achou mas tem palavra chave, cria automático
     if (!conta) {
         const bancosComuns = ['itau', 'nubank', 'inter', 'bradesco', 'caixa', 'santander', 'bb', 'c6', 'picpay'];
         bancosComuns.forEach(b => {
@@ -318,52 +316,42 @@ if (parcelas > 1 || temCartao) tipo = 'cartao';
         });
     }
     
-    // Descrição limpa: remove TUDO que não é o objeto da compra
+    // Descrição limpa: mantém o objeto completo
     let descricao = texto;
-    
-    // 1. Remove valor e parcelado
-    descricao = descricao.replace(/\d+([.,]\d{1,2})?/g, '');
-    descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, '');
-    
-    // 2. Remove palavras-chave de ação
+    descricao = descricao.replace(/\d+([.,]\d{1,2})?/g, ''); // valor
+    descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, ''); // parcelado
+    descricao = descricao.replace(/cart[aã]o/gi, '');
+    descricao = descricao.replace(/banco/gi, '');
     [...inK,...outK].forEach(k => {
         descricao = descricao.replace(new RegExp(k, 'gi'), '');
     });
     
-    // 3. Remove "cartao" e "banco"
-    descricao = descricao.replace(/cart[aã]o/gi, '');
-    descricao = descricao.replace(/banco/gi, '');
-    
-    // 4. Remove nomes de contas/cartões - AGORA NORMALIZADO
+    // Remove nomes de contas/cartões
     const descNorm = normalizar(descricao);
     let palavrasRemover = [];
-    
     contas.forEach(c => {
         if (descNorm.includes(normalizar(c))) palavrasRemover.push(c);
     });
     cartoes.forEach(c => {
         if (descNorm.includes(normalizar(c))) palavrasRemover.push(c);
     });
-    
-    // Remove as palavras achadas, ignorando maiúscula/acento
     palavrasRemover.forEach(p => {
         descricao = descricao.replace(new RegExp(p, 'gi'), '');
     });
     
-    // 5. Limpa espaços duplos
     descricao = descricao.replace(/\s+/g, ' ').trim();
     if (!descricao || descricao.length < 2) descricao = tipo === 'entrada'? 'Entrada' : 'Gasto';
     
     // Categoria automática
     let categoria = tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
-    if (txtNorm.includes('ifood') || txtNorm.includes('mercado') || txtNorm.includes('restaurante') || txtNorm.includes('lanche')) categoria = 'Alimentação';
-    if (txtNorm.includes('uber') || txtNorm.includes('99') || txtNorm.includes('gasolina') || txtNorm.includes('posto')) categoria = 'Transporte';
+    if (txtNorm.includes('ifood') || txtNorm.includes('mercado') || txtNorm.includes('restaurante')) categoria = 'Alimentação';
+    if (txtNorm.includes('uber') || txtNorm.includes('99') || txtNorm.includes('gasolina')) categoria = 'Transporte';
+    if (txtNorm.includes('celular') || txtNorm.includes('samsung') || txtNorm.includes('iphone')) categoria = 'Compras';
     if (txtNorm.includes('salario') || txtNorm.includes('pagamento')) categoria = 'Salário';
-    if (txtNorm.includes('aluguel') || txtNorm.includes('condominio')) categoria = 'Moradia';
     
     return {
         id, descricao, valor, tipo, categoria, conta, parcelas,
-        valorParcela: valor / parcelas,
+        valorParcela: parseFloat((valor / parcelas).toFixed(2)),
         data
     };
 }
@@ -436,20 +424,29 @@ if (parcelas > 1 || temCartao) tipo = 'cartao';
             document.getElementById('eye-icon').classList.toggle('fa-eye-slash');
         }
 
-        function abrirModal(id) {
-            idEditando = id;
-            const t = transacoes.find(x => x.id === id);
-            
-            document.getElementById('edit-desc').value = t.descricao;
-            document.getElementById('edit-valor').value = t.valor;
-            document.getElementById('edit-data').value = t.data.split('T')[0];
-            document.getElementById('edit-tipo').value = t.tipo;
-            
-            atualizarCategorias(t.categoria);
-            atualizarContas(t.conta);
-            
-            document.getElementById('modal').style.display = 'flex';
-        }
+      function abrirModal(id) {
+    idEditando = id;
+    const t = transacoes.find(x => x.id === id);
+    
+    document.getElementById('edit-desc').value = t.descricao;
+    document.getElementById('edit-valor').value = t.valor;
+    document.getElementById('edit-data').value = t.data.split('T')[0];
+    document.getElementById('edit-tipo').value = t.tipo;
+    
+    // Mostra info de parcela
+    const infoParc = document.getElementById('info-parcela');
+    if (t.parcelas > 1) {
+        infoParc.textContent = `${t.parcelas}x de R$ ${t.valorParcela.toFixed(2).replace('.',',')}`;
+        infoParc.classList.remove('hidden');
+    } else {
+        infoParc.classList.add('hidden');
+    }
+    
+    atualizarCategorias(t.categoria);
+    atualizarContas(t.conta);
+    
+    document.getElementById('modal').style.display = 'flex';
+}
 
         function atualizarCategorias(selecionada = null) {
             const tipo = document.getElementById('edit-tipo').value;
