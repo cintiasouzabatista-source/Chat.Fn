@@ -83,7 +83,14 @@
             <h1 class="text-lg font-black text-black-200">Chat Financeiro</h1>
             <div class="flex gap-4">
                 <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
-                <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon text-blue-500"></i></button>
+             <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon text-blue-500"></i></button>
+                <div class="flex items-center gap-3">
+    <!-- Botão Saldo Projetado -->
+    <button id="btnSaldoProjetado" onclick="toggleSaldoProjetado()" 
+        class="text-slate-400 hover:text-blue-400 transition-colors" 
+        title="Projetar saldo pro próximo mês">
+        <i class="fas fa-forward-step"></i>
+    </button>
             </div>
         </div>
         
@@ -225,7 +232,75 @@
             mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
             localStorage.setItem('bankday_mesAtual', mesAtual);
         }
+// Estado inicial da flag
+let saldoProjetadoAtivo = localStorage.getItem('saldoProjetado') === 'true';
 
+// Aplica visual ao carregar a página
+function aplicarVisualSaldoProjetado() {
+    const btn = document.getElementById('btnSaldoProjetado');
+    if (saldoProjetadoAtivo) {
+        btn.classList.remove('text-slate-400');
+        btn.classList.add('text-blue-500');
+    } else {
+        btn.classList.remove('text-blue-500');
+        btn.classList.add('text-slate-400');
+    }
+}
+
+// Liga/desliga a flag
+function toggleSaldoProjetado() {
+    saldoProjetadoAtivo = !saldoProjetadoAtivo;
+    localStorage.setItem('saldoProjetado', saldoProjetadoAtivo);
+    aplicarVisualSaldoProjetado();
+    atualizarCards(); // recalcula tudo
+}
+
+// Modifica sua função de atualizarCards()
+function atualizarCards() {
+    // ... seu código atual que calcula entrada, saída, cartão ...
+    
+    let liquido = entrada - saida;
+    
+    // SALDO PROJETADO: pega saldo do mês anterior
+    let saldoAnterior = 0;
+    if (saldoProjetadoAtivo) {
+        const mesAnterior = getMesAnterior(); // você precisa criar essa função
+        const dadosMesAnterior = JSON.parse(localStorage.getItem(`dados_${mesAnterior}`) || '{}');
+        saldoAnterior = dadosMesAnterior.liquido || 0;
+    }
+    
+    let inicio = 0; // ou o valor que o usuário digitar
+    let final = inicio + liquido + saldoAnterior;
+    
+    // Atualiza na tela
+    document.getElementById('card-liquido').textContent = formatarMoeda(liquido + saldoAnterior);
+    document.getElementById('card-final').textContent = formatarMoeda(final);
+    
+    // Salva pro próximo mês usar
+    salvarDadosMes({ entrada, saida, cartao, liquido, inicio, final });
+}
+
+// Função pra pegar "2026-03" se estiver em "2026-04"
+function getMesAnterior() {
+    // Adapta pra como você guarda o mês atual
+    let [ano, mes] = mesAtual.split('-'); // ex: "2026-04"
+    mes = parseInt(mes) - 1;
+    if (mes === 0) {
+        mes = 12;
+        ano = parseInt(ano) - 1;
+    }
+    return `${ano}-${String(mes).padStart(2, '0')}`;
+}
+
+function salvarDadosMes(dados) {
+    localStorage.setItem(`dados_${mesAtual}`, JSON.stringify(dados));
+}
+
+// Roda ao abrir a página
+document.addEventListener('DOMContentLoaded', () => {
+    aplicarVisualSaldoProjetado();
+    atualizarCards();
+});
         const CATEGORIAS = {
             entrada: ['Salário', 'Vendas', 'Presente', 'Investimento', 'Reembolso', 'Outras Receitas'],
             saida: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Compras', 'Educação', 'Assinaturas', 'Pets', 'Outras Despesas'],
