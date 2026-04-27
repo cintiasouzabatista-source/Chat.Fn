@@ -232,28 +232,7 @@
             mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
             localStorage.setItem('bankday_mesAtual', mesAtual);
         }
-// Estado inicial da flag
-let saldoProjetadoAtivo = localStorage.getItem('saldoProjetado') === 'true';
 
-// Aplica visual ao carregar a página
-function aplicarVisualSaldoProjetado() {
-    const btn = document.getElementById('btnSaldoProjetado');
-    if (saldoProjetadoAtivo) {
-        btn.classList.remove('text-slate-400');
-        btn.classList.add('text-blue-500');
-    } else {
-        btn.classList.remove('text-blue-500');
-        btn.classList.add('text-slate-400');
-    }
-}
-
-// Liga/desliga a flag
-function toggleSaldoProjetado() {
-    saldoProjetadoAtivo = !saldoProjetadoAtivo;
-    localStorage.setItem('saldoProjetado', saldoProjetadoAtivo);
-    aplicarVisualSaldoProjetado();
-    atualizarCards(); // recalcula tudo
-}
 
 // Modifica sua função de atualizarCards()
 function atualizarCards() {
