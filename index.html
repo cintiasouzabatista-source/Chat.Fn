@@ -8,30 +8,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --input-bg: #1e293b; }
-   .light-mode { --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --input-bg: #ffffff; }
+ .light-mode { --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --input-bg: #ffffff; }
 
         body { background-color: var(--bg); color: var(--text); transition: 0.3s; height: 100vh; display: flex; flex-direction: column; }
-   .header-bg { background-color: var(--card); border-bottom: 1px solid rgba(0,0,0,0.1); }
+ .header-bg { background-color: var(--card); border-bottom: 1px solid rgba(0,0,0,0.1); }
         
         #chat-box { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
         
-   .message-fade { animation: fadeOut 1s forwards 7s; }
+ .message-fade { animation: fadeOut 1s forwards 7s; }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; height: 0; margin: 0; padding: 0; } }
         
-   .hidden-val { filter: blur(6px); }
-   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
-   .modal-content { background: var(--card); padding: 1.5rem; border-radius: 1rem; width: 100%; max-width: 400px; }
-   .modal input,.modal select { background: var(--input-bg); color: var(--text); }
-   .menu-dropdown { position: absolute; bottom: 60px; left: 12px; background: var(--card); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; flex-direction: column; min-width: 180px; z-index: 50; }
-   .menu-dropdown button { padding: 0.75rem 1rem; text-align: left; font-size: 0.875rem; }
-   .menu-dropdown button:hover { background: rgba(0,0,0,0.1); }
+ .hidden-val { filter: blur(6px); }
+ .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+ .modal-content { background: var(--card); padding: 1.5rem; border-radius: 1rem; width: 100%; max-width: 400px; }
+ .modal input,.modal select { background: var(--input-bg); color: var(--text); }
+ .menu-dropdown { position: absolute; bottom: 60px; left: 12px; background: var(--card); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; flex-direction: column; min-width: 180px; z-index: 50; }
+ .menu-dropdown button { padding: 0.75rem 1rem; text-align: left; font-size: 0.875rem; }
+ .menu-dropdown button:hover { background: rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
     <header class="p-3 header-bg shadow-sm">
         <div class="flex justify-between items-center mb-3">
-            <h1 class="text-lg font-black text-blue-300 normal">Chat Financeiro</h1>
+            <h1 class="text-lg font-black text-blue-300">Chat Financeiro</h1>
             <div class="flex gap-4">
                 <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
                 <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon text-blue-500"></i></button>
@@ -148,7 +148,10 @@
         };
 
         function normalizar(texto) {
-            return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, '');
+            return texto.toLowerCase()
+               .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+               .replace(/[^a-z0-9\s]/g, '')
+               .trim();
         }
 
         function mudarMes(direcao) {
@@ -189,7 +192,7 @@
                 
                 transacoes.push(transacaoPendente);
                 localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-                adicionarMensagemNaTela(transacaoPendente.descricao + ` R$ ${transacaoPendente.valor}`, transacaoPendente.id);
+                adicionarMensagemNaTela(`${transacaoPendente.descricao} - R$ ${transacaoPendente.valor}`, transacaoPendente.id);
                 removerMensagemSistema();
                 atualizarCalculos();
                 transacaoPendente = null;
@@ -210,7 +213,7 @@
 
             transacoes.push(transacao);
             localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-            adicionarMensagemNaTela(transacao.descricao + ` R$ ${transacao.valor}`, transacao.id);
+            adicionarMensagemNaTela(`${transacao.descricao} - R$ ${transacao.valor}`, transacao.id);
             atualizarCalculos();
             input.value = '';
         }
@@ -218,8 +221,7 @@
         function interpretarTexto(texto) {
             const id = Date.now();
             const data = new Date().toISOString();
-            const txt = normalizar(texto);
-            const txtOriginal = texto;
+            const txtNorm = normalizar(texto);
             
             // Valor
             const valorMatch = texto.match(/\d+([.,]\d{1,2})?/);
@@ -229,23 +231,25 @@
             const inK = ['recebi', 'entrou', 'ganhei', 'salario', 'pagamento', 'saldo'];
             const outK = ['gastei', 'comprei', 'paguei'];
             let tipo = 'saida';
-            if (inK.some(k => txt.includes(normalizar(k)))) tipo = 'entrada';
+            if (inK.some(k => txtNorm.includes(normalizar(k)))) tipo = 'entrada';
             
-            // Parcelado: 3x, 3 vezes, em 3x, em 3 vezes
-            const parcMatch = txt.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
+            // Parcelado: 3x, 3 vezes, em 3x, em 3 vezes, cartão
+            const parcMatch = txtNorm.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
             const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
-            if (parcelas > 1 || txt.includes('cartao') || txt.includes('cartão')) tipo = 'cartao';
+            if (parcelas > 1 || txtNorm.includes('cartao')) tipo = 'cartao';
             
-            // Conta/Cartão - ignora maiúscula/minúscula/acentos
+            // Conta/Cartão - busca por nome exato normalizado
             let conta = null;
             contas.forEach(c => { 
-                if (txt.includes(normalizar(c)) || txt.includes('banco ' + normalizar(c))) conta = c; 
+                const cNorm = normalizar(c);
+                if (txtNorm.includes(cNorm) || txtNorm.includes('banco ' + cNorm)) conta = c; 
             });
             cartoes.forEach(c => { 
-                if (txt.includes(normalizar(c)) || txt.includes('cartao ' + normalizar(c))) conta = c; 
+                const cNorm = normalizar(c);
+                if (txtNorm.includes(cNorm) || txtNorm.includes('cartao ' + cNorm)) conta = c; 
             });
             
-            // Descrição limpa: remove valor, parcelado, conta/cartão, palavras-chave
+            // Descrição limpa: só o objeto da compra
             let descricao = texto;
             descricao = descricao.replace(/\d+([.,]\d{1,2})?/g, ''); // valor
             descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, ''); // parcelado
@@ -257,16 +261,16 @@
             contas.forEach(c => descricao = descricao.replace(new RegExp(c, 'gi'), ''));
             cartoes.forEach(c => descricao = descricao.replace(new RegExp(c, 'gi'), ''));
             descricao = descricao.replace(/\s+/g, ' ').trim();
-            if (!descricao) descricao = tipo === 'entrada'? 'Entrada' : 'Gasto';
+            if (!descricao || descricao.length < 2) descricao = tipo === 'entrada'? 'Entrada' : 'Gasto';
             
             // Categoria automática
             let categoria = tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
-            if (txt.includes('ifood') || txt.includes('mercado') || txt.includes('restaurante')) categoria = 'Alimentação';
-            if (txt.includes('uber') || txt.includes('gasolina') || txt.includes('posto')) categoria = 'Transporte';
-            if (txt.includes('salario') || txt.includes('pagamento')) categoria = 'Salário';
+            if (txtNorm.includes('ifood') || txtNorm.includes('mercado') || txtNorm.includes('restaurante')) categoria = 'Alimentação';
+            if (txtNorm.includes('uber') || txtNorm.includes('gasolina') || txtNorm.includes('posto')) categoria = 'Transporte';
+            if (txtNorm.includes('salario') || txtNorm.includes('pagamento')) categoria = 'Salário';
             
             return {
-                id, textoOriginal: descricao, valor, tipo, categoria, conta, parcelas,
+                id, descricao, valor, tipo, categoria, conta, parcelas,
                 valorParcela: valor / parcelas,
                 data
             };
@@ -345,7 +349,7 @@
             idEditando = id;
             const t = transacoes.find(x => x.id === id);
             
-            document.getElementById('edit-desc').value = t.textoOriginal;
+            document.getElementById('edit-desc').value = t.descricao;
             document.getElementById('edit-valor').value = t.valor;
             document.getElementById('edit-data').value = t.data.split('T')[0];
             document.getElementById('edit-tipo').value = t.tipo;
@@ -400,7 +404,7 @@
 
         function fecharModal() {
             const t = transacoes.find(x => x.id === idEditando);
-            t.textoOriginal = document.getElementById('edit-desc').value;
+            t.descricao = document.getElementById('edit-desc').value;
             t.valor = parseFloat(document.getElementById('edit-valor').value) || 0;
             t.data = new Date(document.getElementById('edit-data').value).toISOString();
             t.tipo = document.getElementById('edit-tipo').value;
