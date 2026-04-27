@@ -706,11 +706,13 @@ function editarDoExtrato(id) {
         atualizarCalculos();
         
         // Fecha menu clicando fora
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.fa-ellipsis-v') &&!e.target.closest('#menuDropdown')) {
-                document.getElementById('menuDropdown').style.display = 'none';
-            }
-        });
+       document.addEventListener('click', function(e) {
+    const menu = document.getElementById('menuDropdown');
+    const btn = document.getElementById('btnMenu');
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.style.display = 'none';
+    }
+});
     </script>
 </body>
 </html>
