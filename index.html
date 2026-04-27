@@ -82,7 +82,14 @@
         <div class="flex justify-between items-center mb-3">
             <h1 class="text-lg font-black text-black-200">Chat Financeiro</h1>
             <div class="flex gap-4">
-                <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
+                <div class="flex items-center gap-3">
+    <button id="btnSaldoProjetado" onclick="toggleSaldoProjetado()" 
+        class="text-slate-400 hover:text-blue-400 transition-colors" 
+        title="Projetar saldo pro próximo mês">
+        <i class="fas fa-forward-step"></i>
+    </button>
+    <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
+</div>
              <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon text-blue-500"></i></button>
    
         </div>
@@ -515,31 +522,77 @@ function criarParcelas(transacaoBase, nomeConta) {
                 msgSistemaId = null;
             }
         }
+// === SALDO PROJETADO ===
+let saldoProjetadoAtivo = localStorage.getItem('saldoProjetado') === 'true';
 
-        function atualizarCalculos() {
-            let e = 0, s = 0, c = 0;
-            
-            const [ano, mesNum] = mesAtual.split('-').map(Number);
-            const transacoesMes = transacoes.filter(t => {
-                const dt = new Date(t.data);
-                return dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
-            });
+function aplicarVisualSaldoProjetado() {
+    const btn = document.getElementById('btnSaldoProjetado');
+    if (!btn) return;
+    if (saldoProjetadoAtivo) {
+        btn.classList.remove('text-slate-400');
+        btn.classList.add('text-blue-500');
+    } else {
+        btn.classList.remove('text-blue-500');
+        btn.classList.add('text-slate-400');
+    }
+}
 
-            transacoesMes.forEach(t => {
-                if (t.tipo === 'entrada') e += t.valor;
-                else if (t.tipo === 'saida') s += t.valor;
-                else if (t.tipo === 'cartao') c += t.valor;
-            });
+function toggleSaldoProjetado() {
+    saldoProjetadoAtivo = !saldoProjetadoAtivo;
+    localStorage.setItem('saldoProjetado', saldoProjetadoAtivo);
+    aplicarVisualSaldoProjetado();
+    atualizarCalculos();
+}
 
-            const saldo = e - s;
-            const formatar = v => `R$ ${v.toFixed(2).replace('.',',')}`;
-            
-            document.getElementById('card-entradas').innerText = formatar(e);
-            document.getElementById('card-saidas').innerText = formatar(s);
-            document.getElementById('card-saldo').innerText = formatar(saldo);
-            document.getElementById('card-cartoes').innerText = formatar(c);
-            document.getElementById('card-liquido').innerText = formatar(saldo - c);
-        }
+function getMesAnterior() {
+    let [ano, mes] = mesAtual.split('-');
+    mes = parseInt(mes) - 1;
+    if (mes === 0) {
+        mes = 12;
+        ano = parseInt(ano) - 1;
+    }
+    return `${ano}-${String(mes).padStart(2, '0')}`;
+}
+
+function salvarDadosMes(dados) {
+    localStorage.setItem(`dados_${mesAtual}`, JSON.stringify(dados));
+}
+// === FIM SALDO PROJETADO ===
+    function atualizarCalculos() {
+    let e = 0, s = 0, c = 0;
+    
+    const [ano, mesNum] = mesAtual.split('-').map(Number);
+    const transacoesMes = transacoes.filter(t => {
+        const dt = new Date(t.data);
+        return dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
+    });
+
+    transacoesMes.forEach(t => {
+        if (t.tipo === 'entrada') e += t.valor;
+        else if (t.tipo === 'saida') s += t.valor;
+        else if (t.tipo === 'cartao') c += t.valor;
+    });
+
+    // SALDO PROJETADO
+    let saldoAnterior = 0;
+    if (saldoProjetadoAtivo) {
+        const mesAnterior = getMesAnterior();
+        const dadosMesAnterior = JSON.parse(localStorage.getItem(`dados_${mesAnterior}`) || '{}');
+        saldoAnterior = dadosMesAnterior.liquido || 0;
+    }
+
+    const saldo = e - s + saldoAnterior;
+    const formatar = v => `R$ ${v.toFixed(2).replace('.',',')}`;
+    
+    document.getElementById('card-entradas').innerText = formatar(e);
+    document.getElementById('card-saidas').innerText = formatar(s);
+    document.getElementById('card-saldo').innerText = formatar(saldo);
+    document.getElementById('card-cartoes').innerText = formatar(c);
+    document.getElementById('card-liquido').innerText = formatar(saldo - c);
+    
+    // Salva dados do mês atual
+    salvarDadosMes({ entrada: e, saida: s, cartao: c, liquido: saldo - c });
+}
 
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
@@ -749,8 +802,9 @@ function editarDoExtrato(id) {
     abrirModal(id);
 }
         // Init
-        atualizarMes();
-        atualizarCalculos();
+      atualizarMes();
+aplicarVisualSaldoProjetado();
+atualizarCalculos();
         
         // Fecha menu clicando fora
        document.addEventListener('click', function(e) {
