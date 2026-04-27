@@ -92,25 +92,25 @@ footer {
         </div>
 
         <div class="mb-2 p-3 rounded-xl bg-blue-600 text-white text-center shadow-md">
-            <p class="text-[9px] uppercase font-bold opacity-80">Líquido Disponível</p>
+           <p class="text-[9px] uppercase font-black opacity-80">LÍQUIDO DISPONÍVEL</p>
             <p id="card-liquido" class="text-2xl font-black val-field">R$ 0,00</p>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
             <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-                <p class="text-[8px] uppercase font-bold text-slate-500">Entrada</p>
+             <p class="text-[8px] uppercase font-black text-slate-500">ENTRADA</p>
                 <p id="card-entradas" class="text-sm font-bold text-emerald-500 val-field">R$ 0,00</p>
             </div>
             <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-                <p class="text-[8px] uppercase font-bold text-slate-500">Saída</p>
+              <p class="text-[8px] uppercase font-black text-slate-500">SAÍDA</p>
                 <p id="card-saidas" class="text-sm font-bold text-orange-500 val-field">R$ 0,00</p>
             </div>
             <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-                <p class="text-[8px] uppercase font-bold text-slate-500">Saldo</p>
+                <p class="text-[8px] uppercase font-black text-slate-500">SALDO ATUAL</p>
                 <p id="card-saldo" class="text-sm font-bold text-blue-500 val-field">R$ 0,00</p>
             </div>
             <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-                <p class="text-[8px] uppercase font-bold text-slate-500">Cartões</p>
+               <p class="text-[8px] uppercase font-black text-slate-500">CARTÕES</p>
                 <p id="card-cartoes" class="text-sm font-bold text-rose-500 val-field">R$ 0,00</p>
             </div>
         </div>
@@ -216,54 +216,92 @@ footer {
             document.getElementById('mesAtual').textContent = `${meses[parseInt(mes)-1]} ${ano}`;
         }
 
-        function processarMensagem() {
-            const input = document.getElementById('user-input');
-            const texto = input.value.trim();
-            if (!texto) return;
+       function processarMensagem() {
+    const input = document.getElementById('user-input');
+    const texto = input.value.trim();
+    if (!texto) return;
 
-            // Se está completando conta/cartão pendente
-            if (transacaoPendente) {
-                const nome = texto.trim();
-                if (transacaoPendente.tipo === 'cartao') {
-                    if (!cartoes.some(c => normalizar(c) === normalizar(nome))) {
-                        cartoes.push(nome);
-                        localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
-                    }
-                } else {
-                    if (!contas.some(c => normalizar(c) === normalizar(nome))) {
-                        contas.push(nome);
-                        localStorage.setItem('bankday_contas', JSON.stringify(contas));
-                    }
-                }
-                transacaoPendente.conta = nome;
-                
-                transacoes.push(transacaoPendente);
-                localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-                adicionarMensagemNaTela(`${transacaoPendente.descricao} - R$ ${transacaoPendente.valor}`, transacaoPendente.id);
-                removerMensagemSistema();
-                atualizarCalculos();
-                transacaoPendente = null;
-                input.value = '';
-                return;
+    // Se está completando conta/cartão pendente
+    if (transacaoPendente) {
+        const nome = texto.trim();
+        if (transacaoPendente.tipo === 'cartao') {
+            if (!cartoes.some(c => normalizar(c) === normalizar(nome))) {
+                cartoes.push(nome);
+                localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
             }
-
-            const transacao = interpretarTexto(texto);
-            
-            // Se não especificou conta/cartão, pergunta
-            if (!transacao.conta) {
-                transacaoPendente = transacao;
-                const tipoNome = transacao.tipo === 'cartao'? 'cartão' : 'conta';
-                adicionarMensagemSistema(`Qual ${tipoNome}? Digite o nome:`);
-                input.value = '';
-                return;
+        } else {
+            if (!contas.some(c => normalizar(c) === normalizar(nome))) {
+                contas.push(nome);
+                localStorage.setItem('bankday_contas', JSON.stringify(contas));
             }
-
-            transacoes.push(transacao);
-            localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-            adicionarMensagemNaTela(`${transacao.descricao} - R$ ${transacao.valor}`, transacao.id);
-            atualizarCalculos();
-            input.value = '';
         }
+        
+        // Se é parcelado, cria todas as parcelas
+        if (transacaoPendente.parcelas > 1) {
+            criarParcelas(transacaoPendente, nome);
+        } else {
+            transacaoPendente.conta = nome;
+            transacoes.push(transacaoPendente);
+        }
+        
+        localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+        adicionarMensagemNaTela(`${transacaoPendente.descricao} - ${transacaoPendente.parcelas}x R$ ${transacaoPendente.valor}`, transacaoPendente.id);
+        removerMensagemSistema();
+        atualizarCalculos();
+        transacaoPendente = null;
+        input.value = '';
+        return;
+    }
+
+    const transacao = interpretarTexto(texto);
+    
+    // Se não especificou conta/cartão, pergunta
+    if (!transacao.conta) {
+        transacaoPendente = transacao;
+        const tipoNome = transacao.tipo === 'cartao'? 'cartão' : 'conta';
+        adicionarMensagemSistema(`Qual ${tipoNome}? Digite o nome:`);
+        input.value = '';
+        return;
+    }
+
+    // Se é parcelado, cria todas as parcelas
+    if (transacao.parcelas > 1) {
+        criarParcelas(transacao, transacao.conta);
+        adicionarMensagemNaTela(`${transacao.descricao} - ${transacao.parcelas}x R$ ${transacao.valor}`, transacao.id);
+    } else {
+        transacoes.push(transacao);
+        adicionarMensagemNaTela(`${transacao.descricao} - R$ ${transacao.valor}`, transacao.id);
+    }
+    
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    atualizarCalculos();
+    input.value = '';
+}
+
+// NOVA FUNÇÃO: Cria todas as parcelas futuras
+function criarParcelas(transacaoBase, nomeConta) {
+    const dataInicial = new Date();
+    
+    for (let i = 0; i < transacaoBase.parcelas; i++) {
+        const dataParcela = new Date(dataInicial.getFullYear(), dataInicial.getMonth() + i, dataInicial.getDate());
+        
+        const parcela = {
+            id: Date.now() + i, // ID único pra cada
+            descricao: `${transacaoBase.descricao} ${i+1}/${transacaoBase.parcelas}`,
+            valor: transacaoBase.valor, // Valor da parcela
+            valorTotal: transacaoBase.valorTotal,
+            tipo: 'cartao',
+            categoria: transacaoBase.categoria,
+            conta: nomeConta,
+            parcelas: transacaoBase.parcelas,
+            parcelaAtual: i + 1,
+            valorParcela: transacaoBase.valor,
+            data: dataParcela.toISOString()
+        };
+        
+        transacoes.push(parcela);
+    }
+}
 
  function interpretarTexto(texto) {
     const id = Date.now();
