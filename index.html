@@ -269,11 +269,11 @@ footer {
     const id = Date.now();
     const data = new Date().toISOString();
     const txtNorm = normalizar(texto);
-    const txtLower = texto.toLowerCase(); // Usa original pra pegar o X
+    const txtLower = texto.toLowerCase();
     
-    // Valor - pega o primeiro número
+    // Valor total digitado
     const valorMatch = texto.match(/\d+([.,]\d{1,2})?/);
-    const valor = valorMatch? parseFloat(valorMatch[0].replace(',', '.')) : 0;
+    const valorTotal = valorMatch? parseFloat(valorMatch[0].replace(',', '.')) : 0;
     
     // Tipo: entrada, saida ou cartao
     const inK = ['recebi', 'entrou', 'ganhei', 'salario', 'pagamento', 'saldo'];
@@ -281,13 +281,16 @@ footer {
     let tipo = 'saida';
     if (inK.some(k => txtNorm.includes(normalizar(k)))) tipo = 'entrada';
     
-    // Parcelado: 3x, 3 x, 3vezes, em 3x - USA TEXTO ORIGINAL
+    // Parcelado: pega o X do texto original
     const parcMatch = txtLower.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
     const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
     const temCartao = txtLower.includes('cartão') || txtLower.includes('cartao');
     if (parcelas > 1 || temCartao) tipo = 'cartao';
     
-    // Detecta Conta/Cartão EM QUALQUER LUGAR
+    // VALOR REAL: se parcelado, usa valor da parcela. Se não, usa total
+    const valor = parcelas > 1? parseFloat((valorTotal / parcelas).toFixed(2)) : valorTotal;
+    
+    // Detecta Conta/Cartão
     let conta = null;
     contas.forEach(c => { 
         const cNorm = normalizar(c);
@@ -299,7 +302,6 @@ footer {
         if (txtNorm.includes(cNorm) || txtNorm.includes('cartao ' + cNorm)) conta = c; 
     });
     
-    // Se não achou mas tem palavra chave, cria automático
     if (!conta) {
         const bancosComuns = ['itau', 'nubank', 'inter', 'bradesco', 'caixa', 'santander', 'bb', 'c6', 'picpay'];
         bancosComuns.forEach(b => {
@@ -316,10 +318,11 @@ footer {
         });
     }
     
-    // Descrição limpa: mantém o objeto completo
+    // Descrição limpa - AGORA TIRA O X TAMBÉM
     let descricao = texto;
     descricao = descricao.replace(/\d+([.,]\d{1,2})?/g, ''); // valor
-    descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, ''); // parcelado
+    descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, ''); // parcelado + x
+    descricao = descricao.replace(/\sx\s/gi, ' '); // remove X solto
     descricao = descricao.replace(/cart[aã]o/gi, '');
     descricao = descricao.replace(/banco/gi, '');
     [...inK,...outK].forEach(k => {
@@ -347,11 +350,13 @@ footer {
     if (txtNorm.includes('ifood') || txtNorm.includes('mercado') || txtNorm.includes('restaurante')) categoria = 'Alimentação';
     if (txtNorm.includes('uber') || txtNorm.includes('99') || txtNorm.includes('gasolina')) categoria = 'Transporte';
     if (txtNorm.includes('celular') || txtNorm.includes('samsung') || txtNorm.includes('iphone')) categoria = 'Compras';
-    if (txtNorm.includes('salario') || txtNorm.includes('pagamento')) categoria = 'Salário';
     
     return {
-        id, descricao, valor, tipo, categoria, conta, parcelas,
-        valorParcela: parseFloat((valor / parcelas).toFixed(2)),
+        id, descricao, 
+        valor, // Agora é o valor da parcela
+        valorTotal, // Guarda o total pra referência
+        tipo, categoria, conta, parcelas,
+        valorParcela: valor, // mesmo que valor agora
         data
     };
 }
@@ -490,19 +495,22 @@ footer {
             }
         }
 
-        function fecharModal() {
-            const t = transacoes.find(x => x.id === idEditando);
-            t.descricao = document.getElementById('edit-desc').value;
-            t.valor = parseFloat(document.getElementById('edit-valor').value) || 0;
-            t.data = new Date(document.getElementById('edit-data').value).toISOString();
-            t.tipo = document.getElementById('edit-tipo').value;
-            t.categoria = document.getElementById('edit-categoria').value;
-            t.conta = document.getElementById('edit-conta').value;
-            
-            localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-            atualizarCalculos();
-            document.getElementById('modal').style.display = 'none';
-        }
+      function fecharModal() {
+    const t = transacoes.find(x => x.id === idEditando);
+    const novoTotal = parseFloat(document.getElementById('edit-valor').value) || 0;
+    
+    t.descricao = document.getElementById('edit-desc').value;
+    t.valorTotal = novoTotal;
+    t.valor = t.parcelas > 1? parseFloat((novoTotal / t.parcelas).toFixed(2)) : novoTotal;
+    t.data = new Date(document.getElementById('edit-data').value).toISOString();
+    t.tipo = document.getElementById('edit-tipo').value;
+    t.categoria = document.getElementById('edit-categoria').value;
+    t.conta = document.getElementById('edit-conta').value;
+    
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    atualizarCalculos();
+    document.getElementById('modal').style.display = 'none';
+}
 
         function fecharModalSemSalvar() {
             document.getElementById('modal').style.display = 'none';
