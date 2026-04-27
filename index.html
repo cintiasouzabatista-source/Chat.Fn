@@ -610,24 +610,21 @@ function criarParcelas(transacaoBase, nomeConta) {
             toggleMenu();
         }
 function abrirExtrato() {
-    document.getElementById('menu-dropdown').style.display = 'none';
+    document.getElementById('menuDropdown').style.display = 'none'; // D maiúsculo
     
-    // Popula filtros
     const catSelect = document.getElementById('filtro-categoria');
     catSelect.innerHTML = '<option value="">Todas categorias</option>';
     [...new Set(transacoes.map(t => t.categoria))].forEach(c => {
-        catSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        if(c) catSelect.innerHTML += `<option value="${c}">${c}</option>`;
     });
     
     const contaSelect = document.getElementById('filtro-conta');
     contaSelect.innerHTML = '<option value="">Todas contas</option>';
     [...new Set([...contas,...cartoes])].forEach(c => {
-        contaSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        if(c) contaSelect.innerHTML += `<option value="${c}">${c}</option>`;
     });
     
-    // Mês atual por padrão
     document.getElementById('filtro-mes').value = mesAtual;
-    
     filtrarExtrato();
     document.getElementById('modal-extrato').style.display = 'flex';
 }
