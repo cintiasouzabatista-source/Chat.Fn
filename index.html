@@ -223,6 +223,10 @@
         let cartoes = JSON.parse(localStorage.getItem('bankday_cartoes') || '[]');
         let idEditando = null;
         let mesAtual = localStorage.getItem('bankday_mesAtual');
+        let contasFixas = JSON.parse(localStorage.getItem('bankday_contas_fixas') || '[]');
+
+// Exemplo de objeto:
+// { id: 123, descricao: 'Aluguel', valor: 1200, tipo: 'saida', categoria: 'Moradia', conta: 'Itaú', dia: 10, ativa: true }
         let transacaoPendente = null;
         let msgSistemaId = null;
         
@@ -795,7 +799,67 @@ function filtrarExtrato() {
     
     document.getElementById('total-extrato').innerHTML = `Total: <span class="${total >= 0? 'text-green-400' : 'text-red-400'}">R$ ${Math.abs(total).toFixed(2).replace('.',',')}</span>`;
 }
+function lancarContasFixas() {
+    const [ano, mes] = mesAtual.split('-').map(Number);
 
+    contasFixas.forEach(fixa => {
+        if (!fixa.ativa) return;
+
+        // Verifica se já lançou esse mês pra não duplicar
+        const jaExiste = transacoes.some(t =>
+            t.descricao === fixa.descricao &&
+            new Date(t.data).getMonth() === mes - 1 &&
+            new Date(t.data).getFullYear() === ano &&
+            t.idFixa === fixa.id
+        );
+
+        if (!jaExiste) {
+            const dataLancamento = new Date(ano, mes - 1, fixa.dia);
+            transacoes.push({
+                id: Date.now() + Math.random(),
+                idFixa: fixa.id, // linka com a conta fixa
+                descricao: fixa.descricao,
+                valor: fixa.valor,
+                tipo: fixa.tipo,
+                categoria: fixa.categoria,
+                conta: fixa.conta,
+                data: dataLancamento.toISOString(),
+                recorrente: true
+            });
+        }
+    });
+
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    atualizarCalculos();
+}
+function interpretarTexto(texto) {
+    //... seu código atual...
+
+    const isFixo = /fixo|fixa|recorrente/i.test(texto);
+    const diaMatch = texto.match(/dia (\d{1,2})/i);
+    const diaVencimento = diaMatch? parseInt(diaMatch[1]) : new Date().getDate();
+
+    if (isFixo) {
+        // Salva direto nas contas fixas
+        const contaFixa = {
+            id: Date.now(),
+            descricao, valor, tipo, categoria, conta,
+            dia: diaVencimento,
+            ativa: true
+        };
+        contasFixas.push(contaFixa);
+        localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
+        adicionarMensagemSistema(`Conta fixa criada: ${descricao} R$${valor} todo dia ${diaVencimento}`);
+    }
+
+    return { id, descricao, valor, tipo, categoria, conta, parcelas, data, recorrente: isFixo };
+}
+// Chama quando muda o mês
+function mudarMes(direcao) {
+    //... seu código atual...
+    lancarContasFixas(); // adiciona essa linha
+    atualizarCalculos();
+}
 function editarDoExtrato(id) {
     fecharExtrato();
     abrirModal(id);
