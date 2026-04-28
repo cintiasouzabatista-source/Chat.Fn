@@ -887,14 +887,17 @@ function editarDoExtrato(id) {
     fecharExtrato();
     abrirModal(id);
 }
+        document.addEventListener('DOMContentLoaded', () => {
+    atualizarMes();
+});
+        
+        
         // Init
       atualizarMes();
 aplicarVisualSaldoProjetado();
 atualizarCalculos();
 
-        document.addEventListener('DOMContentLoaded', () => {
-    atualizarMes();
-});
+
         // Fecha menu clicando fora
        document.addEventListener('click', function(e) {
     const menu = document.getElementById('menuDropdown');
