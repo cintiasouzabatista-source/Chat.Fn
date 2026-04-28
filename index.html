@@ -826,11 +826,7 @@ function filtrarExtrato() {
     
     document.getElementById('total-extrato').innerHTML = `Total: <span class="${total >= 0? 'text-green-400' : 'text-red-400'}">R$ ${Math.abs(total).toFixed(2).replace('.',',')}</span>`;
 }
-function lancarContasFixas() {
-    const [ano, mes] = mesAtual.split('-').map(Number);
-
-    contasFixas.forEach(fixa => {
-        if (!fixa.ativa) return;
+function mudarMes(direcao) {
 
         // Verifica se já lançou esse mês pra não duplicar
         const jaExiste = transacoes.some(t =>
@@ -895,7 +891,10 @@ function editarDoExtrato(id) {
       atualizarMes();
 aplicarVisualSaldoProjetado();
 atualizarCalculos();
-        
+
+        document.addEventListener('DOMContentLoaded', () => {
+    atualizarMes();
+});
         // Fecha menu clicando fora
        document.addEventListener('click', function(e) {
     const menu = document.getElementById('menuDropdown');
