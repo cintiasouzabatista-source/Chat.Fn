@@ -137,7 +137,7 @@
         <button onclick="resetarTransacoes()">Resetar Transações</button>
     </div>
     <div class="flex gap-2 items-center bg-[var(--input-bg)] rounded-full px-4 py-1 shadow-2xl border border-slate-700/30">
-       <button onclick="toggleMenu()" class="text-slate-400 p-2 text-2xl font-black">
+      <button id="btnMenu" onclick="toggleMenu()" class="text-slate-400 p-2 text-2xl font-black">
    <i class="fas fa-bars"></i>
 </button>
         <input type="text" id="user-input" placeholder="Ex: Recebi 1000 | Gastei 50 | Cartão 300 3x" 
@@ -229,6 +229,7 @@
 // { id: 123, descricao: 'Aluguel', valor: 1200, tipo: 'saida', categoria: 'Moradia', conta: 'Itaú', dia: 10, ativa: true }
         let transacaoPendente = null;
         let msgSistemaId = null;
+        let menuTimeout = null;
         
         if (!mesAtual) {
             const hoje = new Date();
@@ -705,9 +706,35 @@ function salvarDadosMes(dados) {
         }
 
         function toggleMenu() {
-            const menu = document.getElementById('menuDropdown');
-            menu.style.display = menu.style.display === 'flex'? 'none' : 'flex';
-        }
+    const menu = document.getElementById('menuDropdown');
+    const isOpen = menu.style.display === 'flex';
+    
+    if (menuTimeout) clearTimeout(menuTimeout);
+    
+    if (isOpen) {
+        menu.style.display = 'none';
+    } else {
+        menu.style.display = 'flex';
+        // Fecha sozinho em 10 segundos
+        menuTimeout = setTimeout(() => {
+            menu.style.display = 'none';
+        }, 10000);
+    }
+}
+        document.addEventListener('click', function(e) {
+    const menu = document.getElementById('menuDropdown');
+    const btn = document.getElementById('btnMenu');
+    
+    if (menu.style.display === 'flex' &&!menu.contains(e.target) &&!btn.contains(e.target)) {
+        menu.style.display = 'none';
+        if (menuTimeout) clearTimeout(menuTimeout);
+    }
+});
+
+// Se clicar dentro do menu, cancela o timer de 10s
+document.getElementById('menuDropdown').addEventListener('click', function() {
+    if (menuTimeout) clearTimeout(menuTimeout);
+});
 
         function resetarTudo() {
             if (!confirm('Apagar TUDO? Não tem volta.')) return;
