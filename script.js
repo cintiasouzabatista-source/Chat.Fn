@@ -245,46 +245,6 @@ function abaContaCartao(tipo) {
 }
 
 function adicionarContaCartao() {
-    if (abaAtualCC === 'contas') {
-        const nome = prompt('Nome da conta:');
-        if (nome &&!contas.includes(nome)) {
-            contas.push(nome);
-            localStorage.setItem('bankday_contas', JSON.stringify(contas));
-            abaContaCartao('contas');
-        }
-    } else {
-        document.getElementById('modal-add-cartao').style.display = 'flex';
-    }
-}
-
-function fecharModalAddCartao() {
-    document.getElementById('modal-add-cartao').style.display = 'none';
-    document.getElementById('cartao-nome').value = '';
-    document.getElementById('cartao-fechamento').value = '';
-    document.getElementById('cartao-vencimento').value = '';
-}
-
-function salvarCartao() {
-    const nome = document.getElementById('cartao-nome').value.trim();
-    const fechamento = parseInt(document.getElementById('cartao-fechamento').value);
-    const vencimento = parseInt(document.getElementById('cartao-vencimento').value);
-    
-    if (!nome ||!fechamento ||!vencimento) {
-        alert('Preencha todos os campos');
-        return;
-    }
-    
-    if (cartoes.some(c => c.nome === nome)) {
-        alert('Cartão já existe');
-        return;
-    }
-    
-    cartoes.push({ nome, diaFechamento: fechamento, diaVencimento: vencimento });
-    localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
-    fecharModalAddCartao();
-    abaContaCartao('cartoes');
-}
-
 function excluirConta(nome) {
     if (!confirm(`Excluir conta ${nome}?`)) return;
     contas = contas.filter(c => c!== nome);
