@@ -144,29 +144,28 @@
         </div>
     </div>
 
-    <!-- Menu rodapé 4 abas -->
-    <div class="grid grid-cols-4 gap-1 px-2 pb-2">
-        <button onclick="abrirExtrato()" class="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
-            <i class="fas fa-list-ul text-xl"></i>
-            <span class="text- font-black">EXTRATO</span>
-        </button>
+   <!-- Menu rodapé compacto -->
+<div class="flex justify-around px-2 py-1">
+    <button onclick="abrirExtrato()" class="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-lg hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
+        <i class="fas fa-list-ul text-base"></i>
+        <span class="text- font-bold">EXTRATO</span>
+    </button>
 
-        <button onclick="abrirGraficos()" class="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
-            <i class="fas fa-chart-line text-xl"></i>
-            <span class="text- font-black">GRÁFICOS</span>
-        </button>
+    <button onclick="abrirGraficos()" class="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-lg hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
+        <i class="fas fa-chart-line text-base"></i>
+        <span class="text- font-bold">GRÁFICOS</span>
+    </button>
 
-        <button onclick="abrirFaturas()" class="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
-            <i class="fas fa-credit-card text-xl"></i>
-            <span class="text- font-black">FATURAS</span>
-        </button>
+    <button onclick="abrirFaturas()" class="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-lg hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
+        <i class="fas fa-credit-card text-base"></i>
+        <span class="text- font-bold">FATURAS</span>
+    </button>
 
-        <button onclick="toggleMenu()" class="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
-            <i class="fas fa-ellipsis-h text-xl"></i>
-            <span class="text- font-black">MAIS</span>
-        </button>
-    </div>
-
+    <button onclick="toggleMenu()" class="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-lg hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
+        <i class="fas fa-ellipsis-h text-base"></i>
+        <span class="text- font-bold">MAIS</span>
+    </button>
+</div>
     <!-- Dropdown do MAIS -->
     <div class="menu-dropdown" id="menuDropdown" style="bottom: 140px; right: 8px; left: auto;">
         <button onclick="abrirContasCartoes()">Contas e Cartões</button>
