@@ -1,1 +1,627 @@
+// script.js - Lógica principal do Chat Financeiro
 
+let transacoes = JSON.parse(localStorage.getItem('bankday_transacoes') || '[]');
+let contas = JSON.parse(localStorage.getItem('bankday_contas') || '["Conta Principal"]');
+let cartoes = JSON.parse(localStorage.getItem('bankday_cartoes') || '[]');
+let contasFixas = JSON.parse(localStorage.getItem('bankday_contas_fixas') || '[]');
+let idEditando = null;
+let mesAtual = localStorage.getItem('bankday_mesAtual');
+let transacaoPendente = null;
+let msgSistemaId = null;
+let menuTimeout = null;
+let saldoProjetadoAtivo = localStorage.getItem('saldoProjetado') === 'true';
+
+if (!mesAtual) {
+    const hoje = new Date();
+    mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+    localStorage.setItem('bankday_mesAtual', mesAtual);
+}
+
+const CATEGORIAS = {
+    entrada: ['Salário', 'Vendas', 'Presente', 'Investimento', 'Reembolso', 'Outras Receitas'],
+    saida: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Compras', 'Educação', 'Assinaturas', 'Pets', 'Outras Despesas'],
+    cartao: ['Alimentação', 'Transporte', 'Lazer', 'Saúde', 'Compras', 'Educação', 'Assinaturas', 'Pets', 'Outras Despesas']
+};
+
+function normalizar(texto) {
+    return texto.toLowerCase()
+.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+.replace(/[^a-z0-9\sx]/g, '')
+.trim();
+}
+
+function setMenuAtivo(pagina) {
+    document.querySelectorAll('.menu-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.page === pagina) btn.classList.add('active');
+    });
+}
+
+function toggleMenu() {
+    const menu = document.getElementById('menuDropdown');
+    const isOpen = menu.style.display === 'flex';
+    if (menuTimeout) clearTimeout(menuTimeout);
+    if (isOpen) {
+        menu.style.display = 'none';
+    } else {
+        menu.style.display = 'flex';
+        menuTimeout = setTimeout(() => {
+            menu.style.display = 'none';
+        }, 10000);
+    }
+}
+
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('menuDropdown');
+    const btn = document.getElementById('btnMenu');
+    if (menu.style.display === 'flex' &&!menu.contains(e.target) &&!btn.contains(e.target)) {
+        menu.style.display = 'none';
+        if (menuTimeout) clearTimeout(menuTimeout);
+    }
+});
+
+function aplicarVisualSaldoProjetado() {
+    const btn = document.getElementById('btnSaldoProjetado');
+    if (!btn) return;
+    if (saldoProjetadoAtivo) {
+        btn.classList.remove('text-slate-400');
+        btn.classList.add('text-blue-500');
+    } else {
+        btn.classList.remove('text-blue-500');
+        btn.classList.add('text-slate-400');
+    }
+}
+
+function toggleSaldoProjetado() {
+    saldoProjetadoAtivo =!saldoProjetadoAtivo;
+    localStorage.setItem('saldoProjetado', saldoProjetadoAtivo);
+    aplicarVisualSaldoProjetado();
+    atualizarCalculos();
+}
+
+function getMesAnterior() {
+    let [ano, mes] = mesAtual.split('-');
+    mes = parseInt(mes) - 1;
+    if (mes === 0) {
+        mes = 12;
+        ano = parseInt(ano) - 1;
+    }
+    return `${ano}-${String(mes).padStart(2, '0')}`;
+}
+
+function salvarDadosMes(dados) {
+    localStorage.setItem(`dados_${mesAtual}`, JSON.stringify(dados));
+}
+
+function lancarContasFixas() {
+    const [ano, mes] = mesAtual.split('-').map(Number);
+    contasFixas.forEach(fixa => {
+        if (!fixa.ativa) return;
+        const jaExiste = transacoes.some(t =>
+            t.idFixa === fixa.id &&
+            new Date(t.data).getMonth() === mes - 1 &&
+            new Date(t.data).getFullYear() === ano
+        );
+        if (!jaExiste) {
+            const dataLancamento = new Date(ano, mes - 1, fixa.dia);
+            transacoes.push({
+                id: Date.now() + Math.random(),
+                idFixa: fixa.id,
+                descricao: fixa.descricao,
+                valor: fixa.valor,
+                tipo: fixa.tipo,
+                categoria: fixa.categoria,
+                conta: fixa.conta,
+                data: dataLancamento.toISOString(),
+                recorrente: true
+            });
+        }
+    });
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+}
+
+function mudarMes(direcao) {
+    const [ano, mes] = mesAtual.split('-').map(Number);
+    const data = new Date(ano, mes - 1 + direcao, 1);
+    mesAtual = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    localStorage.setItem('bankday_mesAtual', mesAtual);
+    atualizarMes();
+    lancarContasFixas();
+    atualizarCalculos();
+}
+
+function atualizarMes() {
+    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const [ano, mes] = mesAtual.split('-');
+    document.getElementById('mesAtual').textContent = `${meses[parseInt(mes)-1]} ${ano}`;
+}
+
+function abrirFaturas() {
+    setMenuAtivo('faturas');
+    const [ano, mesNum] = mesAtual.split('-').map(Number);
+    const cartoesMes = transacoes.filter(t => {
+        const dt = new Date(t.data);
+        return t.tipo === 'cartao' && dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
+    });
+
+    let porCartao = {};
+    cartoesMes.forEach(t => {
+        porCartao[t.conta] = (porCartao[t.conta] || 0) + t.valor;
+    });
+
+    let lista = Object.entries(porCartao)
+.map(([cartao, val]) => `• ${cartao}: R$ ${val.toFixed(2).replace('.',',')}`)
+.join('\n');
+
+    if (!lista) lista = 'Nenhuma fatura no mês';
+    adicionarMensagemSistema(`FATURAS DO MÊS:\n${lista}`);
+}
+
+function abrirContasCartoes() {
+    let listaContas = contas.map(c => `• Conta: ${c}`).join('\n');
+    let listaCartoes = cartoes.map(c => `• Cartão: ${c}`).join('\n');
+    adicionarMensagemSistema(`CONTAS E CARTÕES:\n${listaContas}\n${listaCartoes || '• Nenhum cartão'}`);
+    toggleMenu();
+}
+
+function abrirReserva() {
+    adicionarMensagemSistema('RESERVA:\nFunção em desenvolvimento.\nAqui vai mostrar seu saldo guardado.');
+    toggleMenu();
+}
+
+function abrirContasFixas() {
+    if (contasFixas.length === 0) {
+        adicionarMensagemSistema('Nenhuma conta fixa cadastrada.\nDigite "fixo dia X" numa transação pra criar.');
+        return;
+    }
+    let lista = contasFixas.map(f =>
+        `• ${f.descricao} - R$${f.valor.toFixed(2)} - Dia ${f.dia}`
+    ).join('\n');
+    adicionarMensagemSistema(`CONTAS FIXAS ATIVAS:\n${lista}`);
+    toggleMenu();
+}
+
+function processarMensagem() {
+    const input = document.getElementById('user-input');
+    const texto = input.value.trim();
+    if (!texto) return;
+
+    if (transacaoPendente) {
+        const nome = texto.trim();
+        if (transacaoPendente.tipo === 'cartao') {
+            if (!cartoes.some(c => normalizar(c) === normalizar(nome))) {
+                cartoes.push(nome);
+                localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
+            }
+        } else {
+            if (!contas.some(c => normalizar(c) === normalizar(nome))) {
+                contas.push(nome);
+                localStorage.setItem('bankday_contas', JSON.stringify(contas));
+            }
+        }
+
+        if (transacaoPendente.parcelas > 1) {
+            criarParcelas(transacaoPendente, nome);
+        } else {
+            transacaoPendente.conta = nome;
+            transacoes.push(transacaoPendente);
+        }
+
+        localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+        adicionarMensagemNaTela(`${transacaoPendente.descricao} - R$ ${transacaoPendente.valor}`, transacaoPendente.id);
+        removerMensagemSistema();
+        atualizarCalculos();
+        transacaoPendente = null;
+        input.value = '';
+        return;
+    }
+
+    const transacao = interpretarTexto(texto);
+
+    if (!transacao.conta) {
+        transacaoPendente = transacao;
+        const tipoNome = transacao.tipo === 'cartao'? 'cartão' : 'conta';
+        adicionarMensagemSistema(`Qual ${tipoNome}? Digite o nome:`);
+        input.value = '';
+        return;
+    }
+
+    if (transacao.parcelas > 1) {
+        criarParcelas(transacao, transacao.conta);
+        adicionarMensagemNaTela(`${transacao.descricao} - ${transacao.parcelas}x R$ ${transacao.valor}`, transacao.id);
+    } else {
+        transacoes.push(transacao);
+        adicionarMensagemNaTela(`${transacao.descricao} - R$ ${transacao.valor}`, transacao.id);
+    }
+
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    atualizarCalculos();
+    input.value = '';
+}
+
+function criarParcelas(transacaoBase, nomeConta) {
+    const dataInicial = new Date();
+    for (let i = 0; i < transacaoBase.parcelas; i++) {
+        const dataParcela = new Date(dataInicial.getFullYear(), dataInicial.getMonth() + i, dataInicial.getDate());
+        const parcela = {
+            id: Date.now() + i,
+            descricao: `${transacaoBase.descricao} ${i+1}/${transacaoBase.parcelas}`,
+            valor: transacaoBase.valor,
+            valorTotal: transacaoBase.valorTotal,
+            tipo: 'cartao',
+            categoria: transacaoBase.categoria,
+            conta: nomeConta,
+            parcelas: transacaoBase.parcelas,
+            parcelaAtual: i + 1,
+            valorParcela: transacaoBase.valor,
+            data: dataParcela.toISOString()
+        };
+        transacoes.push(parcela);
+    }
+}
+
+function interpretarTexto(texto) {
+    const id = Date.now();
+    const data = new Date().toISOString();
+    const txtNorm = normalizar(texto);
+    const txtLower = texto.toLowerCase();
+
+    const valorMatch = texto.match(/\d+([.,]\d{1,2})?/);
+    const valorTotal = valorMatch? parseFloat(valorMatch[0].replace(',', '.')) : 0;
+
+    const inK = ['recebi', 'entrou', 'ganhei', 'salario', 'pagamento', 'saldo'];
+    const outK = ['gastei', 'comprei', 'paguei', 'parcelei'];
+    let tipo = 'saida';
+    if (inK.some(k => txtNorm.includes(normalizar(k)))) tipo = 'entrada';
+
+    const parcMatch = txtLower.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
+    const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
+    const temCartao = txtLower.includes('cartão') || txtLower.includes('cartao');
+    if (parcelas > 1 || temCartao) tipo = 'cartao';
+
+    const valor = parcelas > 1? parseFloat((valorTotal / parcelas).toFixed(2)) : valorTotal;
+
+    let conta = null;
+    contas.forEach(c => {
+        const cNorm = normalizar(c);
+        const txtSemBanco = txtNorm.replace(/banco\s+/g, '');
+        if (txtSemBanco.includes(cNorm)) conta = c;
+    });
+    cartoes.forEach(c => {
+        const cNorm = normalizar(c);
+        if (txtNorm.includes(cNorm) || txtNorm.includes('cartao ' + cNorm)) conta = c;
+    });
+
+    if (!conta) {
+        const bancosComuns = ['itau', 'nubank', 'inter', 'bradesco', 'caixa', 'santander', 'bb', 'c6', 'picpay'];
+        bancosComuns.forEach(b => {
+            if (txtNorm.includes(b)) {
+                conta = b.charAt(0).toUpperCase() + b.slice(1);
+                if (tipo === 'cartao' &&!cartoes.some(c => normalizar(c) === b)) {
+                    cartoes.push(conta);
+                    localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
+                } else if (tipo!== 'cartao' &&!contas.some(c => normalizar(c) === b)) {
+                    contas.push(conta);
+                    localStorage.setItem('bankday_contas', JSON.stringify(contas));
+                }
+            }
+        });
+    }
+
+    let descricao = texto;
+    descricao = descricao.replace(/\d+([.,]\d{1,2})?/g, '');
+    descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, '');
+    descricao = descricao.replace(/\sx\s/gi, ' ');
+    descricao = descricao.replace(/cart[aã]o/gi, '');
+    descricao = descricao.replace(/banco/gi, '');
+    descricao = descricao.replace(/fixo|fixa|recorrente/gi, '');
+    descricao = descricao.replace(/dia \d{1,2}/gi, '');
+    [...inK,...outK].forEach(k => descricao = descricao.replace(new RegExp(k, 'gi'), ''));
+
+    const descNorm = normalizar(descricao);
+    let palavrasRemover = [];
+    contas.forEach(c => { if (descNorm.includes(normalizar(c))) palavrasRemover.push(c); });
+    cartoes.forEach(c => { if (descNorm.includes(normalizar(c))) palavrasRemover.push(c); });
+    palavrasRemover.forEach(p => { descricao = descricao.replace(new RegExp(p, 'gi'), ''); });
+
+    descricao = descricao.replace(/\s+/g, ' ').trim();
+    if (!descricao || descricao.length < 2) descricao = tipo === 'entrada'? 'Entrada' : 'Gasto';
+
+    let categoria = tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
+    if (txtNorm.includes('ifood') || txtNorm.includes('mercado') || txtNorm.includes('restaurante')) categoria = 'Alimentação';
+    if (txtNorm.includes('uber') || txtNorm.includes('99') || txtNorm.includes('gasolina')) categoria = 'Transporte';
+    if (txtNorm.includes('celular') || txtNorm.includes('samsung') || txtNorm.includes('iphone')) categoria = 'Compras';
+
+    const isFixo = /fixo|fixa|recorrente/i.test(texto);
+    const diaMatch = texto.match(/dia (\d{1,2})/i);
+    const diaVencimento = diaMatch? parseInt(diaMatch[1]) : new Date().getDate();
+
+    if (isFixo && conta) {
+        const contaFixa = {
+            id: Date.now(),
+            descricao, valor, tipo, categoria, conta,
+            dia: diaVencimento,
+            ativa: true
+        };
+        contasFixas.push(contaFixa);
+        localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
+        adicionarMensagemSistema(`Conta fixa criada: ${descricao} R$${valor} todo dia ${diaVencimento}`);
+    }
+
+    return {
+        id, descricao, valor, valorTotal, tipo, categoria, conta, parcelas,
+        valorParcela: valor, data, recorrente: isFixo
+    };
+}
+
+function adicionarMensagemNaTela(texto, id) {
+    const chat = document.getElementById('chat-box');
+    const div = document.createElement('div');
+    div.id = `msg-${id}`;
+    div.className = "bg-blue-600 text-white self-end p-3 rounded-2xl rounded-tr-none max-w-[85%] text-sm shadow-md message-fade cursor-pointer";
+    div.onclick = () => abrirModal(id);
+    div.innerText = texto;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    setTimeout(() => { if(div) div.remove(); }, 8000);
+}
+
+function adicionarMensagemSistema(texto) {
+    removerMensagemSistema();
+    const chat = document.getElementById('chat-box');
+    const div = document.createElement('div');
+    msgSistemaId = 'sys-' + Date.now();
+    div.id = msgSistemaId;
+    div.className = "bg-slate-600 text-white self-start p-3 rounded-2xl rounded-tl-none max-w-[85%] text-sm shadow-md message-fade";
+    div.innerText = texto;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function removerMensagemSistema() {
+    if (msgSistemaId) {
+        const el = document.getElementById(msgSistemaId);
+        if (el) el.remove();
+        msgSistemaId = null;
+    }
+}
+
+function atualizarCalculos() {
+    let e = 0, s = 0, c = 0;
+    const [ano, mesNum] = mesAtual.split('-').map(Number);
+    const transacoesMes = transacoes.filter(t => {
+        const dt = new Date(t.data);
+        return dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
+    });
+
+    transacoesMes.forEach(t => {
+        if (t.tipo === 'entrada') e += t.valor;
+        else if (t.tipo === 'saida') s += t.valor;
+        else if (t.tipo === 'cartao') c += t.valor;
+    });
+
+    let saldoAnterior = 0;
+    if (saldoProjetadoAtivo) {
+        const mesAnterior = getMesAnterior();
+        const dadosMesAnterior = JSON.parse(localStorage.getItem(`dados_${mesAnterior}`) || '{}');
+        saldoAnterior = dadosMesAnterior.liquido || 0;
+    }
+
+    const saldo = e - s + saldoAnterior;
+    const formatar = v => `R$ ${v.toFixed(2).replace('.',',')}`;
+
+    document.getElementById('card-entradas').innerText = formatar(e);
+    document.getElementById('card-saidas').innerText = formatar(s);
+    document.getElementById('card-saldo').innerText = formatar(saldo);
+    document.getElementById('card-cartoes').innerText = formatar(c);
+    document.getElementById('card-liquido').innerText = formatar(saldo - c);
+
+    salvarDadosMes({ entrada: e, saida: s, cartao: c, liquido: saldo - c });
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('light-mode');
+    const isLight = document.body.classList.contains('light-mode');
+    document.getElementById('theme-icon').className = isLight? 'fas fa-sun text-orange-500' : 'fas fa-moon text-blue-500';
+}
+
+function toggleVisibility() {
+    document.querySelectorAll('.val-field').forEach(f => f.classList.toggle('hidden-val'));
+    document.getElementById('eye-icon').classList.toggle('fa-eye-slash');
+}
+
+function abrirModal(id) {
+    idEditando = id;
+    const t = transacoes.find(x => x.id === id);
+    document.getElementById('edit-desc').value = t.descricao;
+    document.getElementById('edit-valor').value = t.valor;
+    document.getElementById('edit-data').value = t.data.split('T')[0];
+    document.getElementById('edit-tipo').value = t.tipo;
+    const infoParc = document.getElementById('info-parcela');
+    if (t.parcelas > 1) {
+        infoParc.textContent = `${t.parcelas}x de R$ ${t.valorParcela.toFixed(2).replace('.',',')}`;
+        infoParc.classList.remove('hidden');
+    } else {
+        infoParc.classList.add('hidden');
+    }
+    atualizarCategorias(t.categoria);
+    atualizarContas(t.conta);
+    document.getElementById('modal').style.display = 'flex';
+}
+
+function atualizarCategorias(selecionada = null) {
+    const tipo = document.getElementById('edit-tipo').value;
+    const select = document.getElementById('edit-categoria');
+    select.innerHTML = '';
+    CATEGORIAS[tipo].forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        if (cat === selecionada) opt.selected = true;
+        select.appendChild(opt);
+    });
+}
+
+function atualizarContas(selecionada = null) {
+    const select = document.getElementById('edit-conta');
+    select.innerHTML = '<option value="">Selecione...</option>';
+
+    const grupoContas = document.createElement('optgroup');
+    grupoContas.label = 'Contas';
+    contas.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        if (normalizar(c) === normalizar(selecionada || '')) opt.selected = true;
+        grupoContas.appendChild(opt);
+    });
+    select.appendChild(grupoContas);
+
+    if (cartoes.length) {
+        const grupoCartoes = document.createElement('optgroup');
+        grupoCartoes.label = 'Cartões';
+        cartoes.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            opt.textContent = c;
+            if (c === selecionada) opt.selected = true;
+            grupoCartoes.appendChild(opt);
+        });
+        select.appendChild(grupoCartoes);
+    }
+}
+
+function fecharModal() {
+    const t = transacoes.find(x => x.id === idEditando);
+    const novoTotal = parseFloat(document.getElementById('edit-valor').value) || 0;
+
+    t.descricao = document.getElementById('edit-desc').value;
+    t.valorTotal = novoTotal;
+    t.valor = t.parcelas > 1? parseFloat((novoTotal / t.parcelas).toFixed(2)) : novoTotal;
+    t.data = new Date(document.getElementById('edit-data').value).toISOString();
+    t.tipo = document.getElementById('edit-tipo').value;
+    t.categoria = document.getElementById('edit-categoria').value;
+    t.conta = document.getElementById('edit-conta').value;
+
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    atualizarCalculos();
+    document.getElementById('modal').style.display = 'none';
+}
+
+function fecharModalSemSalvar() {
+    document.getElementById('modal').style.display = 'none';
+}
+
+function excluirMensagem() {
+    transacoes = transacoes.filter(x => x.id!== idEditando);
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    const el = document.getElementById(`msg-${idEditando}`);
+    if(el) el.remove();
+    atualizarCalculos();
+    document.getElementById('modal').style.display = 'none';
+}
+
+function resetarTudo() {
+    if (!confirm('Apagar TUDO? Não tem volta.')) return;
+    transacoes = [];
+    contas = ['Conta Principal'];
+    cartoes = [];
+    contasFixas = [];
+    localStorage.clear();
+    location.reload();
+}
+
+function resetarTransacoes() {
+    if (!confirm('Apagar todas as transações? Contas e cartões serão mantidos.')) return;
+    transacoes = [];
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    atualizarCalculos();
+    toggleMenu();
+}
+
+function abrirExtrato() {
+    setMenuAtivo('extrato');
+    document.getElementById('menuDropdown').style.display = 'none';
+
+    const catSelect = document.getElementById('filtro-categoria');
+    catSelect.innerHTML = '<option value="">Todas categorias</option>';
+    [...new Set(transacoes.map(t => t.categoria))].forEach(c => {
+        if(c) catSelect.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+
+    const contaSelect = document.getElementById('filtro-conta');
+    contaSelect.innerHTML = '<option value="">Todas contas</option>';
+    [...new Set([...contas,...cartoes])].forEach(c => {
+        if(c) contaSelect.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+
+    document.getElementById('filtro-mes').value = mesAtual;
+    filtrarExtrato();
+    document.getElementById('modal-extrato').style.display = 'flex';
+}
+
+function fecharExtrato() {
+    document.getElementById('modal-extrato').style.display = 'none';
+}
+
+function filtrarExtrato() {
+    const tipo = document.getElementById('filtro-tipo').value;
+    const cat = document.getElementById('filtro-categoria').value;
+    const conta = document.getElementById('filtro-conta').value;
+    const mes = document.getElementById('filtro-mes').value;
+
+    let filtradas = transacoes;
+
+    if (mes) {
+        const [ano, mesNum] = mes.split('-').map(Number);
+        filtradas = filtradas.filter(t => {
+            const dt = new Date(t.data);
+            return dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
+        });
+    }
+    if (tipo) filtradas = filtradas.filter(t => t.tipo === tipo);
+    if (cat) filtradas = filtradas.filter(t => t.categoria === cat);
+    if (conta) filtradas = filtradas.filter(t => t.conta === conta);
+
+    filtradas.sort((a,b) => new Date(b.data) - new Date(a.data));
+
+    const lista = document.getElementById('lista-extrato');
+    let total = 0;
+
+    if (filtradas.length === 0) {
+        lista.innerHTML = '<p class="text-center text-slate-500 py-8">Nenhuma transação</p>';
+    } else {
+        lista.innerHTML = filtradas.map(t => {
+            const cor = t.tipo === 'entrada'? 'text-green-400' : t.tipo === 'saida'? 'text-red-400' : 'text-blue-400';
+            const sinal = t.tipo === 'entrada'? '+' : '-';
+            total += t.tipo === 'entrada'? t.valor : -t.valor;
+
+            const dt = new Date(t.data);
+            const dataStr = `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}`;
+
+            return `
+                <div class="bg-slate-800 p-3 rounded flex justify-between items-center" onclick="editarDoExtrato(${t.id})">
+                    <div class="flex-1">
+                        <p class="font-bold text-sm">${t.descricao}</p>
+                        <p class="text-xs text-slate-400">${dataStr} • ${t.categoria} • ${t.conta || 'Sem conta'}</p>
+                    </div>
+                    <p class="${cor} font-black">${sinal}R$ ${t.valor.toFixed(2).replace('.',',')}</p>
+                </div>
+            `;
+        }).join('');
+    }
+
+    document.getElementById('total-extrato').innerHTML = `Total: <span class="${total >= 0? 'text-green-400' : 'text-red-400'}">R$ ${Math.abs(total).toFixed(2).replace('.',',')}</span>`;
+}
+
+function editarDoExtrato(id) {
+    fecharExtrato();
+    abrirModal(id);
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+    atualizarMes();
+    aplicarVisualSaldoProjetado();
+    atualizarCalculos();
+});
