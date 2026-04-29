@@ -47,18 +47,19 @@
        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
        .modal-content { background: var(--card); padding: 1.5rem; border-radius: 1rem; width: 100%; max-width: 400px; }
        .modal input,.modal select { background: var(--input-bg); color: var(--text); }
- .menu-dropdown {
+.menu-dropdown {
     display: none;
     position: absolute;
-    bottom: 70px; /* subi um pouco pra garantir */
-    left: 16px;
-    background: #1e293b; /* cinza escuro fixo pra teste */
-    border: 1px solid #334155;
+    bottom: 140px;
+    right: 8px;
+    left: auto;
+    background: var(--card);
+    border: 1px solid rgba(100, 116, 139, 0.2);
     border-radius: 12px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-    z-index: 999; /* joguei lá em cima */
+    z-index: 999;
     flex-direction: column;
-    min-width: 180px; /* força largura */
+    min-width: 220px;
     overflow: hidden;
 }
 .menu-dropdown button {
@@ -130,22 +131,49 @@
 
     <main id="chat-box"></main>
 
-    <footer class="p-3 relative">
-    <div class="menu-dropdown" id="menuDropdown">
-        <button onclick="abrirExtrato()">Extrato</button> 
-        <button onclick="resetarTudo()">Resetar Tudo</button>
-        <button onclick="resetarTransacoes()">Resetar Transações</button>
+    <footer class="bg-[var(--card)] border-t border-slate-700/30">
+    <!-- Input -->
+    <div class="p-3 pb-2">
+        <div class="flex gap-2 items-center bg-[var(--input-bg)] rounded-2xl px-4 py-1 border border-slate-700/30">
+            <input type="text" id="user-input" placeholder="Ex: Recebi 1000 | Gastei 50 | Cartão 300 3x"
+                class="w-full bg-transparent py-3 focus:outline-none text-sm text-inherit"
+                onkeydown="if(event.key==='Enter') processarMensagem()">
+            <button onclick="processarMensagem()" class="text-blue-500 p-2">
+                <i class="fas fa-paper-plane text-xl"></i>
+            </button>
+        </div>
     </div>
-    <div class="flex gap-2 items-center bg-[var(--input-bg)] rounded-full px-4 py-1 shadow-2xl border border-slate-700/30">
-      <button id="btnMenu" onclick="toggleMenu()" class="text-slate-400 p-2 text-2xl font-black">
-   <i class="fas fa-bars"></i>
-</button>
-        <input type="text" id="user-input" placeholder="Ex: Recebi 1000 | Gastei 50 | Cartão 300 3x" 
-            class="w-full bg-transparent py-3 focus:outline-none text-sm text-inherit"
-            onkeydown="if(event.key==='Enter') processarMensagem()">
-        <button onclick="processarMensagem()" class="text-blue-500 p-2">
-            <i class="fas fa-paper-plane text-xl"></i>
+
+    <!-- Menu rodapé 4 abas -->
+    <div class="grid grid-cols-4 gap-1 px-2 pb-2">
+        <button onclick="abrirExtrato()" class="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-list-ul text-xl"></i>
+            <span class="text- font-black">EXTRATO</span>
         </button>
+
+        <button onclick="abrirGraficos()" class="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-chart-line text-xl"></i>
+            <span class="text- font-black">GRÁFICOS</span>
+        </button>
+
+        <button onclick="abrirFaturas()" class="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-credit-card text-xl"></i>
+            <span class="text- font-black">FATURAS</span>
+        </button>
+
+        <button onclick="toggleMenu()" class="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-slate-700/50 text-slate-400 hover:text-blue-400 transition-colors">
+            <i class="fas fa-ellipsis-h text-xl"></i>
+            <span class="text- font-black">MAIS</span>
+        </button>
+    </div>
+
+    <!-- Dropdown do MAIS -->
+    <div class="menu-dropdown" id="menuDropdown" style="bottom: 140px; right: 8px; left: auto;">
+        <button onclick="abrirContasCartoes()">Contas e Cartões</button>
+        <button onclick="abrirReserva()">Reserva</button>
+        <button onclick="abrirContasFixas()">Contas Fixas</button>
+        <button onclick="resetarTransacoes()">Resetar Transações</button>
+        <button onclick="resetarTudo()">Resetar Tudo</button>
     </div>
 </footer>
     
@@ -362,6 +390,64 @@
         document.getElementById('mesAtual').textContent = `${meses[parseInt(mes)-1]} ${ano}`;
     }
 
+      function abrirGraficos() {
+    const [ano, mesNum] = mesAtual.split('-').map(Number);
+    const transacoesMes = transacoes.filter(t => {
+        const dt = new Date(t.data);
+        return dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
+    });
+
+    let porCategoria = {};
+    transacoesMes.forEach(t => {
+        if (t.tipo!== 'entrada') {
+            porCategoria[t.categoria] = (porCategoria[t.categoria] || 0) + t.valor;
+        }
+    });
+
+    let total = Object.values(porCategoria).reduce((a,b) => a+b, 0);
+    let lista = Object.entries(porCategoria)
+ .sort((a,b) => b[1] - a[1])
+ .map(([cat, val]) => {
+      const perc = ((val/total)*100).toFixed(0);
+      return `• ${cat}: R$ ${val.toFixed(2).replace('.',',')} - ${perc}%`;
+  })
+ .join('\n');
+
+    if (!lista) lista = 'Nenhum gasto no mês';
+    adicionarMensagemSistema(`GRÁFICOS - GASTOS POR CATEGORIA:\n${lista}`);
+}
+
+function abrirFaturas() {
+    const [ano, mesNum] = mesAtual.split('-').map(Number);
+    const cartoesMes = transacoes.filter(t => {
+        const dt = new Date(t.data);
+        return t.tipo === 'cartao' && dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
+    });
+
+    let porCartao = {};
+    cartoesMes.forEach(t => {
+        porCartao[t.conta] = (porCartao[t.conta] || 0) + t.valor;
+    });
+
+    let lista = Object.entries(porCartao)
+ .map(([cartao, val]) => `• ${cartao}: R$ ${val.toFixed(2).replace('.',',')}`)
+ .join('\n');
+
+    if (!lista) lista = 'Nenhuma fatura no mês';
+    adicionarMensagemSistema(`FATURAS DO MÊS:\n${lista}`);
+}
+
+function abrirContasCartoes() {
+    let listaContas = contas.map(c => `• Conta: ${c}`).join('\n');
+    let listaCartoes = cartoes.map(c => `• Cartão: ${c}`).join('\n');
+    adicionarMensagemSistema(`CONTAS E CARTÕES:\n${listaContas}\n${listaCartoes || '• Nenhum cartão'}`);
+    toggleMenu();
+}
+
+function abrirReserva() {
+    adicionarMensagemSistema('RESERVA:\nFunção em desenvolvimento.\nAqui vai mostrar seu saldo guardado.');
+    toggleMenu();
+}
     // === TRANSAÇÕES ===
     function processarMensagem() {
         const input = document.getElementById('user-input');
