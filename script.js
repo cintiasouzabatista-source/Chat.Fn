@@ -26,9 +26,9 @@ const CATEGORIAS = {
 
 function normalizar(texto) {
     return texto.toLowerCase()
-  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-  .replace(/[^a-z0-9\sx]/g, '')
-  .trim();
+ .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+ .replace(/[^a-z0-9\sx]/g, '')
+ .trim();
 }
 
 function setMenuAtivo(pagina) {
@@ -140,35 +140,35 @@ function atualizarMes() {
 function abrirFaturas() {
     setMenuAtivo('faturas');
     document.getElementById('modal-faturas').style.display = 'flex';
-    
+
     const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     const [ano, mes] = mesAtual.split('-');
     document.getElementById('fatura-mes').textContent = `${meses[parseInt(mes)-1]} ${ano}`;
-    
+
     const hoje = new Date();
     const [anoAtual, mesAtualNum] = mesAtual.split('-').map(Number);
-    
+
     const lista = document.getElementById('lista-faturas');
-    
+
     if (cartoes.length === 0) {
         lista.innerHTML = '<p class="text-center text-slate-500 py-8">Nenhum cartão cadastrado</p>';
         return;
     }
-    
+
     lista.innerHTML = cartoes.map(cartao => {
         const gastosMes = transacoes.filter(t => {
             const dt = new Date(t.data);
-            return t.tipo === 'cartao' && 
+            return t.tipo === 'cartao' &&
                    t.conta === cartao.nome &&
-                   dt.getMonth() === mesAtualNum - 1 && 
+                   dt.getMonth() === mesAtualNum - 1 &&
                    dt.getFullYear() === anoAtual;
         });
-        
+
         const total = gastosMes.reduce((s,t) => s + t.valor, 0);
-        
+
         let status = 'Fechada';
         let statusCor = 'bg-rose-600';
-        
+
         if (hoje.getFullYear() === anoAtual && hoje.getMonth() === mesAtualNum - 1) {
             if (hoje.getDate() <= cartao.diaFechamento) {
                 status = 'Aberta';
@@ -178,7 +178,7 @@ function abrirFaturas() {
             status = 'Futura';
             statusCor = 'bg-slate-600';
         }
-        
+
         return `
             <div class="bg-slate-800 p-4 rounded-lg">
                 <div class="flex justify-between items-start mb-2">
@@ -214,14 +214,14 @@ function fecharContasCartoes() {
 function abaContaCartao(tipo) {
     abaAtualCC = tipo;
     document.getElementById('aba-contas').className = tipo === 'contas'
-        ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+       ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
         : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
     document.getElementById('aba-cartoes').className = tipo === 'cartoes'
-        ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+       ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
         : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
-    
+
     const lista = document.getElementById('lista-contas-cartoes');
-    
+
     if (tipo === 'contas') {
         lista.innerHTML = contas.map(c => `
             <div class="flex justify-between items-center bg-slate-800 p-3 rounded-lg">
@@ -245,6 +245,85 @@ function abaContaCartao(tipo) {
 }
 
 function adicionarContaCartao() {
+    if (abaAtualCC === 'contas') {
+        document.getElementById('modal-add-conta').style.display = 'flex';
+    } else {
+        document.getElementById('modal-add-cartao').style.display = 'flex';
+    }
+}
+
+function fecharModalAddConta() {
+    document.getElementById('modal-add-conta').style.display = 'none';
+    document.getElementById('conta-nome').value = '';
+    document.getElementById('conta-saldo').value = '';
+}
+
+function salvarConta() {
+    const nome = document.getElementById('conta-nome').value.trim();
+    const saldoInicial = parseFloat(document.getElementById('conta-saldo').value) || 0;
+
+    if (!nome) {
+        alert('Preencha o nome da conta');
+        return;
+    }
+
+    if (contas.includes(nome)) {
+        alert('Conta já existe');
+        return;
+    }
+
+    contas.push(nome);
+    localStorage.setItem('bankday_contas', JSON.stringify(contas));
+
+    if (saldoInicial > 0) {
+        transacoes.push({
+            id: Date.now(),
+            descricao: `Saldo inicial - ${nome}`,
+            valor: saldoInicial,
+            valorTotal: saldoInicial,
+            tipo: 'entrada',
+            categoria: 'Outras Receitas',
+            conta: nome,
+            parcelas: 1,
+            valorParcela: saldoInicial,
+            data: new Date().toISOString()
+        });
+        localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+        atualizarCalculos();
+    }
+
+    fecharModalAddConta();
+    abaContaCartao('contas');
+}
+
+function fecharModalAddCartao() {
+    document.getElementById('modal-add-cartao').style.display = 'none';
+    document.getElementById('cartao-nome').value = '';
+    document.getElementById('cartao-fechamento').value = '';
+    document.getElementById('cartao-vencimento').value = '';
+}
+
+function salvarCartao() {
+    const nome = document.getElementById('cartao-nome').value.trim();
+    const fechamento = parseInt(document.getElementById('cartao-fechamento').value);
+    const vencimento = parseInt(document.getElementById('cartao-vencimento').value);
+
+    if (!nome ||!fechamento ||!vencimento) {
+        alert('Preencha todos os campos');
+        return;
+    }
+
+    if (cartoes.some(c => c.nome === nome)) {
+        alert('Cartão já existe');
+        return;
+    }
+
+    cartoes.push({ nome, diaFechamento: fechamento, diaVencimento: vencimento });
+    localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
+    fecharModalAddCartao();
+    abaContaCartao('cartoes');
+}
+
 function excluirConta(nome) {
     if (!confirm(`Excluir conta ${nome}?`)) return;
     contas = contas.filter(c => c!== nome);
@@ -548,7 +627,7 @@ function atualizarCategorias(selecionada = null) {
     const tipo = document.getElementById('edit-tipo').value;
     const select = document.getElementById('edit-categoria');
     select.innerHTML = '';
-    CATEGORIAS[tipo].forEach(cat => {
+    CATEGORIAS.forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat;
         opt.textContent = cat;
