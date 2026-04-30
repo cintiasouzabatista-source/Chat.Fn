@@ -520,13 +520,131 @@ function abrirReserva() {
 }
 
 function abrirContasFixas() {
+    toggleMenu();
+    document.getElementById('modal-contas-fixas').style.display = 'flex';
+    listarContasFixas();
+}
+
+function fecharContasFixas() {
+    document.getElementById('modal-contas-fixas').style.display = 'none';
+}
+
+function listarContasFixas() {
+    const lista = document.getElementById('lista-contas-fixas');
     if (contasFixas.length === 0) {
-        adicionarMensagemSistema('Nenhuma conta fixa cadastrada.\nDigite "fixo dia X" numa transação pra criar.');
+        lista.innerHTML = '<p class="text-center text-slate-500 py-8">Nenhuma conta fixa cadastrada<br><span class="text-xs">Digite "fixo dia X" numa transação pra criar</span></p>';
         return;
     }
-    let lista = contasFixas.map(f => `• ${f.descricao} - R$${f.valor.toFixed(2)} - Dia ${f.dia}`).join('\n');
-    adicionarMensagemSistema(`CONTAS FIXAS ATIVAS:\n${lista}`);
-    toggleMenu();
+    lista.innerHTML = contasFixas.map(f => `
+        <div class="bg-slate-800 light-mode:bg-slate-100 p-3 rounded-lg border border-slate-700 light-mode:border-slate-200">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <p class="font-bold text-white light-mode:text-slate-900">${f.descricao}</p>
+                    <p class="text-xs text-slate-400">R$ ${f.valor.toFixed(2).replace('.', ',')} • Todo dia ${f.dia} • ${f.conta}</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="editarContaFixa(${f.id})" class="text-blue-400"><i class="fas fa-pen"></i></button>
+                    <button onclick="excluirContaFixa(${f.id})" class="text-rose-500"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+let fixaEditando = null;
+let tipoEdicaoFixa = null; // 'atual' ou 'todas'
+
+function editarContaFixa(id) {
+    fixaEditando = contasFixas.find(f => f.id === id);
+    document.getElementById('fixa-desc').value = fixaEditando.descricao;
+    document.getElementById('fixa-valor').value = fixaEditando.valor;
+    document.getElementById('fixa-dia').value = fixaEditando.dia;
+    document.getElementById('fixa-conta').innerHTML = contas.map(c => `<option value="${c}" ${c === fixaEditando.conta? 'selected' : ''}>${c}</option>`).join('');
+    document.getElementById('modal-edit-fixa').style.display = 'flex';
+}
+
+function salvarEdicaoFixa(escopo) {
+    const novaDesc = document.getElementById('fixa-desc').value;
+    const novoValor = parseFloat(document.getElementById('fixa-valor').value);
+    const novoDia = parseInt(document.getElementById('fixa-dia').value);
+    const novaConta = document.getElementById('fixa-conta').value;
+
+    if (!novaDesc ||!novoValor ||!novoDia ||!novaConta) {
+        alert('Preencha todos os campos');
+        return;
+    }
+
+    if (escopo === 'todas') {
+        // Edita o modelo da conta fixa
+        fixaEditando.descricao = novaDesc;
+        fixaEditando.valor = novoValor;
+        fixaEditando.dia = novoDia;
+        fixaEditando.conta = novaConta;
+        localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
+        adicionarMensagemSistema(`Conta fixa atualizada para todos os meses`);
+    } else {
+        // Edita só a transação deste mês
+        const [ano, mes] = mesAtual.split('-').map(Number);
+        const transacaoMes = transacoes.find(t => 
+            t.idFixa === fixaEditando.id && 
+            new Date(t.data).getMonth() === mes - 1 && 
+            new Date(t.data).getFullYear() === ano
+        );
+        if (transacaoMes) {
+            transacaoMes.descricao = novaDesc;
+            transacaoMes.valor = novoValor;
+            transacaoMes.conta = novaConta;
+            transacaoMes.data = new Date(ano, mes - 1, novoDia).toISOString();
+            localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+            adicionarMensagemSistema(`Conta fixa atualizada só para ${mes}/${ano}`);
+        }
+    }
+    fecharModalEditFixa();
+    listarContasFixas();
+    atualizarCalculos();
+}
+
+function fecharModalEditFixa() {
+    document.getElementById('modal-edit-fixa').style.display = 'none';
+    fixaEditando = null;
+}
+
+function excluirContaFixa(id) {
+    fixaEditando = contasFixas.find(f => f.id === id);
+    document.getElementById('fixa-excluir-nome').textContent = fixaEditando.descricao;
+    document.getElementById('modal-excluir-fixa').style.display = 'flex';
+}
+
+function confirmarExcluirFixa(escopo) {
+    if (escopo === 'todas') {
+        // Remove o modelo e todas as transações futuras
+        contasFixas = contasFixas.filter(f => f.id!== fixaEditando.id);
+        const hoje = new Date();
+        transacoes = transacoes.filter(t => 
+            !(t.idFixa === fixaEditando.id && new Date(t.data) >= hoje)
+        );
+        localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
+        localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+        adicionarMensagemSistema(`Conta fixa excluída de todos os meses futuros`);
+    } else {
+        // Remove só a transação deste mês
+        const [ano, mes] = mesAtual.split('-').map(Number);
+        transacoes = transacoes.filter(t => 
+            !(t.idFixa === fixaEditando.id && 
+              new Date(t.data).getMonth() === mes - 1 && 
+              new Date(t.data).getFullYear() === ano)
+        );
+        localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+        adicionarMensagemSistema(`Conta fixa removida só de ${mes}/${ano}`);
+    }
+    fecharModalExcluirFixa();
+    listarContasFixas();
+    atualizarCalculos();
+}
+
+function fecharModalExcluirFixa() {
+    document.getElementById('modal-excluir-fixa').style.display = 'none';
+    fixaEditando = null;
 }
 
 function processarMensagem() {
