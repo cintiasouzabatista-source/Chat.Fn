@@ -11,6 +11,8 @@ let msgSistemaId = null;
 let menuTimeout = null;
 let saldoProjetadoAtivo = localStorage.getItem('saldoProjetado') === 'true';
 let abaAtualCC = 'contas';
+let contaEditando = null;
+let cartaoEditando = null;
 
 if (!mesAtual) {
     const hoje = new Date();
@@ -26,9 +28,9 @@ const CATEGORIAS = {
 
 function normalizar(texto) {
     return texto.toLowerCase()
- .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
- .replace(/[^a-z0-9\sx]/g, '')
- .trim();
+.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+.replace(/[^a-z0-9\sx]/g, '')
+.trim();
 }
 
 function setMenuAtivo(pagina) {
@@ -140,35 +142,24 @@ function atualizarMes() {
 function abrirFaturas() {
     setMenuAtivo('faturas');
     document.getElementById('modal-faturas').style.display = 'flex';
-
     const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     const [ano, mes] = mesAtual.split('-');
     document.getElementById('fatura-mes').textContent = `${meses[parseInt(mes)-1]} ${ano}`;
-
     const hoje = new Date();
     const [anoAtual, mesAtualNum] = mesAtual.split('-').map(Number);
-
     const lista = document.getElementById('lista-faturas');
-
     if (cartoes.length === 0) {
         lista.innerHTML = '<p class="text-center text-slate-500 py-8">Nenhum cartão cadastrado</p>';
         return;
     }
-
     lista.innerHTML = cartoes.map(cartao => {
         const gastosMes = transacoes.filter(t => {
             const dt = new Date(t.data);
-            return t.tipo === 'cartao' &&
-                   t.conta === cartao.nome &&
-                   dt.getMonth() === mesAtualNum - 1 &&
-                   dt.getFullYear() === anoAtual;
+            return t.tipo === 'cartao' && t.conta === cartao.nome && dt.getMonth() === mesAtualNum - 1 && dt.getFullYear() === anoAtual;
         });
-
         const total = gastosMes.reduce((s,t) => s + t.valor, 0);
-
         let status = 'Fechada';
         let statusCor = 'bg-rose-600';
-
         if (hoje.getFullYear() === anoAtual && hoje.getMonth() === mesAtualNum - 1) {
             if (hoje.getDate() <= cartao.diaFechamento) {
                 status = 'Aberta';
@@ -178,7 +169,6 @@ function abrirFaturas() {
             status = 'Futura';
             statusCor = 'bg-slate-600';
         }
-
         return `
             <div class="bg-slate-800 p-4 rounded-lg">
                 <div class="flex justify-between items-start mb-2">
@@ -213,15 +203,9 @@ function fecharContasCartoes() {
 
 function abaContaCartao(tipo) {
     abaAtualCC = tipo;
-    document.getElementById('aba-contas').className = tipo === 'contas'
-      ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
-        : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
-    document.getElementById('aba-cartoes').className = tipo === 'cartoes'
-      ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
-        : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
-    
+    document.getElementById('aba-contas').className = tipo === 'contas'? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold' : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
+    document.getElementById('aba-cartoes').className = tipo === 'cartoes'? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold' : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
     const lista = document.getElementById('lista-contas-cartoes');
-    
     if (tipo === 'contas') {
         lista.innerHTML = contas.map(c => `
             <div class="bg-slate-800 p-3 rounded-lg flex justify-between items-center">
@@ -249,6 +233,7 @@ function abaContaCartao(tipo) {
         `).join('') || '<p class="text-center text-slate-500 py-4">Nenhum cartão</p>';
     }
 }
+
 function adicionarContaCartao() {
     if (abaAtualCC === 'contas') {
         document.getElementById('modal-add-conta').style.display = 'flex';
@@ -261,107 +246,18 @@ function fecharModalAddConta() {
     document.getElementById('modal-add-conta').style.display = 'none';
     document.getElementById('conta-nome').value = '';
     document.getElementById('conta-saldo').value = '';
+    document.getElementById('conta-saldo').placeholder = 'Ex: 1000.00';
+    document.querySelector('#modal-add-conta h3').textContent = 'Nova Conta';
+    contaEditando = null;
 }
 
 function salvarConta() {
     const nome = document.getElementById('conta-nome').value.trim();
     const saldoInicial = parseFloat(document.getElementById('conta-saldo').value) || 0;
-
     if (!nome) {
         alert('Preencha o nome da conta');
         return;
     }
-
-    if (contas.includes(nome)) {
-        alert('Conta já existe');
-        return;
-    }
-
-    contas.push(nome);
-    localStorage.setItem('bankday_contas', JSON.stringify(contas));
-
-    if (saldoInicial > 0) {
-        transacoes.push({
-            id: Date.now(),
-            descricao: `Saldo inicial - ${nome}`,
-            valor: saldoInicial,
-            valorTotal: saldoInicial,
-            tipo: 'entrada',
-            categoria: 'Outras Receitas',
-            conta: nome,
-            parcelas: 1,
-            valorParcela: saldoInicial,
-            data: new Date().toISOString()
-        });
-        localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-        atualizarCalculos();
-    }
-
-    fecharModalAddConta();
-    abaContaCartao('contas');
-}
-
-function fecharModalAddCartao() {
-    document.getElementById('modal-add-cartao').style.display = 'none';
-    document.getElementById('cartao-nome').value = '';
-    document.getElementById('cartao-fechamento').value = '';
-    document.getElementById('cartao-vencimento').value = '';
-}
-
-function salvarCartao() {
-    const nome = document.getElementById('cartao-nome').value.trim();
-    const fechamento = parseInt(document.getElementById('cartao-fechamento').value);
-    const vencimento = parseInt(document.getElementById('cartao-vencimento').value);
-
-    if (!nome ||!fechamento ||!vencimento) {
-        alert('Preencha todos os campos');
-        return;
-    }
-
-    if (cartoes.some(c => c.nome === nome)) {
-        alert('Cartão já existe');
-        return;
-    }
-
-    cartoes.push({ nome, diaFechamento: fechamento, diaVencimento: vencimento });
-    localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
-    fecharModalAddCartao();
-    abaContaCartao('cartoes');
-}
-
-let contaEditando = null;
-let cartaoEditando = null;
-
-function editarConta(nomeAntigo) {
-    contaEditando = nomeAntigo;
-    document.getElementById('conta-nome').value = nomeAntigo;
-    document.getElementById('conta-saldo').value = '';
-    document.getElementById('conta-saldo').placeholder = 'Não altera o saldo';
-    document.querySelector('#modal-add-conta h3').textContent = 'Editar Conta';
-    document.getElementById('modal-add-conta').style.display = 'flex';
-}
-
-function editarCartao(nomeAntigo) {
-    cartaoEditando = nomeAntigo;
-    const cartao = cartoes.find(c => c.nome === nomeAntigo);
-    document.getElementById('cartao-nome').value = cartao.nome;
-    document.getElementById('cartao-fechamento').value = cartao.diaFechamento;
-    document.getElementById('cartao-vencimento').value = cartao.diaVencimento;
-    document.querySelector('#modal-add-cartao h3').textContent = 'Editar Cartão';
-    document.getElementById('modal-add-cartao').style.display = 'flex';
-}
-
-// Substitui a função salvarConta() por essa:
-function salvarConta() {
-    const nome = document.getElementById('conta-nome').value.trim();
-    const saldoInicial = parseFloat(document.getElementById('conta-saldo').value) || 0;
-
-    if (!nome) {
-        alert('Preencha o nome da conta');
-        return;
-    }
-
-    // Se tá editando
     if (contaEditando) {
         const index = contas.indexOf(contaEditando);
         if (contas.includes(nome) && nome!== contaEditando) {
@@ -369,7 +265,6 @@ function salvarConta() {
             return;
         }
         contas[index] = nome;
-        // Atualiza transações que usavam o nome antigo
         transacoes.forEach(t => {
             if (t.conta === contaEditando) t.conta = nome;
         });
@@ -399,27 +294,30 @@ function salvarConta() {
             atualizarCalculos();
         }
     }
-
     localStorage.setItem('bankday_contas', JSON.stringify(contas));
     localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
     localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
-    
     fecharModalAddConta();
     abaContaCartao('contas');
 }
 
-// Substitui a função salvarCartao() por essa:
+function fecharModalAddCartao() {
+    document.getElementById('modal-add-cartao').style.display = 'none';
+    document.getElementById('cartao-nome').value = '';
+    document.getElementById('cartao-fechamento').value = '';
+    document.getElementById('cartao-vencimento').value = '';
+    document.querySelector('#modal-add-cartao h3').textContent = 'Novo Cartão';
+    cartaoEditando = null;
+}
+
 function salvarCartao() {
     const nome = document.getElementById('cartao-nome').value.trim();
     const fechamento = parseInt(document.getElementById('cartao-fechamento').value);
     const vencimento = parseInt(document.getElementById('cartao-vencimento').value);
-
     if (!nome ||!fechamento ||!vencimento) {
         alert('Preencha todos os campos');
         return;
     }
-
-    // Se tá editando
     if (cartaoEditando) {
         const index = cartoes.findIndex(c => c.nome === cartaoEditando);
         if (cartoes.some(c => c.nome === nome && c.nome!== cartaoEditando)) {
@@ -427,7 +325,6 @@ function salvarCartao() {
             return;
         }
         cartoes[index] = { nome, diaFechamento: fechamento, diaVencimento: vencimento };
-        // Atualiza transações que usavam o nome antigo
         transacoes.forEach(t => {
             if (t.conta === cartaoEditando) t.conta = nome;
         });
@@ -442,32 +339,30 @@ function salvarCartao() {
         }
         cartoes.push({ nome, diaFechamento: fechamento, diaVencimento: vencimento });
     }
-
     localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
     localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
     localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
-    
     fecharModalAddCartao();
     abaContaCartao('cartoes');
 }
 
-// Ajusta as funções de fechar modal pra resetar o título
-function fecharModalAddConta() {
-    document.getElementById('modal-add-conta').style.display = 'none';
-    document.getElementById('conta-nome').value = '';
+function editarConta(nomeAntigo) {
+    contaEditando = nomeAntigo;
+    document.getElementById('conta-nome').value = nomeAntigo;
     document.getElementById('conta-saldo').value = '';
-    document.getElementById('conta-saldo').placeholder = 'Ex: 1000.00';
-    document.querySelector('#modal-add-conta h3').textContent = 'Nova Conta';
-    contaEditando = null;
+    document.getElementById('conta-saldo').placeholder = 'Não altera o saldo';
+    document.querySelector('#modal-add-conta h3').textContent = 'Editar Conta';
+    document.getElementById('modal-add-conta').style.display = 'flex';
 }
 
-function fecharModalAddCartao() {
-    document.getElementById('modal-add-cartao').style.display = 'none';
-    document.getElementById('cartao-nome').value = '';
-    document.getElementById('cartao-fechamento').value = '';
-    document.getElementById('cartao-vencimento').value = '';
-    document.querySelector('#modal-add-cartao h3').textContent = 'Novo Cartão';
-    cartaoEditando = null;
+function editarCartao(nomeAntigo) {
+    cartaoEditando = nomeAntigo;
+    const cartao = cartoes.find(c => c.nome === nomeAntigo);
+    document.getElementById('cartao-nome').value = cartao.nome;
+    document.getElementById('cartao-fechamento').value = cartao.diaFechamento;
+    document.getElementById('cartao-vencimento').value = cartao.diaVencimento;
+    document.querySelector('#modal-add-cartao h3').textContent = 'Editar Cartão';
+    document.getElementById('modal-add-cartao').style.display = 'flex';
 }
 
 function excluirConta(nome) {
@@ -494,9 +389,7 @@ function abrirContasFixas() {
         adicionarMensagemSistema('Nenhuma conta fixa cadastrada.\nDigite "fixo dia X" numa transação pra criar.');
         return;
     }
-    let lista = contasFixas.map(f =>
-        `• ${f.descricao} - R$${f.valor.toFixed(2)} - Dia ${f.dia}`
-    ).join('\n');
+    let lista = contasFixas.map(f => `• ${f.descricao} - R$${f.valor.toFixed(2)} - Dia ${f.dia}`).join('\n');
     adicionarMensagemSistema(`CONTAS FIXAS ATIVAS:\n${lista}`);
     toggleMenu();
 }
@@ -505,7 +398,6 @@ function processarMensagem() {
     const input = document.getElementById('user-input');
     const texto = input.value.trim();
     if (!texto) return;
-
     if (transacaoPendente) {
         const nome = texto.trim();
         if (transacaoPendente.tipo === 'cartao') {
@@ -519,14 +411,12 @@ function processarMensagem() {
                 localStorage.setItem('bankday_contas', JSON.stringify(contas));
             }
         }
-
         if (transacaoPendente.parcelas > 1) {
             criarParcelas(transacaoPendente, nome);
         } else {
             transacaoPendente.conta = nome;
             transacoes.push(transacaoPendente);
         }
-
         localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
         adicionarMensagemNaTela(`${transacaoPendente.descricao} - R$ ${transacaoPendente.valor}`, transacaoPendente.id);
         removerMensagemSistema();
@@ -535,9 +425,7 @@ function processarMensagem() {
         input.value = '';
         return;
     }
-
     const transacao = interpretarTexto(texto);
-
     if (!transacao.conta) {
         transacaoPendente = transacao;
         const tipoNome = transacao.tipo === 'cartao'? 'cartão' : 'conta';
@@ -545,7 +433,6 @@ function processarMensagem() {
         input.value = '';
         return;
     }
-
     if (transacao.parcelas > 1) {
         criarParcelas(transacao, transacao.conta);
         adicionarMensagemNaTela(`${transacao.descricao} - ${transacao.parcelas}x R$ ${transacao.valor}`, transacao.id);
@@ -553,7 +440,6 @@ function processarMensagem() {
         transacoes.push(transacao);
         adicionarMensagemNaTela(`${transacao.descricao} - R$ ${transacao.valor}`, transacao.id);
     }
-
     localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
     atualizarCalculos();
     input.value = '';
@@ -585,22 +471,17 @@ function interpretarTexto(texto) {
     const data = new Date().toISOString();
     const txtNorm = normalizar(texto);
     const txtLower = texto.toLowerCase();
-
     const valorMatch = texto.match(/\d+([.,]\d{1,2})?/);
     const valorTotal = valorMatch? parseFloat(valorMatch[0].replace(',', '.')) : 0;
-
     const inK = ['recebi', 'entrou', 'ganhei', 'salario', 'pagamento', 'saldo'];
     const outK = ['gastei', 'comprei', 'paguei', 'parcelei'];
     let tipo = 'saida';
     if (inK.some(k => txtNorm.includes(normalizar(k)))) tipo = 'entrada';
-
     const parcMatch = txtLower.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
     const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
     const temCartao = txtLower.includes('cartão') || txtLower.includes('cartao');
     if (parcelas > 1 || temCartao) tipo = 'cartao';
-
     const valor = parcelas > 1? parseFloat((valorTotal / parcelas).toFixed(2)) : valorTotal;
-
     let conta = null;
     contas.forEach(c => {
         const cNorm = normalizar(c);
@@ -611,7 +492,6 @@ function interpretarTexto(texto) {
         const cNorm = normalizar(c.nome);
         if (txtNorm.includes(cNorm) || txtNorm.includes('cartao ' + cNorm)) conta = c.nome;
     });
-
     if (!conta) {
         const bancosComuns = ['itau', 'nubank', 'inter', 'bradesco', 'caixa', 'santander', 'bb', 'c6', 'picpay'];
         bancosComuns.forEach(b => {
@@ -627,7 +507,6 @@ function interpretarTexto(texto) {
             }
         });
     }
-
     let descricao = texto;
     descricao = descricao.replace(/\d+([.,]\d{1,2})?/g, '');
     descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, '');
@@ -637,25 +516,20 @@ function interpretarTexto(texto) {
     descricao = descricao.replace(/fixo|fixa|recorrente/gi, '');
     descricao = descricao.replace(/dia \d{1,2}/gi, '');
     [...inK,...outK].forEach(k => descricao = descricao.replace(new RegExp(k, 'gi'), ''));
-
     const descNorm = normalizar(descricao);
     let palavrasRemover = [];
     contas.forEach(c => { if (descNorm.includes(normalizar(c))) palavrasRemover.push(c); });
     cartoes.forEach(c => { if (descNorm.includes(normalizar(c.nome))) palavrasRemover.push(c.nome); });
     palavrasRemover.forEach(p => { descricao = descricao.replace(new RegExp(p, 'gi'), ''); });
-
     descricao = descricao.replace(/\s+/g, ' ').trim();
     if (!descricao || descricao.length < 2) descricao = tipo === 'entrada'? 'Entrada' : 'Gasto';
-
     let categoria = tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
     if (txtNorm.includes('ifood') || txtNorm.includes('mercado') || txtNorm.includes('restaurante')) categoria = 'Alimentação';
     if (txtNorm.includes('uber') || txtNorm.includes('99') || txtNorm.includes('gasolina')) categoria = 'Transporte';
     if (txtNorm.includes('celular') || txtNorm.includes('samsung') || txtNorm.includes('iphone')) categoria = 'Compras';
-
     const isFixo = /fixo|fixa|recorrente/i.test(texto);
     const diaMatch = texto.match(/dia (\d{1,2})/i);
     const diaVencimento = diaMatch? parseInt(diaMatch[1]) : new Date().getDate();
-
     if (isFixo && conta) {
         const contaFixa = {
             id: Date.now(),
@@ -667,7 +541,6 @@ function interpretarTexto(texto) {
         localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
         adicionarMensagemSistema(`Conta fixa criada: ${descricao} R$${valor} todo dia ${diaVencimento}`);
     }
-
     return {
         id, descricao, valor, valorTotal, tipo, categoria, conta, parcelas,
         valorParcela: valor, data, recorrente: isFixo
@@ -713,29 +586,24 @@ function atualizarCalculos() {
         const dt = new Date(t.data);
         return dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
     });
-
     transacoesMes.forEach(t => {
         if (t.tipo === 'entrada') e += t.valor;
         else if (t.tipo === 'saida') s += t.valor;
         else if (t.tipo === 'cartao') c += t.valor;
     });
-
     let saldoAnterior = 0;
     if (saldoProjetadoAtivo) {
         const mesAnterior = getMesAnterior();
         const dadosMesAnterior = JSON.parse(localStorage.getItem(`dados_${mesAnterior}`) || '{}');
         saldoAnterior = dadosMesAnterior.liquido || 0;
     }
-
     const saldo = e - s + saldoAnterior;
     const formatar = v => `R$ ${v.toFixed(2).replace('.',',')}`;
-
     document.getElementById('card-entradas').innerText = formatar(e);
     document.getElementById('card-saidas').innerText = formatar(s);
     document.getElementById('card-saldo').innerText = formatar(saldo);
     document.getElementById('card-cartoes').innerText = formatar(c);
     document.getElementById('card-liquido').innerText = formatar(saldo - c);
-
     salvarDadosMes({ entrada: e, saida: s, cartao: c, liquido: saldo - c });
 }
 
@@ -773,7 +641,7 @@ function atualizarCategorias(selecionada = null) {
     const tipo = document.getElementById('edit-tipo').value;
     const select = document.getElementById('edit-categoria');
     select.innerHTML = '';
-    CATEGORIAS.forEach(cat => {
+    CATEGORIAS[tipo].forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat;
         opt.textContent = cat;
@@ -785,7 +653,6 @@ function atualizarCategorias(selecionada = null) {
 function atualizarContas(selecionada = null) {
     const select = document.getElementById('edit-conta');
     select.innerHTML = '<option value="">Selecione...</option>';
-
     const grupoContas = document.createElement('optgroup');
     grupoContas.label = 'Contas';
     contas.forEach(c => {
@@ -796,134 +663,7 @@ function atualizarContas(selecionada = null) {
         grupoContas.appendChild(opt);
     });
     select.appendChild(grupoContas);
-
     if (cartoes.length) {
         const grupoCartoes = document.createElement('optgroup');
         grupoCartoes.label = 'Cartões';
-        cartoes.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.nome;
-            opt.textContent = c.nome;
-            if (c.nome === selecionada) opt.selected = true;
-            grupoCartoes.appendChild(opt);
-        });
-        select.appendChild(grupoCartoes);
-    }
-}
-
-function fecharModal() {
-    const t = transacoes.find(x => x.id === idEditando);
-    const novoTotal = parseFloat(document.getElementById('edit-valor').value) || 0;
-
-    t.descricao = document.getElementById('edit-desc').value;
-    t.valorTotal = novoTotal;
-    t.valor = t.parcelas > 1? parseFloat((novoTotal / t.parcelas).toFixed(2)) : novoTotal;
-    t.data = new Date(document.getElementById('edit-data').value).toISOString();
-    t.tipo = document.getElementById('edit-tipo').value;
-    t.categoria = document.getElementById('edit-categoria').value;
-    t.conta = document.getElementById('edit-conta').value;
-
-    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-    atualizarCalculos();
-    document.getElementById('modal').style.display = 'none';
-}
-
-function fecharModalSemSalvar() {
-    document.getElementById('modal').style.display = 'none';
-}
-
-function excluirMensagem() {
-    transacoes = transacoes.filter(x => x.id!== idEditando);
-    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-    const el = document.getElementById(`msg-${idEditando}`);
-    if(el) el.remove();
-    atualizarCalculos();
-    document.getElementById('modal').style.display = 'none';
-}
-
-function resetarTudo() {
-    if (!confirm('Apagar TUDO? Não tem volta.')) return;
-    transacoes = [];
-    contas = ['Conta Principal'];
-    cartoes = [];
-    contasFixas = [];
-    localStorage.clear();
-    location.reload();
-}
-
-function resetarTransacoes() {
-    if (!confirm('Apagar todas as transações? Contas e cartões serão mantidos.')) return;
-    transacoes = [];
-    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-    atualizarCalculos();
-    toggleMenu();
-}
-
-function filtrarExtrato() {
-    const tipo = document.getElementById('filtro-tipo').value;
-    const cat = document.getElementById('filtro-categoria').value;
-    const conta = document.getElementById('filtro-conta').value;
-    const mes = document.getElementById('filtro-mes').value;
-
-    let filtradas = transacoes;
-
-    if (mes) {
-        const [ano, mesNum] = mes.split('-').map(Number);
-        filtradas = filtradas.filter(t => {
-            const dt = new Date(t.data);
-            return dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
-        });
-    }
-    if (tipo) filtradas = filtradas.filter(t => t.tipo === tipo);
-    if (cat) filtradas = filtradas.filter(t => t.categoria === cat);
-    if (conta) filtradas = filtradas.filter(t => t.conta === conta);
-
-    filtradas.sort((a,b) => new Date(b.data) - new Date(a.data));
-
-    const lista = document.getElementById('lista-extrato');
-    let total = 0;
-
-    if (filtradas.length === 0) {
-        lista.innerHTML = '<p class="text-center text-slate-500 py-8">Nenhuma transação</p>';
-    } else {
-        lista.innerHTML = filtradas.map(t => {
-            const cor = t.tipo === 'entrada'? 'text-emerald-500' : t.tipo === 'saida'? 'text-orange-500' : 'text-rose-500';
-            const sinal = t.tipo === 'entrada'? '+' : '-';
-            total += t.tipo === 'entrada'? t.valor : -t.valor;
-
-            const dt = new Date(t.data);
-            const dataStr = `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}`;
-
-            return `
-                <div class="bg-slate-800 light-mode:bg-slate-100 p-3 rounded-lg">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1" onclick="editarDoExtrato(${t.id})">
-                            <p class="font-bold text-sm text-white light-mode:text-slate-800">${t.descricao}</p>
-                            <p class="text-xs text-slate-400">${dataStr} • ${t.categoria} • ${t.conta || 'Sem conta'}</p>
-                        </div>
-                        <div class="flex items-center gap-3 ml-2">
-                            <p class="${cor} font-black">${sinal}R$ ${t.valor.toFixed(2).replace('.',',')}</p>
-                            <button onclick="editarDoExtrato(${t.id})" class="text-blue-400 text-sm">
-                                <i class="fas fa-pen"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    document.getElementById('total-extrato').innerHTML = `Total: <span class="${total >= 0? 'text-emerald-500' : 'text-rose-500'}">R$ ${Math.abs(total).toFixed(2).replace('.',',')}</span>`;
-}
-
-function editarDoExtrato(id) {
-    fecharExtrato();
-    abrirModal(id);
-}
-
-// Init
-document.addEventListener('DOMContentLoaded', () => {
-    atualizarMes();
-    aplicarVisualSaldoProjetado();
-    atualizarCalculos();
-});
+        cartoes
