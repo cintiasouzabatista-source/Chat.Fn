@@ -859,31 +859,6 @@ function resetarTransacoes() {
     toggleMenu();
 }
 
-function abrirExtrato() {
-    setMenuAtivo('extrato');
-    document.getElementById('menuDropdown').style.display = 'none';
-
-    const catSelect = document.getElementById('filtro-categoria');
-    catSelect.innerHTML = '<option value="">Todas categorias</option>';
-    [...new Set(transacoes.map(t => t.categoria))].forEach(c => {
-        if(c) catSelect.innerHTML += `<option value="${c}">${c}</option>`;
-    });
-
-    const contaSelect = document.getElementById('filtro-conta');
-    contaSelect.innerHTML = '<option value="">Todas contas</option>';
-    [...new Set([...contas,...cartoes.map(c=>c.nome)])].forEach(c => {
-        if(c) contaSelect.innerHTML += `<option value="${c}">${c}</option>`;
-    });
-
-    document.getElementById('filtro-mes').value = mesAtual;
-    filtrarExtrato();
-    document.getElementById('modal-extrato').style.display = 'flex';
-}
-
-function fecharExtrato() {
-    document.getElementById('modal-extrato').style.display = 'none';
-}
-
 function filtrarExtrato() {
     const tipo = document.getElementById('filtro-tipo').value;
     const cat = document.getElementById('filtro-categoria').value;
@@ -912,7 +887,7 @@ function filtrarExtrato() {
         lista.innerHTML = '<p class="text-center text-slate-500 py-8">Nenhuma transação</p>';
     } else {
         lista.innerHTML = filtradas.map(t => {
-            const cor = t.tipo === 'entrada'? 'text-green-400' : t.tipo === 'saida'? 'text-red-400' : 'text-blue-400';
+            const cor = t.tipo === 'entrada'? 'text-emerald-500' : t.tipo === 'saida'? 'text-orange-500' : 'text-rose-500';
             const sinal = t.tipo === 'entrada'? '+' : '-';
             total += t.tipo === 'entrada'? t.valor : -t.valor;
 
@@ -920,18 +895,25 @@ function filtrarExtrato() {
             const dataStr = `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}`;
 
             return `
-                <div class="bg-slate-800 p-3 rounded flex justify-between items-center" onclick="editarDoExtrato(${t.id})">
-                    <div class="flex-1">
-                        <p class="font-bold text-sm">${t.descricao}</p>
-                        <p class="text-xs text-slate-400">${dataStr} • ${t.categoria} • ${t.conta || 'Sem conta'}</p>
+                <div class="bg-slate-800 light-mode:bg-slate-100 p-3 rounded-lg">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1" onclick="editarDoExtrato(${t.id})">
+                            <p class="font-bold text-sm text-white light-mode:text-slate-800">${t.descricao}</p>
+                            <p class="text-xs text-slate-400">${dataStr} • ${t.categoria} • ${t.conta || 'Sem conta'}</p>
+                        </div>
+                        <div class="flex items-center gap-3 ml-2">
+                            <p class="${cor} font-black">${sinal}R$ ${t.valor.toFixed(2).replace('.',',')}</p>
+                            <button onclick="editarDoExtrato(${t.id})" class="text-blue-400 text-sm">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                        </div>
                     </div>
-                    <p class="${cor} font-black">${sinal}R$ ${t.valor.toFixed(2).replace('.',',')}</p>
                 </div>
             `;
         }).join('');
     }
 
-    document.getElementById('total-extrato').innerHTML = `Total: <span class="${total >= 0? 'text-green-400' : 'text-red-400'}">R$ ${Math.abs(total).toFixed(2).replace('.',',')}</span>`;
+    document.getElementById('total-extrato').innerHTML = `Total: <span class="${total >= 0? 'text-emerald-500' : 'text-rose-500'}">R$ ${Math.abs(total).toFixed(2).replace('.',',')}</span>`;
 }
 
 function editarDoExtrato(id) {
