@@ -340,3 +340,20 @@ body.light-mode .bg-slate-800.light-mode\:bg-white {
 body.light-mode .text-white.light-mode\:text-slate-900 {
     color: #0f172a !important;
 }
+/* MENSAGENS DE SISTEMA */
+.bg-slate-600 {
+    background-color: #475569 !important;
+    color: #f1f5f9 !important;
+}
+
+body.light-mode .bg-slate-600 {
+    background-color: #e2e8f0 !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1;
+}
+
+/* MENSAGENS DO USUÁRIO - azul nos dois modos */
+.bg-blue-600 {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
+}
