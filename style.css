@@ -329,3 +329,14 @@ body.light-mode .menu-dropdown button:hover {
 /* BOTÕES */
 .bg-blue-600 { background-color: var(--blue) !important; }
 .bg-blue-600:hover { background-color: var(--blue-hover) !important; }
+
+/* CARD LIQUIDO NO LIGHT MODE */
+body.light-mode .bg-slate-800.light-mode\:bg-white {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1) !important;
+}
+
+body.light-mode .text-white.light-mode\:text-slate-900 {
+    color: #0f172a !important;
+}
