@@ -1,16 +1,12 @@
-// chart.js - Gráficos profissionais do Chat Financeiro
-
 let graficoAtual = null;
-let tipoGraficoAtual = 'categoria';
+let tipoGraficoAtivo = 'categoria';
 
 function abrirGraficos() {
     setMenuAtivo('graficos');
     document.getElementById('modal-graficos').style.display = 'flex';
-
     const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     const [ano, mes] = mesAtual.split('-');
     document.getElementById('grafico-mes').textContent = `${meses[parseInt(mes)-1]} ${ano}`;
-
     trocarGrafico('categoria');
 }
 
@@ -23,53 +19,127 @@ function fecharGraficos() {
 }
 
 function trocarGrafico(tipo) {
-    tipoGraficoAtual = tipo;
-
+    tipoGraficoAtivo = tipo;
     document.getElementById('btn-cat').className = tipo === 'categoria'
-      ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+       ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
         : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
-
     document.getElementById('btn-tipo').className = tipo === 'tipo'
-      ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+       ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
         : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
+    desenharGrafico();
+}
 
-    const [ano, mesNum] = mesAtual.split('-').map(Number);
+function desenharGrafico() {
+    const [ano, mes] = mesAtual.split('-').map(Number);
     const transacoesMes = transacoes.filter(t => {
         const dt = new Date(t.data);
-        return dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
+        return dt.getMonth() === mes - 1 && dt.getFullYear() === ano;
     });
 
     if (graficoAtual) graficoAtual.destroy();
 
     const ctx = document.getElementById('grafico-canvas').getContext('2d');
-    const isDark =!document.body.classList.contains('light-mode');
+    const isLight = document.body.classList.contains('light-mode');
+    const corTexto = isLight? '#1e293b' : '#f1f5f9';
+    const corGrid = isLight? '#e2e8f0' : '#334155';
 
-    if (tipo === 'categoria') {
-        let porCategoria = {};
-        transacoesMes.forEach(t => {
-            if (t.tipo!== 'entrada') {
-                porCategoria[t.categoria] = (porCategoria[t.categoria] || 0) + t.valor;
-            }
+    if (tipoGraficoAtivo === 'categoria') {
+        // CATEGORIA = BARRA HORIZONTAL
+        const gastosPorCat = {};
+        transacoesMes.filter(t => t.tipo!== 'entrada').forEach(t => {
+            gastosPorCat[t.categoria] = (gastosPorCat[t.categoria] || 0) + t.valor;
         });
 
-        const labels = Object.keys(porCategoria);
-        const dados = Object.values(porCategoria);
-        const total = dados.reduce((a,b) => a+b, 0);
+        const dados = Object.entries(gastosPorCat)
+           .sort((a, b) => b[1] - a[1])
+           .slice(0, 8); // Top 8 categorias
 
-        if (labels.length === 0) {
-            document.getElementById('grafico-legenda').innerHTML = '<p class="text-center text-slate-500">Nenhum gasto no mês</p>';
+        if (dados.length === 0) {
+            document.getElementById('grafico-legenda').innerHTML = '<p class="text-center text-slate-500 py-8">Sem gastos no mês</p>';
             return;
         }
 
-        const cores = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+        const labels = dados.map(d => d[0]);
+        const valores = dados.map(d => d[1]);
+        const total = valores.reduce((s, v) => s + v, 0);
+
+        graficoAtual = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: valores,
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 6,
+                    barThickness: 20
+                }]
+            },
+            options: {
+                indexAxis: 'y', // HORIZONTAL
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const pct = ((ctx.raw / total) * 100).toFixed(1);
+                                return `R$ ${ctx.raw.toFixed(2).replace('.', ',')} - ${pct}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { 
+                            color: corTexto,
+                            callback: (v) => `R$ ${v}`
+                        },
+                        grid: { color: corGrid }
+                    },
+                    y: {
+                        ticks: { color: corTexto },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Legenda custom
+        document.getElementById('grafico-legenda').innerHTML = dados.map(([cat, val]) => {
+            const pct = ((val / total) * 100).toFixed(1);
+            return `
+                <div class="flex justify-between text-xs py-1">
+                    <span>${cat}</span>
+                    <span class="font-bold">R$ ${val.toFixed(2).replace('.', ',')} - ${pct}%</span>
+                </div>
+            `;
+        }).join('');
+
+    } else {
+        // ENTRADA VS SAÍDA = PIZZA
+        let entrada = 0, saida = 0, cartao = 0;
+        transacoesMes.forEach(t => {
+            if (t.tipo === 'entrada') entrada += t.valor;
+            else if (t.tipo === 'saida') saida += t.valor;
+            else if (t.tipo === 'cartao') cartao += t.valor;
+        });
+
+        const totalGasto = saida + cartao;
+        const total = entrada + totalGasto;
+
+        if (total === 0) {
+            document.getElementById('grafico-legenda').innerHTML = '<p class="text-center text-slate-500 py-8">Sem dados no mês</p>';
+            return;
+        }
 
         graficoAtual = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: labels,
+                labels: ['Entradas', 'Saídas', 'Cartões'],
                 datasets: [{
-                    data: dados,
-                    backgroundColor: cores,
+                    data: [entrada, saida, cartao],
+                    backgroundColor: ['#10b981', '#f97316', '#ef4444'],
                     borderWidth: 0
                 }]
             },
@@ -81,9 +151,8 @@ function trocarGrafico(tipo) {
                     tooltip: {
                         callbacks: {
                             label: (ctx) => {
-                                const val = ctx.parsed;
-                                const perc = ((val/total)*100).toFixed(1);
-                                return `R$ ${val.toFixed(2).replace('.',',')} - ${perc}%`;
+                                const pct = ((ctx.raw / total) * 100).toFixed(1);
+                                return `${ctx.label}: R$ ${ctx.raw.toFixed(2).replace('.', ',')} - ${pct}%`;
                             }
                         }
                     }
@@ -91,69 +160,24 @@ function trocarGrafico(tipo) {
             }
         });
 
-        document.getElementById('grafico-legenda').innerHTML = labels.map((cat, i) => {
-            const val = dados[i];
-            const perc = ((val/total)*100).toFixed(1);
+        // Legenda custom
+        const dados = [
+            { label: 'Entradas', valor: entrada, cor: '#10b981' },
+            { label: 'Saídas', valor: saida, cor: '#f97316' },
+            { label: 'Cartões', valor: cartao, cor: '#ef4444' }
+        ].filter(d => d.valor > 0);
+
+        document.getElementById('grafico-legenda').innerHTML = dados.map(d => {
+            const pct = ((d.valor / total) * 100).toFixed(1);
             return `
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center text-xs py-1">
                     <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded" style="background:${cores[i]}"></div>
-                        <span>${cat}</span>
+                        <div class="w-3 h-3 rounded" style="background:${d.cor}"></div>
+                        <span>${d.label}</span>
                     </div>
-                    <span class="font-bold">R$ ${val.toFixed(2).replace('.',',')} - ${perc}%</span>
+                    <span class="font-bold">R$ ${d.valor.toFixed(2).replace('.', ',')} - ${pct}%</span>
                 </div>
             `;
         }).join('');
-
-    } else {
-        let entrada = 0, saida = 0, cartao = 0;
-        transacoesMes.forEach(t => {
-            if (t.tipo === 'entrada') entrada += t.valor;
-            else if (t.tipo === 'saida') saida += t.valor;
-            else if (t.tipo === 'cartao') cartao += t.valor;
-        });
-
-        graficoAtual = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Entrada', 'Saída', 'Cartão'],
-                datasets: [{
-                    data: [entrada, saida, cartao],
-                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => `R$ ${ctx.parsed.y.toFixed(2).replace('.',',')}`
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        ticks: {
-                            color: isDark? '#94a3b8' : '#475569',
-                            callback: (val) => `R$ ${val}`
-                        },
-                        grid: { color: isDark? '#334155' : '#e2e8f0' }
-                    },
-                    x: {
-                        ticks: { color: isDark? '#94a3b8' : '#475569' },
-                        grid: { display: false }
-                    }
-                }
-            }
-        });
-
-        document.getElementById('grafico-legenda').innerHTML = `
-            <div class="flex justify-between"><span class="text-emerald-500">Entrada</span><span class="font-bold">R$ ${entrada.toFixed(2).replace('.',',')}</span></div>
-            <div class="flex justify-between"><span class="text-orange-500">Saída</span><span class="font-bold">R$ ${saida.toFixed(2).replace('.',',')}</span></div>
-            <div class="flex justify-between"><span class="text-rose-500">Cartão</span><span class="font-bold">R$ ${cartao.toFixed(2).replace('.',',')}</span></div>
-        `;
     }
 }
