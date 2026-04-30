@@ -100,13 +100,25 @@
         </button>
     </div>
 
-    <div class="menu-dropdown" id="menuDropdown">
-        <button onclick="abrirContasCartoes()">Contas e Cartões</button>
-        <button onclick="abrirReserva()">Reserva</button>
-        <button onclick="abrirContasFixas()">Contas Fixas</button>
-        <button onclick="resetarTransacoes()">Resetar Transações</button>
-        <button onclick="resetarTudo()">Resetar Tudo</button>
-    </div>
+   <div class="menu-dropdown" id="menuDropdown">
+    <button onclick="abrirContasCartoes()">
+        <i class="fas fa-wallet w-5"></i>
+        <span>Contas e Cartões</span>
+    </button>
+    <button onclick="abrirReserva()">
+        <i class="fas fa-piggy-bank w-5"></i>
+        <span>Reserva</span>
+    </button>
+    <button onclick="abrirContasFixas()">
+        <i class="fas fa-calendar-check w-5"></i>
+        <span>Contas Fixas</span>
+    </button>
+    <div class="border-t border-slate-600 light-mode:border-slate-200 my-1"></div>
+    <button onclick="abrirModalReset()" class="text-rose-500">
+        <i class="fas fa-trash-alt w-5"></i>
+        <span>Resetar Dados</span>
+    </button>
+</div>
 </footer>
 
 <!-- MODAL GRAFICOS -->
@@ -260,7 +272,34 @@
         </div>
     </div>
 </div>
-
+<!-- MODAL RESET -->
+<div id="modal-reset" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="bg-rose-500/20 text-rose-500 w-10 h-10 rounded-full flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="font-bold text-lg">Resetar Dados</h3>
+        </div>
+        
+        <p class="text-sm text-slate-400 mb-4">Essa ação não pode ser desfeita. Escolha o que deseja apagar:</p>
+        
+        <div class="space-y-2">
+            <button onclick="confirmarReset('transacoes')" class="w-full bg-slate-700 light-mode:bg-slate-100 hover:bg-slate-600 light-mode:hover:bg-slate-200 p-4 rounded-lg text-left transition-colors">
+                <div class="font-bold">Apenas Transações</div>
+                <div class="text-xs text-slate-400">Apaga lançamentos mas mantém contas e cartões</div>
+            </button>
+            
+            <button onclick="confirmarReset('tudo')" class="w-full bg-slate-700 light-mode:bg-slate-100 hover:bg-slate-600 light-mode:hover:bg-slate-200 p-4 rounded-lg text-left transition-colors">
+                <div class="font-bold text-rose-500">Apagar Tudo</div>
+                <div class="text-xs text-slate-400">Remove transações, contas, cartões e fixas</div>
+            </button>
+        </div>
+        
+        <button onclick="fecharModalReset()" class="w-full mt-4 bg-slate-600 text-white py-2 rounded-lg">Cancelar</button>
+    </div>
+</div>
+    
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="chart.js"></script>
 <script src="script.js"></script>
