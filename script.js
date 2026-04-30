@@ -148,6 +148,39 @@ let saldoProjetadoAtivo = localStorage.getItem('saldoProjetado') === 'true';
 let abaAtualCC = 'contas';
 let contaEditando = null;
 let cartaoEditando = null;
+// NORMALIZAÇÃO E CATEGORIAS
+function normalizarTexto(txt) {
+    return txt.toLowerCase()
+     .normalize('NFD')
+     .replace(/[\u0300-\u036f]/g, '')
+     .replace(/[.,!?;:]/g, '')
+     .trim();
+}
+
+function capitalizarPrimeira(str) {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function detectarCategoria(desc) {
+    const d = normalizarTexto(desc);
+    const categorias = {
+        'Alimentação': ['ifood', 'rappi', 'uber eats', 'lanche', 'lanches', 'hamburguer', 'pizza', 'pizzaria', 'restaurante', 'bar', 'boteco', 'padaria', 'paes', 'pao', 'mercado', 'supermercado', 'acougue', 'hortifruti', 'feira', 'comida', 'almoco', 'janta', 'cafe', 'cafeteria', 'sorvete', 'acai', 'doceria', 'bolo', 'salada', 'marmita'],
+        'Transporte': ['uber', '99', 'taxi', 'onibus', 'metro', 'trem', 'passagem', 'pedagio', 'estacionamento', 'gasolina', 'combustivel', 'posto', 'alcool', 'diesel', 'mecanico', 'oficina', 'pneu', 'oleo', 'lavagem', 'carro', 'moto', 'bike', 'bicicleta', 'ipva'],
+        'Moradia': ['aluguel', 'condominio', 'iptu', 'luz', 'energia', 'enel', 'cpfl', 'light', 'agua', 'saneamento', 'sabesp', 'gas', 'comgas', 'internet', 'net', 'vivo', 'claro', 'tim', 'oi', 'telefone', 'celular', 'faxina', 'diarista', 'reforma', 'material', 'construcao', 'moveis'],
+        'Saúde': ['farmacia', 'drogaria', 'remedio', 'medicamento', 'medico', 'medica', 'consulta', 'dentista', 'hospital', 'clinica', 'laboratorio', 'exame', 'plano', 'unimed', 'amil', 'sulamerica', 'psicologo', 'terapia', 'fisio', 'fisioterapia', 'academia', 'gym', 'pilates'],
+        'Lazer': ['cinema', 'teatro', 'show', 'festa', 'balada', 'ingresso', 'streaming', 'netflix', 'spotify', 'prime', 'disney', 'hbo', 'globoplay', 'youtube', 'jogo', 'game', 'psn', 'xbox', 'steam', 'viagem', 'hotel', 'airbnb', 'passagem aerea', 'passeio', 'bar', 'cerveja'],
+        'Educação': ['escola', 'faculdade', 'curso', 'livro', 'material escolar', 'matricula', 'mensalidade', 'idioma', 'ingles', 'espanhol', 'udemy', 'alura', 'curso online', 'colegio'],
+        'Compras': ['shopping', 'loja', 'roupa', 'sapato', 'tenis', 'calcado', 'presente', 'eletronico', 'celular', 'notebook', 'tv', 'amazon', 'mercado livre', 'shopee', 'shein', 'aliexpress', 'magazine', 'americanas', 'casas bahia', 'magalu'],
+        'Cartão': ['fatura', 'cartao', 'credito', 'nubank', 'itau', 'bradesco', 'santander', 'bb', 'caixa', 'inter', 'c6', 'neon', 'pagbank'],
+        'Investimento': ['aplicacao', 'investimento', 'tesouro', 'cdb', 'lci', 'lca', 'acao', 'fii', 'fundo', 'bitcoin', 'crypto', 'cripto', 'poupanca', 'renda fixa'],
+        'Salário': ['salario', 'pagamento', 'holerite', '13', 'decimo', 'ferias', 'bonus', 'comissao', 'freelance', 'freela', 'pix recebido', 'renda']
+    };
+    for (const [cat, palavras] of Object.entries(categorias)) {
+        if (palavras.some(p => d.includes(p))) return cat;
+    }
+    return 'Outros';
+}
 
 if (!mesAtual) {
     const hoje = new Date();
@@ -720,83 +753,61 @@ function criarParcelas(transacaoBase, nomeConta) {
 }
 
 function interpretarTexto(texto) {
-    const id = Date.now();
-    const data = new Date().toISOString();
-    const txtNorm = normalizar(texto);
-    const txtLower = texto.toLowerCase();
-    const valorMatch = texto.match(/\d+([.,]\d{1,2})?/);
-    const valorTotal = valorMatch? parseFloat(valorMatch[0].replace(',', '.')) : 0;
-    const inK = ['recebi', 'entrou', 'ganhei', 'salario', 'pagamento', 'saldo'];
-    const outK = ['gastei', 'comprei', 'paguei', 'parcelei'];
-    let tipo = 'saida';
-    if (inK.some(k => txtNorm.includes(normalizar(k)))) tipo = 'entrada';
-    const parcMatch = txtLower.match(/(?:em\s*)?(\d+)\s*(x|vezes)/i);
-    const parcelas = parcMatch? parseInt(parcMatch[1]) : 1;
-    const temCartao = txtLower.includes('cartão') || txtLower.includes('cartao');
-    if (parcelas > 1 || temCartao) tipo = 'cartao';
+    const id = Date.now() + Math.random();
+    const t = texto.toLowerCase().trim();
+    const [ano, mes] = mesAtual.split('-').map(Number);
+    const original = texto.trim();
+
+    const valorMatch = t.match(/(\d+[.,]?\d*)/);
+    if (!valorMatch) return null;
+    const valorTotal = parseFloat(valorMatch[0].replace(',', '.'));
+    if (isNaN(valorTotal) || valorTotal <= 0) return null;
+
+    let descLimpa = original.replace(valorMatch[0], '').trim();
+    descLimpa = descLimpa.replace(/^\|\s*/, '').replace(/\s*\|$/, '').trim();
+
+    const entrada = /(recebi|recebimento|salario|salário|pix recebi|entrou|entrada|ganhei|vendi|renda)/.test(t);
+    const cartao = /(cartao|cartão|credito|crédito|fatura)/.test(t);
+    const tipo = entrada? 'entrada' : cartao? 'cartao' : 'saida';
+
+    let parcelas = 1;
+    const parcelaMatch = t.match(/(\d+)\s*x\b/);
+    if (parcelaMatch) parcelas = parseInt(parcelaMatch[1]);
+
+    const diaMatch = t.match(/dia\s+(\d{1,2})\b/);
+    let dia = diaMatch? parseInt(diaMatch[1]) : new Date().getDate();
+    if (dia > 31) dia = 31;
+    if (dia < 1) dia = 1;
+
+    let conta = contas[0];
+    const bancoMatch = t.match(/@(\w+)|banco\s+(\w+)|conta\s+(\w+)/);
+    if (bancoMatch) {
+        const nomeBanco = bancoMatch[1] || bancoMatch[2] || bancoMatch[3];
+        const contaExiste = contas.find(c => normalizarTexto(c).includes(normalizarTexto(nomeBanco)));
+        if (contaExiste) conta = contaExiste;
+    }
+
+    const contaFixa = /(fixo|fixa|mensal|todo mes|todo mês)/.test(t);
+
+    descLimpa = descLimpa
+     .replace(/\b(recebi|gastei|paguei|cartao|cartão|credito|crédito|pix|entrada|saida|fixo|fixa|mensal|dia \d+|@\w+|banco \w+|conta \w+|\d+\s*x)\b/gi, '')
+     .replace(/\s+/g, ' ')
+     .trim();
+
+    let descricao = capitalizarPrimeira(descLimpa) || 'Transação';
+    if (descricao === 'Transação') {
+        if (entrada) descricao = 'Recebimento';
+        else if (cartao) descricao = 'Compra cartão';
+        else descricao = 'Gasto';
+    }
+
+    const categoria = detectarCategoria(descricao);
+    const data = new Date(ano, mes - 1, dia).toISOString();
     const valor = parcelas > 1? parseFloat((valorTotal / parcelas).toFixed(2)) : valorTotal;
-    let conta = null;
-    contas.forEach(c => {
-        const cNorm = normalizar(c);
-        const txtSemBanco = txtNorm.replace(/banco\s+/g, '');
-        if (txtSemBanco.includes(cNorm)) conta = c;
-    });
-    cartoes.forEach(c => {
-        const cNorm = normalizar(c.nome);
-        if (txtNorm.includes(cNorm) || txtNorm.includes('cartao ' + cNorm)) conta = c.nome;
-    });
-    if (!conta) {
-        const bancosComuns = ['itau', 'nubank', 'inter', 'bradesco', 'caixa', 'santander', 'bb', 'c6', 'picpay'];
-        bancosComuns.forEach(b => {
-            if (txtNorm.includes(b)) {
-                conta = b.charAt(0).toUpperCase() + b.slice(1);
-                if (tipo === 'cartao' &&!cartoes.some(c => c.nome === conta)) {
-                    cartoes.push({nome: conta, diaFechamento: 7, diaVencimento: 15});
-                    localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
-                } else if (tipo!== 'cartao' &&!contas.includes(conta)) {
-                    contas.push(conta);
-                    localStorage.setItem('bankday_contas', JSON.stringify(contas));
-                }
-            }
-        });
-    }
-    let descricao = texto;
-    descricao = descricao.replace(/\d+([.,]\d{1,2})?/g, '');
-    descricao = descricao.replace(/(?:em\s*)?\d+\s*(x|vezes)/gi, '');
-    descricao = descricao.replace(/\sx\s/gi, ' ');
-    descricao = descricao.replace(/cart[aã]o/gi, '');
-    descricao = descricao.replace(/banco/gi, '');
-    descricao = descricao.replace(/fixo|fixa|recorrente/gi, '');
-    descricao = descricao.replace(/dia \d{1,2}/gi, '');
-    [...inK,...outK].forEach(k => descricao = descricao.replace(new RegExp(k, 'gi'), ''));
-    const descNorm = normalizar(descricao);
-    let palavrasRemover = [];
-    contas.forEach(c => { if (descNorm.includes(normalizar(c))) palavrasRemover.push(c); });
-    cartoes.forEach(c => { if (descNorm.includes(normalizar(c.nome))) palavrasRemover.push(c.nome); });
-    palavrasRemover.forEach(p => { descricao = descricao.replace(new RegExp(p, 'gi'), ''); });
-    descricao = descricao.replace(/\s+/g, ' ').trim();
-    if (!descricao || descricao.length < 2) descricao = tipo === 'entrada'? 'Entrada' : 'Gasto';
-    let categoria = tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
-    if (txtNorm.includes('ifood') || txtNorm.includes('mercado') || txtNorm.includes('restaurante')) categoria = 'Alimentação';
-    if (txtNorm.includes('uber') || txtNorm.includes('99') || txtNorm.includes('gasolina')) categoria = 'Transporte';
-    if (txtNorm.includes('celular') || txtNorm.includes('samsung') || txtNorm.includes('iphone')) categoria = 'Compras';
-    const isFixo = /fixo|fixa|recorrente/i.test(texto);
-    const diaMatch = texto.match(/dia (\d{1,2})/i);
-    const diaVencimento = diaMatch? parseInt(diaMatch[1]) : new Date().getDate();
-    if (isFixo && conta) {
-        const contaFixa = {
-            id: Date.now(),
-            descricao, valor, tipo, categoria, conta,
-            dia: diaVencimento,
-            ativa: true
-        };
-        contasFixas.push(contaFixa);
-        localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
-        adicionarMensagemSistema(`Conta fixa criada: ${descricao} R$${valor} todo dia ${diaVencimento}`);
-    }
+
     return {
         id, descricao, valor, valorTotal, tipo, categoria, conta, parcelas,
-        valorParcela: valor, data, recorrente: isFixo
+        valorParcela: valor, data, recorrente: contaFixa
     };
 }
 
