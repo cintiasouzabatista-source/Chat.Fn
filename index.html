@@ -299,6 +299,71 @@
         <button onclick="fecharModalReset()" class="w-full mt-4 bg-slate-600 text-white py-2 rounded-lg">Cancelar</button>
     </div>
 </div>
+    <!-- MODAL CONTAS FIXAS -->
+<div id="modal-contas-fixas" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold">Contas Fixas</h2>
+            <button onclick="fecharContasFixas()" class="text-slate-400"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="lista-contas-fixas" class="space-y-2 max-h-96 overflow-y-auto"></div>
+        <p class="text-xs text-slate-400 mt-3 text-center">Para criar, digite "fixo dia X" numa transação</p>
+    </div>
+</div>
+
+<!-- MODAL EDITAR FIXA -->
+<div id="modal-edit-fixa" class="modal">
+    <div class="modal-content">
+        <h3 class="font-bold mb-4 text-lg">Editar Conta Fixa</h3>
+        
+        <label class="text-xs opacity-70">Descrição</label>
+        <input type="text" id="fixa-desc" class="w-full p-2 rounded-lg border mb-3 text-sm">
+        
+        <label class="text-xs opacity-70">Valor</label>
+        <input type="number" id="fixa-valor" step="0.01" class="w-full p-2 rounded-lg border mb-3 text-sm">
+        
+        <label class="text-xs opacity-70">Dia do mês</label>
+        <input type="number" id="fixa-dia" min="1" max="31" class="w-full p-2 rounded-lg border mb-3 text-sm">
+        
+        <label class="text-xs opacity-70">Conta</label>
+        <select id="fixa-conta" class="w-full p-2 rounded-lg border mb-4 text-sm"></select>
+        
+        <p class="text-xs text-slate-400 mb-3 text-center">Aplicar alteração em:</p>
+        <div class="flex gap-2">
+            <button onclick="salvarEdicaoFixa('atual')" class="flex-1 bg-slate-600 text-white py-2 rounded-lg text-sm">Só este mês</button>
+            <button onclick="salvarEdicaoFixa('todas')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold">Todos os meses</button>
+        </div>
+        <button onclick="fecharModalEditFixa()" class="w-full mt-2 text-slate-400 text-sm">Cancelar</button>
+    </div>
+</div>
+
+<!-- MODAL EXCLUIR FIXA -->
+<div id="modal-excluir-fixa" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="bg-rose-500/20 text-rose-500 w-10 h-10 rounded-full flex items-center justify-center">
+                <i class="fas fa-trash"></i>
+            </div>
+            <h3 class="font-bold text-lg">Excluir Conta Fixa</h3>
+        </div>
+        
+        <p class="text-sm mb-4">Excluir <span id="fixa-excluir-nome" class="font-bold"></span>?</p>
+        
+        <div class="space-y-2">
+            <button onclick="confirmarExcluirFixa('atual')" class="w-full bg-slate-700 light-mode:bg-slate-100 hover:bg-slate-600 light-mode:hover:bg-slate-200 p-3 rounded-lg text-left">
+                <div class="font-bold text-sm">Só deste mês</div>
+                <div class="text-xs text-slate-400">Mantém nos próximos meses</div>
+            </button>
+            
+            <button onclick="confirmarExcluirFixa('todas')" class="w-full bg-slate-700 light-mode:bg-slate-100 hover:bg-slate-600 light-mode:hover:bg-slate-200 p-3 rounded-lg text-left">
+                <div class="font-bold text-sm text-rose-500">Todos os meses futuros</div>
+                <div class="text-xs text-slate-400">Remove o modelo e lançamentos futuros</div>
+            </button>
+        </div>
+        
+        <button onclick="fecharModalExcluirFixa()" class="w-full mt-3 bg-slate-600 text-white py-2 rounded-lg">Cancelar</button>
+    </div>
+</div>
     <!-- TELA DE PIN -->
 <div id="tela-pin" class="fixed inset-0 bg-[var(--bg-dark)] light-mode:bg-[var(--bg-light)] z-50 flex items-center justify-center p-4">
     <div class="w-full max-w-sm">
