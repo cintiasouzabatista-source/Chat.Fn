@@ -735,19 +735,19 @@ function criarParcelas(transacaoBase, nomeConta) {
     const dataInicial = new Date();
     for (let i = 0; i < transacaoBase.parcelas; i++) {
         const dataParcela = new Date(dataInicial.getFullYear(), dataInicial.getMonth() + i, dataInicial.getDate());
-        const parcela = {
-            id: Date.now() + i,
-            descricao: `${transacaoBase.descricao} ${i+1}/${transacaoBase.parcelas}`,
-            valor: transacaoBase.valor,
-            valorTotal: transacaoBase.valorTotal,
-            tipo: 'cartao',
-            categoria: transacaoBase.categoria,
-            conta: nomeConta,
-            parcelas: transacaoBase.parcelas,
-            parcelaAtual: i + 1,
-            valorParcela: transacaoBase.valor,
-            data: dataParcela.toISOString()
-        };
+      const parcela = {
+    id: Date.now() + i,
+    descricao: `${capitalizarPrimeira(transacaoBase.descricao)} ${i+1}/${transacaoBase.parcelas}`,
+    valor: transacaoBase.valor,
+    valorTotal: transacaoBase.valorTotal,
+    tipo: 'cartao',
+    categoria: transacaoBase.categoria,
+    conta: nomeConta,
+    parcelas: transacaoBase.parcelas,
+    parcelaAtual: i + 1,
+    valorParcela: transacaoBase.valor,
+    data: dataParcela.toISOString()
+};
         transacoes.push(parcela);
     }
 }
@@ -805,11 +805,19 @@ function interpretarTexto(texto) {
     const data = new Date(ano, mes - 1, dia).toISOString();
     const valor = parcelas > 1? parseFloat((valorTotal / parcelas).toFixed(2)) : valorTotal;
 
-    return {
-        id, descricao, valor, valorTotal, tipo, categoria, conta, parcelas,
-        valorParcela: valor, data, recorrente: contaFixa
-    };
-}
+   return {
+    id, 
+    descricao: capitalizarPrimeira(descricao), 
+    valor, 
+    valorTotal, 
+    tipo, 
+    categoria, 
+    conta, 
+    parcelas,
+    valorParcela: valor, 
+    data, 
+    recorrente: isFixo
+};
 
 function adicionarMensagemNaTela(texto, id) {
     const chat = document.getElementById('chat-box');
