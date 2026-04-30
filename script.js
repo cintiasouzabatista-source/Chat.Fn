@@ -667,3 +667,142 @@ function atualizarContas(selecionada = null) {
         const grupoCartoes = document.createElement('optgroup');
         grupoCartoes.label = 'Cartões';
         cartoes
+.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.nome;
+            opt.textContent = c.nome;
+            if (c.nome === selecionada) opt.selected = true;
+            grupoCartoes.appendChild(opt);
+        });
+        select.appendChild(grupoCartoes);
+    }
+}
+
+function fecharModal() {
+    const t = transacoes.find(x => x.id === idEditando);
+    const novoTotal = parseFloat(document.getElementById('edit-valor').value) || 0;
+    t.descricao = document.getElementById('edit-desc').value;
+    t.valorTotal = novoTotal;
+    t.valor = t.parcelas > 1? parseFloat((novoTotal / t.parcelas).toFixed(2)) : novoTotal;
+    t.data = new Date(document.getElementById('edit-data').value).toISOString();
+    t.tipo = document.getElementById('edit-tipo').value;
+    t.categoria = document.getElementById('edit-categoria').value;
+    t.conta = document.getElementById('edit-conta').value;
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    atualizarCalculos();
+    document.getElementById('modal').style.display = 'none';
+}
+
+function fecharModalSemSalvar() {
+    document.getElementById('modal').style.display = 'none';
+}
+
+function excluirMensagem() {
+    transacoes = transacoes.filter(x => x.id!== idEditando);
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    const el = document.getElementById(`msg-${idEditando}`);
+    if(el) el.remove();
+    atualizarCalculos();
+    document.getElementById('modal').style.display = 'none';
+}
+
+function resetarTudo() {
+    if (!confirm('Apagar TUDO? Não tem volta.')) return;
+    transacoes = [];
+    contas = ['Conta Principal'];
+    cartoes = [];
+    contasFixas = [];
+    localStorage.clear();
+    location.reload();
+}
+
+function resetarTransacoes() {
+    if (!confirm('Apagar todas as transações? Contas e cartões serão mantidos.')) return;
+    transacoes = [];
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    atualizarCalculos();
+    toggleMenu();
+}
+
+function abrirExtrato() {
+    setMenuAtivo('extrato');
+    document.getElementById('menuDropdown').style.display = 'none';
+    const catSelect = document.getElementById('filtro-categoria');
+    catSelect.innerHTML = '<option value="">Todas categorias</option>';
+    [...new Set(transacoes.map(t => t.categoria))].forEach(c => {
+        if(c) catSelect.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+    const contaSelect = document.getElementById('filtro-conta');
+    contaSelect.innerHTML = '<option value="">Todas contas</option>';
+    [...new Set([...contas,...cartoes.map(c=>c.nome)])].forEach(c => {
+        if(c) contaSelect.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+    document.getElementById('filtro-mes').value = mesAtual;
+    filtrarExtrato();
+    document.getElementById('modal-extrato').style.display = 'flex';
+}
+
+function fecharExtrato() {
+    document.getElementById('modal-extrato').style.display = 'none';
+}
+
+function filtrarExtrato() {
+    const tipo = document.getElementById('filtro-tipo').value;
+    const cat = document.getElementById('filtro-categoria').value;
+    const conta = document.getElementById('filtro-conta').value;
+    const mes = document.getElementById('filtro-mes').value;
+    let filtradas = transacoes;
+    if (mes) {
+        const [ano, mesNum] = mes.split('-').map(Number);
+        filtradas = filtradas.filter(t => {
+            const dt = new Date(t.data);
+            return dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
+        });
+    }
+    if (tipo) filtradas = filtradas.filter(t => t.tipo === tipo);
+    if (cat) filtradas = filtradas.filter(t => t.categoria === cat);
+    if (conta) filtradas = filtradas.filter(t => t.conta === conta);
+    filtradas.sort((a,b) => new Date(b.data) - new Date(a.data));
+    const lista = document.getElementById('lista-extrato');
+    let total = 0;
+    if (filtradas.length === 0) {
+        lista.innerHTML = '<p class="text-center text-slate-500 py-8">Nenhuma transação</p>';
+    } else {
+        lista.innerHTML = filtradas.map(t => {
+            const cor = t.tipo === 'entrada'? 'text-emerald-500' : t.tipo === 'saida'? 'text-orange-500' : 'text-rose-500';
+            const sinal = t.tipo === 'entrada'? '+' : '-';
+            total += t.tipo === 'entrada'? t.valor : -t.valor;
+            const dt = new Date(t.data);
+            const dataStr = `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}`;
+            return `
+                <div class="bg-slate-800 light-mode:bg-slate-100 p-3 rounded-lg">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1 cursor-pointer" onclick="editarDoExtrato(${t.id})">
+                            <p class="font-bold text-sm text-white light-mode:text-slate-800">${t.descricao}</p>
+                            <p class="text-xs text-slate-400">${dataStr} • ${t.categoria} • ${t.conta || 'Sem conta'}</p>
+                        </div>
+                        <div class="flex items-center gap-3 ml-2">
+                            <p class="${cor} font-black">${sinal}R$ ${t.valor.toFixed(2).replace('.',',')}</p>
+                            <button onclick="editarDoExtrato(${t.id})" class="text-blue-400 text-sm">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    document.getElementById('total-extrato').innerHTML = `Total: <span class="${total >= 0? 'text-emerald-500' : 'text-rose-500'}">R$ ${Math.abs(total).toFixed(2).replace('.',',')}</span>`;
+}
+
+function editarDoExtrato(id) {
+    fecharExtrato();
+    abrirModal(id);
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+    atualizarMes();
+    aplicarVisualSaldoProjetado();
+    atualizarCalculos();
+});
