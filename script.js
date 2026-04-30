@@ -706,22 +706,32 @@ function excluirMensagem() {
     document.getElementById('modal').style.display = 'none';
 }
 
-function resetarTudo() {
-    if (!confirm('Apagar TUDO? Não tem volta.')) return;
-    transacoes = [];
-    contas = ['Conta Principal'];
-    cartoes = [];
-    contasFixas = [];
-    localStorage.clear();
-    location.reload();
+function abrirModalReset() {
+    toggleMenu();
+    document.getElementById('modal-reset').style.display = 'flex';
 }
 
-function resetarTransacoes() {
-    if (!confirm('Apagar todas as transações? Contas e cartões serão mantidos.')) return;
-    transacoes = [];
-    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-    atualizarCalculos();
-    toggleMenu();
+function fecharModalReset() {
+    document.getElementById('modal-reset').style.display = 'none';
+}
+
+function confirmarReset(tipo) {
+    if (tipo === 'transacoes') {
+        if (!confirm('Apagar TODAS as transações?\nContas e cartões serão mantidos.')) return;
+        transacoes = [];
+        localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+        atualizarCalculos();
+        adicionarMensagemSistema('Transações apagadas.');
+    } else {
+        if (!confirm('APAGAR TUDO?\n\nIsso vai remover:\n- Transações\n- Contas e cartões\n- Contas fixas\n\nNão tem volta!')) return;
+        transacoes = [];
+        contas = ['Conta Principal'];
+        cartoes = [];
+        contasFixas = [];
+        localStorage.clear();
+        location.reload();
+    }
+    fecharModalReset();
 }
 
 function abrirExtrato() {
