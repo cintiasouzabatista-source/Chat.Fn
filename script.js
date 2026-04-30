@@ -1131,7 +1131,19 @@ function editarDoExtrato(id) {
     fecharExtrato();
     abrirModal(id);
 }
-
+function abrirTutorial() {
+    toggleMenu();
+    tutorialStep = 1;
+    document.getElementById('tutorial-step-1').classList.remove('hidden');
+    document.getElementById('tutorial-step-2').classList.add('hidden');
+    document.getElementById('tutorial-step-3').classList.add('hidden');
+    document.getElementById('tutorial-step-4').classList.add('hidden');
+    document.querySelectorAll('.tutorial-dot').forEach((dot, i) => {
+        dot.className = i === 0 ? 'tutorial-dot w-2 h-2 rounded-full bg-blue-600' : 'tutorial-dot w-2 h-2 rounded-full bg-slate-600';
+    });
+    document.getElementById('btn-tutorial-prox').textContent = 'Próximo';
+    document.getElementById('tutorial').style.display = 'flex';
+}
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     atualizarMes();
