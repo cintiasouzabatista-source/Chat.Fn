@@ -1,3 +1,138 @@
+// SISTEMA DE PIN
+let tentativasPin = 0;
+let pinBloqueadoAte = 0;
+const PIN_SALVO = localStorage.getItem('bankday_pin');
+const PIN_PRIMEIRO_ACESSO =!PIN_SALVO;
+
+function initPin() {
+    const telaPin = document.getElementById('tela-pin');
+    const appContent = document.getElementById('app-content');
+    const titulo = document.getElementById('pin-titulo');
+    const subtitulo = document.getElementById('pin-subtitulo');
+    const btnEsqueci = document.getElementById('btn-esqueci');
+
+    if (PIN_PRIMEIRO_ACESSO) {
+        titulo.textContent = 'Crie seu PIN';
+        subtitulo.textContent = '4 dígitos para proteger o app';
+        btnEsqueci.classList.add('hidden');
+    } else {
+        titulo.textContent = 'Digite seu PIN';
+        subtitulo.textContent = 'Para acessar o app';
+        btnEsqueci.classList.remove('hidden');
+
+        // Verifica bloqueio
+        const agora = Date.now();
+        if (pinBloqueadoAte > agora) {
+            const segundos = Math.ceil((pinBloqueadoAte - agora) / 1000);
+            bloquearPin(segundos);
+        }
+    }
+
+    // Auto-focus e navegação entre inputs
+    const inputs = document.querySelectorAll('.pin-input');
+    inputs[0].focus();
+
+    inputs.forEach((input, idx) => {
+        input.addEventListener('input', (e) => {
+            if (e.target.value.length === 1 && idx < 3) {
+                inputs[idx + 1].focus();
+            }
+            if (idx === 3 && e.target.value.length === 1) {
+                validarPin();
+            }
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && e.target.value === '' && idx > 0) {
+                inputs[idx - 1].focus();
+            }
+        });
+    });
+
+    telaPin.style.display = 'flex';
+    appContent.style.display = 'none';
+}
+
+function validarPin() {
+    const inputs = document.querySelectorAll('.pin-input');
+    const pinDigitado = Array.from(inputs).map(i => i.value).join('');
+
+    if (pinDigitado.length!== 4) return;
+
+    const erro = document.getElementById('pin-erro');
+
+    if (PIN_PRIMEIRO_ACESSO) {
+        // Criar PIN
+        localStorage.setItem('bankday_pin', btoa(pinDigitado)); // base64 simples
+        liberarApp();
+    } else {
+        // Verificar PIN
+        if (btoa(pinDigitado) === PIN_SALVO) {
+            tentativasPin = 0;
+            liberarApp();
+        } else {
+            tentativasPin++;
+            erro.textContent = `PIN incorreto. ${3 - tentativasPin} tentativas restantes`;
+            erro.classList.remove('hidden');
+            inputs.forEach(i => {
+                i.value = '';
+                i.classList.add('border-rose-500');
+            });
+            inputs[0].focus();
+            setTimeout(() => {
+                inputs.forEach(i => i.classList.remove('border-rose-500'));
+            }, 1000);
+
+            if (tentativasPin >= 3) {
+                pinBloqueadoAte = Date.now() + 30000; // 30s
+                bloquearPin(30);
+            }
+        }
+    }
+}
+
+function bloquearPin(segundos) {
+    const inputs = document.querySelectorAll('.pin-input');
+    const erro = document.getElementById('pin-erro');
+    inputs.forEach(i => {
+        i.disabled = true;
+        i.value = '';
+    });
+
+    let contador = segundos;
+    erro.classList.remove('hidden');
+    const interval = setInterval(() => {
+        erro.textContent = `Muitas tentativas. Tente em ${contador}s`;
+        contador--;
+        if (contador < 0) {
+            clearInterval(interval);
+            inputs.forEach(i => i.disabled = false);
+            erro.classList.add('hidden');
+            inputs[0].focus();
+            tentativasPin = 0;
+        }
+    }, 1000);
+}
+
+function liberarApp() {
+    document.getElementById('tela-pin').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
+}
+
+function esqueciPin() {
+    if (confirm('Esqueceu o PIN?\n\nIsso vai apagar TODOS os dados do app:\n- Transações\n- Contas\n- Cartões\n\nNão tem volta!')) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+// Chama na inicialização
+document.addEventListener('DOMContentLoaded', () => {
+    initPin(); // Adiciona isso antes de atualizarMes()
+    atualizarMes();
+    aplicarVisualSaldoProjetado();
+    atualizarCalculos();
+});
 // script.js - Lógica principal do Chat Financeiro
 
 let transacoes = JSON.parse(localStorage.getItem('bankday_transacoes') || '[]');
