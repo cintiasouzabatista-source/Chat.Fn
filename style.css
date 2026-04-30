@@ -82,3 +82,50 @@ footer { flex: 0 0 auto; z-index: 10; }
 .menu-btn.active {
     color: #3b82f6;
 }
+
+/* CORREÇÃO DO MODO CLARO */
+body.light-mode {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #1e293b;
+    --input-bg: #f1f5f9;
+}
+
+body.light-mode .header-bg {
+    background-color: var(--card);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+body.light-mode .bg-slate-700 {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+
+body.light-mode .bg-black\/5,
+body.light-mode .light-mode\:bg-slate-100 {
+    background-color: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode .text-slate-400 {
+    color: #64748b !important;
+}
+
+body.light-mode .menu-dropdown {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0;
+}
+
+body.light-mode .menu-dropdown button {
+    color: #334155 !important;
+}
+
+body.light-mode .menu-dropdown button:hover {
+    background-color: #f1f5f9 !important;
+}
+
+/* CORES FIXAS DOS VALORES - mesmo no light e dark */
+.text-emerald-500 { color: #10b981 !important; }
+.text-orange-500 { color: #f97316 !important; }
+.text-blue-500 { color: #3b82f6 !important; }
+.text-rose-500 { color: #f43f5e !important; }
