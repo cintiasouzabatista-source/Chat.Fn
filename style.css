@@ -357,3 +357,17 @@ body.light-mode .bg-slate-600 {
     background-color: #3b82f6 !important;
     color: #ffffff !important;
 }
+
+.menu-dropdown button {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.875rem;
+}
+
+.menu-dropdown button i {
+    text-align: center;
+}
