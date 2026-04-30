@@ -816,9 +816,9 @@ function interpretarTexto(texto) {
     parcelas,
     valorParcela: valor, 
     data, 
-    recorrente: isFixo
+    recorrente: contaFixa
 };
-
+}
 function adicionarMensagemNaTela(texto, id) {
     const chat = document.getElementById('chat-box');
     const div = document.createElement('div');
