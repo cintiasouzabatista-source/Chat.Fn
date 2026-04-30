@@ -214,19 +214,22 @@ function fecharContasCartoes() {
 function abaContaCartao(tipo) {
     abaAtualCC = tipo;
     document.getElementById('aba-contas').className = tipo === 'contas'
-       ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+      ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
         : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
     document.getElementById('aba-cartoes').className = tipo === 'cartoes'
-       ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+      ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
         : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
-
+    
     const lista = document.getElementById('lista-contas-cartoes');
-
+    
     if (tipo === 'contas') {
         lista.innerHTML = contas.map(c => `
-            <div class="flex justify-between items-center bg-slate-800 p-3 rounded-lg">
-             <span class="font-bold text-white light-mode:text-slate-800">${c}</span>
-                <button onclick="excluirConta('${c}')" class="text-rose-500"><i class="fas fa-trash"></i></button>
+            <div class="bg-slate-800 p-3 rounded-lg flex justify-between items-center">
+                <span class="font-bold text-white light-mode:text-slate-800">${c}</span>
+                <div class="flex gap-3">
+                    <button onclick="editarConta('${c}')" class="text-blue-400"><i class="fas fa-pen"></i></button>
+                    <button onclick="excluirConta('${c}')" class="text-rose-500"><i class="fas fa-trash"></i></button>
+                </div>
             </div>
         `).join('') || '<p class="text-center text-slate-500 py-4">Nenhuma conta</p>';
     } else {
@@ -234,16 +237,18 @@ function abaContaCartao(tipo) {
             <div class="bg-slate-800 p-3 rounded-lg">
                 <div class="flex justify-between items-start">
                     <div>
-                        <p class="font-bold">${c.nome}</p>
+                        <p class="font-bold text-white light-mode:text-slate-800">${c.nome}</p>
                         <p class="text-xs text-slate-400">Fecha ${c.diaFechamento} • Vence ${c.diaVencimento}</p>
                     </div>
-                    <button onclick="excluirCartao('${c.nome}')" class="text-rose-500"><i class="fas fa-trash"></i></button>
+                    <div class="flex gap-3">
+                        <button onclick="editarCartao('${c.nome}')" class="text-blue-400"><i class="fas fa-pen"></i></button>
+                        <button onclick="excluirCartao('${c.nome}')" class="text-rose-500"><i class="fas fa-trash"></i></button>
+                    </div>
                 </div>
             </div>
         `).join('') || '<p class="text-center text-slate-500 py-4">Nenhum cartão</p>';
     }
 }
-
 function adicionarContaCartao() {
     if (abaAtualCC === 'contas') {
         document.getElementById('modal-add-conta').style.display = 'flex';
@@ -322,6 +327,147 @@ function salvarCartao() {
     localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
     fecharModalAddCartao();
     abaContaCartao('cartoes');
+}
+
+let contaEditando = null;
+let cartaoEditando = null;
+
+function editarConta(nomeAntigo) {
+    contaEditando = nomeAntigo;
+    document.getElementById('conta-nome').value = nomeAntigo;
+    document.getElementById('conta-saldo').value = '';
+    document.getElementById('conta-saldo').placeholder = 'Não altera o saldo';
+    document.querySelector('#modal-add-conta h3').textContent = 'Editar Conta';
+    document.getElementById('modal-add-conta').style.display = 'flex';
+}
+
+function editarCartao(nomeAntigo) {
+    cartaoEditando = nomeAntigo;
+    const cartao = cartoes.find(c => c.nome === nomeAntigo);
+    document.getElementById('cartao-nome').value = cartao.nome;
+    document.getElementById('cartao-fechamento').value = cartao.diaFechamento;
+    document.getElementById('cartao-vencimento').value = cartao.diaVencimento;
+    document.querySelector('#modal-add-cartao h3').textContent = 'Editar Cartão';
+    document.getElementById('modal-add-cartao').style.display = 'flex';
+}
+
+// Substitui a função salvarConta() por essa:
+function salvarConta() {
+    const nome = document.getElementById('conta-nome').value.trim();
+    const saldoInicial = parseFloat(document.getElementById('conta-saldo').value) || 0;
+
+    if (!nome) {
+        alert('Preencha o nome da conta');
+        return;
+    }
+
+    // Se tá editando
+    if (contaEditando) {
+        const index = contas.indexOf(contaEditando);
+        if (contas.includes(nome) && nome!== contaEditando) {
+            alert('Já existe uma conta com esse nome');
+            return;
+        }
+        contas[index] = nome;
+        // Atualiza transações que usavam o nome antigo
+        transacoes.forEach(t => {
+            if (t.conta === contaEditando) t.conta = nome;
+        });
+        contasFixas.forEach(f => {
+            if (f.conta === contaEditando) f.conta = nome;
+        });
+        contaEditando = null;
+    } else {
+        if (contas.includes(nome)) {
+            alert('Conta já existe');
+            return;
+        }
+        contas.push(nome);
+        if (saldoInicial > 0) {
+            transacoes.push({
+                id: Date.now(),
+                descricao: `Saldo inicial - ${nome}`,
+                valor: saldoInicial,
+                valorTotal: saldoInicial,
+                tipo: 'entrada',
+                categoria: 'Outras Receitas',
+                conta: nome,
+                parcelas: 1,
+                valorParcela: saldoInicial,
+                data: new Date().toISOString()
+            });
+            atualizarCalculos();
+        }
+    }
+
+    localStorage.setItem('bankday_contas', JSON.stringify(contas));
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
+    
+    fecharModalAddConta();
+    abaContaCartao('contas');
+}
+
+// Substitui a função salvarCartao() por essa:
+function salvarCartao() {
+    const nome = document.getElementById('cartao-nome').value.trim();
+    const fechamento = parseInt(document.getElementById('cartao-fechamento').value);
+    const vencimento = parseInt(document.getElementById('cartao-vencimento').value);
+
+    if (!nome ||!fechamento ||!vencimento) {
+        alert('Preencha todos os campos');
+        return;
+    }
+
+    // Se tá editando
+    if (cartaoEditando) {
+        const index = cartoes.findIndex(c => c.nome === cartaoEditando);
+        if (cartoes.some(c => c.nome === nome && c.nome!== cartaoEditando)) {
+            alert('Já existe um cartão com esse nome');
+            return;
+        }
+        cartoes[index] = { nome, diaFechamento: fechamento, diaVencimento: vencimento };
+        // Atualiza transações que usavam o nome antigo
+        transacoes.forEach(t => {
+            if (t.conta === cartaoEditando) t.conta = nome;
+        });
+        contasFixas.forEach(f => {
+            if (f.conta === cartaoEditando) f.conta = nome;
+        });
+        cartaoEditando = null;
+    } else {
+        if (cartoes.some(c => c.nome === nome)) {
+            alert('Cartão já existe');
+            return;
+        }
+        cartoes.push({ nome, diaFechamento: fechamento, diaVencimento: vencimento });
+    }
+
+    localStorage.setItem('bankday_cartoes', JSON.stringify(cartoes));
+    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
+    localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
+    
+    fecharModalAddCartao();
+    abaContaCartao('cartoes');
+}
+
+// Ajusta as funções de fechar modal pra resetar o título
+function fecharModalAddConta() {
+    document.getElementById('modal-add-conta').style.display = 'none';
+    document.getElementById('conta-nome').value = '';
+    document.getElementById('conta-saldo').value = '';
+    document.getElementById('conta-saldo').placeholder = 'Ex: 1000.00';
+    document.querySelector('#modal-add-conta h3').textContent = 'Nova Conta';
+    contaEditando = null;
+}
+
+function fecharModalAddCartao() {
+    document.getElementById('modal-add-cartao').style.display = 'none';
+    document.getElementById('cartao-nome').value = '';
+    document.getElementById('cartao-fechamento').value = '';
+    document.getElementById('cartao-vencimento').value = '';
+    document.querySelector('#modal-add-cartao h3').textContent = 'Novo Cartão';
+    cartaoEditando = null;
 }
 
 function excluirConta(nome) {
