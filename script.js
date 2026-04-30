@@ -225,7 +225,7 @@ function abaContaCartao(tipo) {
     if (tipo === 'contas') {
         lista.innerHTML = contas.map(c => `
             <div class="flex justify-between items-center bg-slate-800 p-3 rounded-lg">
-                <span class="font-bold">${c}</span>
+             <span class="font-bold text-white light-mode:text-slate-800">${c}</span>
                 <button onclick="excluirConta('${c}')" class="text-rose-500"><i class="fas fa-trash"></i></button>
             </div>
         `).join('') || '<p class="text-center text-slate-500 py-4">Nenhuma conta</p>';
