@@ -299,7 +299,31 @@
         <button onclick="fecharModalReset()" class="w-full mt-4 bg-slate-600 text-white py-2 rounded-lg">Cancelar</button>
     </div>
 </div>
-    
+    <!-- TELA DE PIN -->
+<div id="tela-pin" class="fixed inset-0 bg-[var(--bg-dark)] light-mode:bg-[var(--bg-light)] z-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-sm">
+        <div class="text-center mb-8">
+            <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-lock text-white text-2xl"></i>
+            </div>
+            <h2 id="pin-titulo" class="text-2xl font-black mb-2">Digite seu PIN</h2>
+            <p id="pin-subtitulo" class="text-sm text-slate-400">Para acessar o app</p>
+        </div>
+
+        <div class="flex gap-3 justify-center mb-6">
+            <input type="password" maxlength="1" class="pin-input w-14 h-14 text-center text-2xl font-black rounded-xl border-2 border-slate-600 light-mode:border-slate-300 bg-slate-800 light-mode:bg-white focus:border-blue-500 outline-none" inputmode="numeric">
+            <input type="password" maxlength="1" class="pin-input w-14 h-14 text-center text-2xl font-black rounded-xl border-2 border-slate-600 light-mode:border-slate-300 bg-slate-800 light-mode:bg-white focus:border-blue-500 outline-none" inputmode="numeric">
+            <input type="password" maxlength="1" class="pin-input w-14 h-14 text-center text-2xl font-black rounded-xl border-2 border-slate-600 light-mode:border-slate-300 bg-slate-800 light-mode:bg-white focus:border-blue-500 outline-none" inputmode="numeric">
+            <input type="password" maxlength="1" class="pin-input w-14 h-14 text-center text-2xl font-black rounded-xl border-2 border-slate-600 light-mode:border-slate-300 bg-slate-800 light-mode:bg-white focus:border-blue-500 outline-none" inputmode="numeric">
+        </div>
+
+        <p id="pin-erro" class="text-rose-500 text-sm text-center mb-4 hidden"></p>
+
+        <button id="btn-esqueci" onclick="esqueciPin()" class="w-full text-sm text-slate-400 hover:text-blue-500 py-2 hidden">
+            Esqueci meu PIN
+        </button>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="chart.js"></script>
 <script src="script.js"></script>
