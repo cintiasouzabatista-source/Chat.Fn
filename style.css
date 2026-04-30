@@ -129,3 +129,57 @@ body.light-mode .menu-dropdown button:hover {
 .text-orange-500 { color: #f97316 !important; }
 .text-blue-500 { color: #3b82f6 !important; }
 .text-rose-500 { color: #f43f5e !important; }
+
+
+/* MODAIS UNIFORMES - DARK E LIGHT */
+.modal-content {
+    background-color: var(--card);
+    color: var(--text);
+}
+
+.modal-content .bg-slate-800 {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+    border: 1px solid #334155;
+}
+
+.modal-content h2,
+.modal-content h3,
+.modal-content .font-bold {
+    color: var(--text) !important;
+}
+
+.modal-content input,
+.modal-content select {
+    background-color: var(--input-bg);
+    color: var(--text);
+    border: 1px solid #475569;
+}
+
+body.light-mode .modal-content {
+    background-color: #ffffff;
+    color: #1e293b;
+}
+
+body.light-mode .modal-content .bg-slate-800 {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1;
+}
+
+body.light-mode .modal-content input,
+body.light-mode .modal-content select {
+    background-color: #f8fafc;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
+}
+
+/* BOTÃO CARTÕES INATIVO */
+#aba-cartoes.bg-slate-700 {
+    background-color: #475569 !important;
+}
+
+body.light-mode #aba-cartoes.bg-slate-700 {
+    background-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
