@@ -183,3 +183,149 @@ body.light-mode #aba-cartoes.bg-slate-700 {
     background-color: #e2e8f0 !important;
     color: #475569 !important;
 }
+/* PALETA UNIFICADA */
+:root {
+    --bg-dark: #0f172a;
+    --bg-light: #f8fafc;
+    --card-dark: #1e293b;
+    --card-light: #ffffff;
+    --card-sec-dark: #334155;
+    --card-sec-light: #f1f5f9;
+    --text-dark: #f1f5f9;
+    --text-light: #0f172a;
+    --text-sec-dark: #94a3b8;
+    --text-sec-light: #64748b;
+    --border-dark: #334155;
+    --border-light: #e2e8f0;
+    --blue: #3b82f6;
+    --blue-hover: #2563eb;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-dark);
+}
+
+body.light-mode {
+    background-color: var(--bg-light);
+    color: var(--text-light);
+}
+
+/* HEADER E CARDS */
+.header-bg {
+    background-color: var(--card-dark);
+    border-bottom: 1px solid var(--border-dark);
+}
+body.light-mode .header-bg {
+    background-color: var(--card-light);
+    border-bottom: 1px solid var(--border-light);
+}
+
+/* CARD PRINCIPAL - Líquido */
+.bg-slate-800 {
+    background-color: var(--card-sec-dark) !important;
+}
+body.light-mode .bg-slate-800 {
+    background-color: var(--card-sec-light) !important;
+    border: 1px solid var(--border-light);
+}
+
+/* CARDS MENORES */
+.bg-black\/5, .light-mode\:bg-slate-100 {
+    background-color: var(--card-sec-dark) !important;
+    border: 1px solid var(--border-dark);
+}
+body.light-mode .bg-black\/5,
+body.light-mode .light-mode\:bg-slate-100 {
+    background-color: var(--card-sec-light) !important;
+    border: 1px solid var(--border-light) !important;
+}
+
+/* TEXTOS */
+.text-slate-400 {
+    color: var(--text-sec-dark) !important;
+}
+body.light-mode .text-slate-400 {
+    color: var(--text-sec-light) !important;
+}
+
+.text-white {
+    color: var(--text-dark) !important;
+}
+body.light-mode .text-white {
+    color: var(--text-light) !important;
+}
+
+/* VALORES - mesmo tom nos dois modos, só ajusta saturação */
+.text-emerald-500 { color: #10b981 !important; }
+body.light-mode .text-emerald-500 { color: #059669 !important; }
+
+.text-orange-500 { color: #f97316 !important; }
+body.light-mode .text-orange-500 { color: #ea580c !important; }
+
+.text-rose-500 { color: #ef4444 !important; }
+body.light-mode .text-rose-500 { color: #dc2626 !important; }
+
+.text-blue-500, .text-blue-400 { color: var(--blue) !important; }
+body.light-mode .text-blue-500, 
+body.light-mode .text-blue-400 { color: var(--blue-hover) !important; }
+
+/* MODAIS */
+.modal-content {
+    background-color: var(--card-dark);
+    color: var(--text-dark);
+    border: 1px solid var(--border-dark);
+}
+body.light-mode .modal-content {
+    background-color: var(--card-light);
+    color: var(--text-light);
+    border: 1px solid var(--border-light);
+}
+
+.modal-content .bg-slate-800 {
+    background-color: var(--card-sec-dark) !important;
+    border: 1px solid var(--border-dark);
+}
+body.light-mode .modal-content .bg-slate-800 {
+    background-color: var(--card-sec-light) !important;
+    border: 1px solid var(--border-light);
+}
+
+.modal-content input,
+.modal-content select {
+    background-color: var(--bg-dark);
+    color: var(--text-dark);
+    border: 1px solid var(--border-dark);
+}
+body.light-mode .modal-content input,
+body.light-mode .modal-content select {
+    background-color: var(--bg-light);
+    color: var(--text-light);
+    border: 1px solid var(--border-light);
+}
+
+/* MENU DROPDOWN */
+.menu-dropdown {
+    background-color: var(--card-dark);
+    border: 1px solid var(--border-dark);
+}
+.menu-dropdown button {
+    color: var(--text-dark);
+}
+.menu-dropdown button:hover {
+    background-color: var(--card-sec-dark);
+}
+body.light-mode .menu-dropdown {
+    background-color: var(--card-light);
+    border: 1px solid var(--border-light);
+}
+body.light-mode .menu-dropdown button {
+    color: var(--text-light);
+}
+body.light-mode .menu-dropdown button:hover {
+    background-color: var(--card-sec-light);
+}
+
+/* BOTÕES */
+.bg-blue-600 { background-color: var(--blue) !important; }
+.bg-blue-600:hover { background-color: var(--blue-hover) !important; }
