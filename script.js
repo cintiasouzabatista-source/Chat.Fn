@@ -118,6 +118,56 @@ function liberarApp() {
     document.getElementById('tela-pin').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
 }
+let tutorialStep = 1;
+const TOTAL_STEPS = 4;
+
+function verificarTutorial() {
+    const viuTutorial = localStorage.getItem('bankday_tutorial');
+    if (!viuTutorial && PIN_PRIMEIRO_ACESSO) {
+        setTimeout(() => {
+            document.getElementById('tutorial').style.display = 'flex';
+        }, 500);
+    }
+}
+
+function proximoTutorial() {
+    document.getElementById(`tutorial-step-${tutorialStep}`).classList.add('hidden');
+    document.querySelectorAll('.tutorial-dot')[tutorialStep - 1].classList.replace('bg-blue-600', 'bg-slate-600');
+    
+    tutorialStep++;
+    
+    if (tutorialStep > TOTAL_STEPS) {
+        finalizarTutorial();
+        return;
+    }
+    
+    document.getElementById(`tutorial-step-${tutorialStep}`).classList.remove('hidden');
+    document.querySelectorAll('.tutorial-dot')[tutorialStep - 1].classList.replace('bg-slate-600', 'bg-blue-600');
+    
+    if (tutorialStep === TOTAL_STEPS) {
+        document.getElementById('btn-tutorial-prox').textContent = 'Começar';
+    }
+}
+
+function pularTutorial() {
+    if (confirm('Pular tutorial? Você pode ver depois em Mais > Ajuda')) {
+        finalizarTutorial();
+    }
+}
+
+function finalizarTutorial() {
+    localStorage.setItem('bankday_tutorial', 'true');
+    document.getElementById('tutorial').style.display = 'none';
+    // Foca no input pra pessoa já testar
+    document.getElementById('user-input').focus();
+}
+
+// Modifica liberarApp pra chamar o tutorial
+function liberarApp() {
+    document.getElementById('tela-pin').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
+    verificarTutorial(); // ADICIONA ESSA LINHA
+}
 
 function esqueciPin() {
     if (confirm('Esqueceu o PIN?\n\nIsso vai apagar TODOS os dados do app:\n- Transações\n- Contas\n- Cartões\n\nNão tem volta!')) {
