@@ -234,6 +234,17 @@
             <select id="filtro-conta" class="p-2 rounded" onchange="filtrarExtrato()">
                 <option value="">Todas contas</option>
             </select>
+            <!-- Adiciona depois do select de Conta/Cartão -->
+<div class="flex items-center gap-2 mt-4 mb-2 p-3 bg-slate-800 rounded-lg border border-slate-700">
+    <input type="checkbox" id="edit-fixa" class="w-5 h-5 rounded accent-blue-600">
+    <label for="edit-fixa" class="text-sm font-bold cursor-pointer">
+        <i class="fas fa-repeat text-blue-500 mr-1"></i>
+        Conta Fixa - Repetir todo mês
+    </label>
+</div>
+<div id="edit-fixa-info" class="hidden text-xs text-slate-400 mb-3 px-3">
+    <i class="fas fa-info-circle"></i> Será lançada todo dia <span id="edit-fixa-dia">01</span> automaticamente
+</div>
             <input type="month" id="filtro-mes" class="p-2 rounded" onchange="filtrarExtrato()">
         </div>
 
