@@ -947,6 +947,7 @@ function abrirModal(id) {
     document.getElementById('edit-valor').value = t.valor;
     document.getElementById('edit-data').value = t.data.split('T')[0];
     document.getElementById('edit-tipo').value = t.tipo;
+
     const infoParc = document.getElementById('info-parcela');
     if (t.parcelas > 1) {
         infoParc.textContent = `${t.parcelas}x de R$ ${t.valorParcela.toFixed(2).replace('.',',')}`;
@@ -954,11 +955,34 @@ function abrirModal(id) {
     } else {
         infoParc.classList.add('hidden');
     }
+
+    // ADICIONA ISSO - CHECKBOX CONTA FIXA
+    const checkFixa = document.getElementById('edit-fixa');
+    const infoFixa = document.getElementById('edit-fixa-info');
+    const diaFixa = document.getElementById('edit-fixa-dia');
+    const dt = new Date(t.data);
+
+    checkFixa.checked = t.recorrente ||!!t.idFixa;
+    if (checkFixa.checked) {
+        infoFixa.classList.remove('hidden');
+        diaFixa.textContent = String(dt.getDate()).padStart(2, '0');
+    } else {
+        infoFixa.classList.add('hidden');
+    }
+
+    checkFixa.onchange = () => {
+        if (checkFixa.checked) {
+            infoFixa.classList.remove('hidden');
+            diaFixa.textContent = String(new Date(document.getElementById('edit-data').value).getDate()).padStart(2, '0');
+        } else {
+            infoFixa.classList.add('hidden');
+        }
+    };
+
     atualizarCategorias(t.categoria);
     atualizarContas(t.conta);
     document.getElementById('modal').style.display = 'flex';
 }
-
 function atualizarCategorias(selecionada = null) {
     const tipo = document.getElementById('edit-tipo').value;
     const select = document.getElementById('edit-categoria');
@@ -1003,31 +1027,63 @@ function atualizarContas(selecionada = null) {
 function fecharModal() {
     const t = transacoes.find(x => x.id === idEditando);
     const novoTotal = parseFloat(document.getElementById('edit-valor').value) || 0;
+    const ehFixa = document.getElementById('edit-fixa').checked;
+    const novaData = new Date(document.getElementById('edit-data').value);
+
     t.descricao = document.getElementById('edit-desc').value;
     t.valorTotal = novoTotal;
     t.valor = t.parcelas > 1? parseFloat((novoTotal / t.parcelas).toFixed(2)) : novoTotal;
-    t.data = new Date(document.getElementById('edit-data').value).toISOString();
+    t.data = novaData.toISOString();
     t.tipo = document.getElementById('edit-tipo').value;
     t.categoria = document.getElementById('edit-categoria').value;
     t.conta = document.getElementById('edit-conta').value;
+
+    // LÓGICA DA CONTA FIXA
+    if (ehFixa) {
+        t.recorrente = true;
+
+        // Se já era fixa, atualiza o modelo
+        if (t.idFixa) {
+            const fixa = contasFixas.find(f => f.id === t.idFixa);
+            if (fixa) {
+                fixa.descricao = t.descricao;
+                fixa.valor = t.valor;
+                fixa.tipo = t.tipo;
+                fixa.categoria = t.categoria;
+                fixa.conta = t.conta;
+                fixa.dia = novaData.getDate();
+                localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
+            }
+        } else {
+            // Cria nova conta fixa
+            const novaFixa = {
+                id: Date.now(),
+                descricao: t.descricao,
+                valor: t.valor,
+                tipo: t.tipo,
+                categoria: t.categoria,
+                conta: t.conta,
+                dia: novaData.getDate(),
+                ativa: true
+            };
+            contasFixas.push(novaFixa);
+            t.idFixa = novaFixa.id;
+            localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
+        }
+    } else {
+        // Desmarca como fixa
+        t.recorrente = false;
+        if (t.idFixa) {
+            contasFixas = contasFixas.filter(f => f.id!== t.idFixa);
+            localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
+            delete t.idFixa;
+        }
+    }
+
     localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
     atualizarCalculos();
     document.getElementById('modal').style.display = 'none';
 }
-
-function fecharModalSemSalvar() {
-    document.getElementById('modal').style.display = 'none';
-}
-
-function excluirMensagem() {
-    transacoes = transacoes.filter(x => x.id!== idEditando);
-    localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
-    const el = document.getElementById(`msg-${idEditando}`);
-    if(el) el.remove();
-    atualizarCalculos();
-    document.getElementById('modal').style.display = 'none';
-}
-
 function abrirModalReset() {
     toggleMenu();
     document.getElementById('modal-reset').style.display = 'flex';
