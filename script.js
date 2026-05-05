@@ -1413,3 +1413,17 @@ if (document.readyState === 'loading') {
 } else {
     iniciarApp(); // Roda direto se o HTML já carregou
 }
+// Init - RODA SEMPRE
+function iniciarApp() {
+    console.log('Iniciando BankDay...');
+    initPin();
+    atualizarMes();
+    aplicarVisualSaldoProjetado();
+    atualizarCalculos();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciarApp);
+} else {
+    iniciarApp();
+}
