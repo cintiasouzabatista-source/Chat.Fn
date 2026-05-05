@@ -26,7 +26,76 @@ let cartaoEditando = null;
 let tutorialStep = 1;
 const TOTAL_STEPS = 4;
 let fixaEditando = null;
+// FUNÇÕES TESTE OU PRODUÇÃO - TEM QUE VIR ANTES DO iniciarApp
+function verificarTesteExpirado() {
+    if (!modoTeste) return false;
+    const expira = parseInt(localStorage.getItem('bankday_teste_expira') || '0');
+    const agora = Date.now();
+    if (agora > expira && expira > 0) {
+        bloquearTesteExpirado();
+        return true;
+    }
+    return false;
+}
 
+function bloquearTesteExpirado() {
+    document.getElementById('app-content').innerHTML = `
+        <div class="flex items-center justify-center min-h-screen p-6">
+            <div class="max-w-sm w-full text-center">
+                <div class="bg-amber-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-clock text-white text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-black mb-2">Teste Expirado</h2>
+                <p class="text-slate-400 mb-6">Seu período de teste de 48h acabou. Para continuar usando o BankDay, migre para Produção.</p>
+                <button onclick="converterParaProducao()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold mb-3">
+                    Migrar para Produção
+                </button>
+                <button onclick="resetarApp()" class="w-full bg-slate-700 text-slate-300 py-3 rounded-lg font-bold">
+                    Apagar tudo e recomeçar
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function converterParaProducao() {
+    if (confirm('Migrar para Produção?\n\nOs dados de teste serão apagados.')) {
+        localStorage.setItem('bankday_modo', 'producao');
+        localStorage.removeItem('bankday_transacoes');
+        localStorage.removeItem('bankday_teste_expira');
+        transacoes = [];
+        contas = ['Conta Principal'];
+        localStorage.setItem('bankday_contas', JSON.stringify(contas));
+        modoTeste = false;
+        modoProducao = true;
+        location.reload();
+    }
+}
+
+function resetarApp() {
+    if (confirm('Isso vai apagar TODOS os dados e voltar pro início. Confirma?')) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+// Init - RODA SEMPRE
+function iniciarApp() {
+    console.log('Iniciando BankDay...');
+    
+    const PIN_SALVO_AGORA = localStorage.getItem('bankday_pin');
+    
+    if (!PIN_SALVO_AGORA) {
+        initPin();
+    } else {
+        if (verificarTesteExpirado()) return;
+        initPin();
+    }
+    
+    atualizarMes();
+    aplicarVisualSaldoProjetado();
+    atualizarCalculos();
+}
 // Init - RODA SEMPRE
 function iniciarApp() {
     console.log('Iniciando BankDay...');
