@@ -1399,11 +1399,17 @@ function abrirTutorial() {
     document.getElementById('btn-tutorial-prox').textContent = 'Próximo';
     document.getElementById('tutorial').style.display = 'flex';
 }
+// Init - FORÇA A EXECUÇÃO
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciarApp);
+} else {
+    iniciarApp();
+}
 
-// Init
-document.addEventListener('DOMContentLoaded', () => {
+function iniciarApp() {
+    console.log('BankDay iniciando...');
     initPin();
     atualizarMes();
     aplicarVisualSaldoProjetado();
     atualizarCalculos();
-});
+}
