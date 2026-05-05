@@ -400,3 +400,21 @@ body.light-mode .bg-slate-600 {
 .modal[style*="display: flex"] {
     display: flex !important;
 }
+/* FORÇA O LAYOUT CORRETO */
+#chat-box {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    padding: 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    min-height: 200px !important;
+    max-height: calc(100vh - 380px) !important;
+}
+
+#app-content {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+}
