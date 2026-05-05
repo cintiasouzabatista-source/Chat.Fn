@@ -1200,6 +1200,96 @@ function abrirTutorial() {
     document.getElementById('btn-tutorial-prox').textContent = 'Próximo';
     document.getElementById('tutorial').style.display = 'flex';
 }
+
+function abrirResumo(tipo) {
+    const [ano, mesNum] = mesAtual.split('-').map(Number);
+    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+    const transacoesMes = transacoes.filter(t => {
+        const dt = new Date(t.data);
+        return dt.getMonth() === mesNum - 1 && dt.getFullYear() === ano;
+    });
+
+    let filtradas = [];
+    let titulo = '';
+    let cor = '';
+
+    if (tipo === 'entrada') {
+        filtradas = transacoesMes.filter(t => t.tipo === 'entrada');
+        titulo = 'Entradas do Mês';
+        cor = 'text-emerald-500';
+    } else if (tipo === 'saida') {
+        filtradas = transacoesMes.filter(t => t.tipo === 'saida');
+        titulo = 'Saídas do Mês';
+        cor = 'text-orange-500';
+    } else if (tipo === 'cartao') {
+        filtradas = transacoesMes.filter(t => t.tipo === 'cartao');
+        titulo = 'Gastos no Cartão';
+        cor = 'text-rose-500';
+    } else if (tipo === 'saldo') {
+        // Saldo mostra entradas e saídas
+        filtradas = transacoesMes.filter(t => t.tipo === 'entrada' || t.tipo === 'saida');
+        titulo = 'Movimentação do Mês';
+        cor = 'text-blue-500';
+    }
+
+    // Ordena por data decrescente
+    filtradas.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    // Calcula total
+    let total = 0;
+    if (tipo === 'saldo') {
+        total = filtradas.reduce((s, t) => s + (t.tipo === 'entrada'? t.valor : -t.valor), 0);
+    } else {
+        total = filtradas.reduce((s, t) => s + t.valor, 0);
+    }
+
+    // Atualiza modal
+    document.getElementById('resumo-titulo').textContent = titulo;
+    document.getElementById('resumo-subtitulo').textContent = `${meses[mesNum - 1]} ${ano}`;
+    document.getElementById('resumo-valor-total').textContent = `R$ ${Math.abs(total).toFixed(2).replace('.', ',')}`;
+    document.getElementById('resumo-valor-total').className = `text-2xl font-black ${cor}`;
+
+    const lista = document.getElementById('resumo-lista');
+    if (filtradas.length === 0) {
+        lista.innerHTML = '<p class="text-center text-slate-500 py-8">Nenhuma transação</p>';
+    } else {
+        lista.innerHTML = filtradas.map(t => {
+            const dt = new Date(t.data);
+            const dataStr = `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}`;
+            const corTrans = t.tipo === 'entrada'? 'text-emerald-500' : t.tipo === 'saida'? 'text-orange-500' : 'text-rose-500';
+            const sinal = t.tipo === 'entrada'? '+' : '-';
+            const ehFixa = t.recorrente ||!!t.idFixa;
+
+            return `
+                <div onclick="editarDoResumo(${t.id})" class="bg-slate-800 p-3 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <p class="font-bold text-sm">${t.descricao}</p>
+                                ${ehFixa? '<i class="fas fa-repeat text-blue-500 text-xs" title="Conta Fixa"></i>' : ''}
+                                ${t.parcelas > 1? `<span class="text-xs bg-slate-700 px-2 py-0.5 rounded">${t.parcelaAtual || 1}/${t.parcelas}</span>` : ''}
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">${dataStr} • ${t.categoria} • ${t.conta}</p>
+                        </div>
+                        <p class="${corTrans} font-black text-sm ml-3">${sinal}R$ ${t.valor.toFixed(2).replace('.', ',')}</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    document.getElementById('modal-resumo-card').style.display = 'flex';
+}
+
+function fecharResumoCard() {
+    document.getElementById('modal-resumo-card').style.display = 'none';
+}
+
+function editarDoResumo(id) {
+    fecharResumoCard();
+    abrirModal(id);
+}
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     atualizarMes();
