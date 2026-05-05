@@ -34,30 +34,48 @@
         <h2 id="mesAtual"></h2>
         <button onclick="mudarMes(1)" class="btn-mes">›</button>
     </div>
-
-    <!-- 5 CARDS: Entrada-Saida=Saldo-Fatura=SaldoFinal -->
-    <div class="totais">
-        <div>
-            <span>Entradas</span>
-            <strong class="positivo" id="totalEntradas">R$ 0,00</strong>
+<!-- MODAL RESUMO CARDS -->
+<div id="modal-resumo-card" class="modal" style="display: none;">
+    <div class="bg-slate-900 w-full max-w-md rounded-2xl border border-slate-700 max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center p-4 border-b border-slate-700">
+            <div>
+                <h3 id="resumo-titulo" class="text-lg font-bold">Resumo</h3>
+                <p id="resumo-subtitulo" class="text-xs text-slate-400">Mês atual</p>
+            </div>
+            <button onclick="fecharResumoCard()" class="text-slate-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
         </div>
-        <div>
-            <span>Saídas</span>
-            <strong class="negativo" id="totalSaidas">R$ 0,00</strong>
+        <div id="resumo-total" class="bg-slate-800 p-4 border-b border-slate-700">
+            <p class="text-xs text-slate-400 mb-1">Total do período</p>
+            <p id="resumo-valor-total" class="text-2xl font-black text-emerald-500">R$ 0,00</p>
         </div>
-        <div>
-            <span>Saldo</span>
-            <strong id="saldoMes">R$ 0,00</strong>
-        </div>
-        <div>
-            <span>Fatura</span>
-            <strong class="negativo" id="totalFatura">R$ 0,00</strong>
-        </div>
-        <div>
-            <span>Saldo Final</span>
-            <strong id="saldoFinal">R$ 0,00</strong>
+        <div id="resumo-lista" class="flex-1 overflow-y-auto p-4 space-y-2">
+            <!-- Lista vai aqui -->
         </div>
     </div>
+</div>
+    <!-- 5 CARDS: Entrada-Saida=Saldo-Fatura=SaldoFinal -->
+  <!-- CARDS -->
+<div class="grid grid-cols-2 gap-3 mb-4">
+    <div onclick="abrirResumo('entrada')" class="bg-slate-800 p-4 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700 transition-all">
+        <p class="text-xs text-slate-400 mb-1">Entradas</p>
+        <p id="card-entradas" class="text-xl font-black text-emerald-500">R$ 0,00</p>
+    </div>
+    <div onclick="abrirResumo('saida')" class="bg-slate-800 p-4 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700 transition-all">
+        <p class="text-xs text-slate-400 mb-1">Saídas</p>
+        <p id="card-saidas" class="text-xl font-black text-orange-500">R$ 0,00</p>
+    </div>
+    <div onclick="abrirResumo('saldo')" class="bg-slate-800 p-4 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700 transition-all">
+        <p class="text-xs text-slate-400 mb-1">Saldo</p>
+        <p id="card-saldo" class="text-xl font-black text-blue-500">R$ 0,00</p>
+    </div>
+    <div onclick="abrirResumo('cartao')" class="bg-slate-800 p-4 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700 transition-all">
+        <p class="text-xs text-slate-400 mb-1">Cartões</p>
+        <p id="card-cartoes" class="text-xl font-black text-rose-500">R$ 0,00</p>
+    </div>
+</div>
+    
 
     <!-- Card de projeção, só aparece se ativar nos 3 pontinhos -->
     <div id="saldoProjetado" class="projecao-card" style="display:none">
