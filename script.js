@@ -332,25 +332,74 @@ function esqueciPin() {
 }
 
 // Init - RODA SEMPRE
+// Init - RODA SEMPRE
 function iniciarApp() {
     console.log('Iniciando BankDay...');
-
-    const PIN_SALVO_AGORA = localStorage.getItem('bankday_pin');
-
-    if (!PIN_SALVO_AGORA) {
-        initPin();
-    } else {
-        if (verificarTesteExpirado()) return;
-        initPin();
+    
+    const modo = localStorage.getItem('bankday_modo');
+    
+    // Se não tem modo definido ainda, mostra onboarding primeiro
+    if (!modo) {
+        document.getElementById('app-content').style.display = 'none';
+        document.getElementById('tela-pin').style.display = 'none';
+        setTimeout(() => {
+            document.getElementById('modal-onboarding').style.display = 'flex';
+        }, 300);
+        atualizarMes();
+        aplicarVisualSaldoProjetado();
+        atualizarCalculos();
+        return;
     }
-
+    
+    // Modo teste: entra direto sem PIN
+    if (modo === 'teste') {
+        if (verificarTesteExpirado()) return;
+        document.getElementById('tela-pin').style.display = 'none';
+        document.getElementById('app-content').style.display = 'flex';
+        mostrarBannerTeste();
+        mostrarToastExpiracao();
+        verificarTutorial();
+    } 
+    // Modo produção: pede PIN
+    else if (modo === 'producao') {
+        const PIN_SALVO = localStorage.getItem('bankday_pin');
+        if (!PIN_SALVO) {
+            initPin(); // Cria PIN no primeiro acesso produção
+        } else {
+            initPin(); // Pede PIN pra entrar
+        }
+    }
+    
     atualizarMes();
     aplicarVisualSaldoProjetado();
     atualizarCalculos();
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', iniciarApp);
-} else {
-    iniciarApp();
+// MENU - USA classList, NÃO style.display
+function toggleMenu() {
+    const menu = document.getElementById('menuDropdown');
+    if (!menu) return;
+    
+    const isHidden = menu.classList.contains('hidden');
+    
+    if (menuTimeout) clearTimeout(menuTimeout);
+    
+    if (isHidden) {
+        menu.classList.remove('hidden');
+        menuTimeout = setTimeout(() => {
+            menu.classList.add('hidden');
+        }, 10000);
+    } else {
+        menu.classList.add('hidden');
+    }
 }
+
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('menuDropdown');
+    const btn = document.getElementById('btnMenu');
+    if (!menu || menu.classList.contains('hidden')) return;
+    if (!menu.contains(e.target) &&!btn.contains(e.target)) {
+        menu.classList.add('hidden');
+        if (menuTimeout) clearTimeout(menuTimeout);
+    }
+});
