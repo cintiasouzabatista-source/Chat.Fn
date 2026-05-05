@@ -41,7 +41,6 @@ function initPin() {
         titulo.textContent = 'Digite seu PIN';
         subtitulo.textContent = 'Para acessar o app';
         btnEsqueci.classList.remove('hidden');
-
         const agora = Date.now();
         if (pinBloqueadoAte > agora) {
             const segundos = Math.ceil((pinBloqueadoAte - agora) / 1000);
@@ -51,7 +50,6 @@ function initPin() {
 
     const inputs = document.querySelectorAll('.pin-input');
     inputs[0].focus();
-
     inputs.forEach((input, idx) => {
         input.addEventListener('input', (e) => {
             if (e.target.value.length === 1 && idx < 3) {
@@ -61,7 +59,6 @@ function initPin() {
                 validarPin();
             }
         });
-
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Backspace' && e.target.value === '' && idx > 0) {
                 inputs[idx - 1].focus();
@@ -127,7 +124,6 @@ function bloquearPin(segundos) {
     }, 1000);
 }
 
-// ÚNICA FUNÇÃO liberarApp - CORRIGIDA
 function liberarApp() {
     document.getElementById('tela-pin').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
@@ -174,7 +170,7 @@ function selecionarModo(tipo) {
     } else {
         modoTeste = true;
         modoProducao = false;
-        localStorage.setItem('bankday_teste_expira', agora + (48 * 60 * 60 * 1000));
+        localStorage.setItem('bankday_teste_expira', agora + (48 * 60 * 1000));
         if (!contas.includes('Conta Teste')) {
             contas = ['Conta Teste'];
             localStorage.setItem('bankday_contas', JSON.stringify(contas));
@@ -431,13 +427,13 @@ function editarDoResumo(id) {
     abrirModal(id);
 }
 
-// RESTO DO CÓDIGO CONTINUA IGUAL...
+// NORMALIZAÇÃO E CATEGORIAS
 function normalizarTexto(txt) {
     return txt.toLowerCase()
-   .normalize('NFD')
-   .replace(/[\u0300-\u036f]/g, '')
-   .replace(/[.,!?;:]/g, '')
-   .trim();
+ .normalize('NFD')
+ .replace(/[\u0300-\u036f]/g, '')
+ .replace(/[.,!?;:]/g, '')
+ .trim();
 }
 
 function capitalizarPrimeira(str) {
@@ -722,7 +718,7 @@ function salvarConta() {
         contasFixas.forEach(f => {
             if (f.conta === contaEditando) f.conta = nome;
         });
-        contaEditando = null;
+         contaEditando = null;
     } else {
         if (contas.includes(nome)) {
             alert('Conta já existe');
@@ -929,7 +925,7 @@ function confirmarExcluirFixa(escopo) {
         contasFixas = contasFixas.filter(f => f.id!== fixaEditando.id);
         const hoje = new Date();
         transacoes = transacoes.filter(t =>
-           !(t.idFixa === fixaEditando.id && new Date(t.data) >= hoje)
+          !(t.idFixa === fixaEditando.id && new Date(t.data) >= hoje)
         );
         localStorage.setItem('bankday_contas_fixas', JSON.stringify(contasFixas));
         localStorage.setItem('bankday_transacoes', JSON.stringify(transacoes));
@@ -937,7 +933,7 @@ function confirmarExcluirFixa(escopo) {
     } else {
         const [ano, mes] = mesAtual.split('-').map(Number);
         transacoes = transacoes.filter(t =>
-           !(t.idFixa === fixaEditando.id &&
+          !(t.idFixa === fixaEditando.id &&
               new Date(t.data).getMonth() === mes - 1 &&
               new Date(t.data).getFullYear() === ano)
         );
@@ -1057,9 +1053,9 @@ function interpretarTexto(texto) {
     }
     const contaFixa = /(fixo|fixa|mensal|todo mes|todo mês)/.test(t);
     descLimpa = descLimpa
-  .replace(/\b(recebi|gastei|paguei|cartao|cartão|credito|crédito|pix|entrada|saida|fixo|fixa|mensal|dia \d+|@\w+|banco \w+|conta \w+|\d+\s*x)\b/gi, '')
-  .replace(/\s+/g, ' ')
-  .trim();
+ .replace(/\b(recebi|gastei|paguei|cartao|cartão|credito|crédito|pix|entrada|saida|fixo|fixa|mensal|dia \d+|@\w+|banco \w+|conta \w+|\d+\s*x)\b/gi, '')
+ .replace(/\s+/g, ' ')
+ .trim();
     let descricao = capitalizarPrimeira(descLimpa) || 'Transação';
     if (descricao === 'Transação') {
         if (entrada) descricao = 'Recebimento';
