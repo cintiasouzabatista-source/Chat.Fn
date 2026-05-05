@@ -1,501 +1,226 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>BankDay - Controle Financeiro</title>
+    
+    <!-- PWA -->
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#25d366">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BankDay">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Financas</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<header class="p-3 header-bg shadow-sm">
-    <div class="flex justify-between items-center mb-3">
-        <h1 class="text-lg font-black text-black-200">Chat Financeiro</h1>
-        <div class="flex items-center gap-3">
-            <button id="btnSaldoProjetado" onclick="toggleSaldoProjetado()"
-                class="text-slate-400 hover:text-blue-400 transition-colors"
-                title="Projetar saldo pro próximo mês">
-                <i class="fas fa-forward-step"></i>
-            </button>
-            <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye text-slate-400"></i></button>
-            <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon text-blue-500"></i></button>
+<header class="header">
+    <div class="header-top">
+        <h1>BankDay</h1>
+        <div class="header-actions">
+            <button id="btnTema" class="icon-btn" onclick="alternarTema()">🌙</button>
+            <button id="olho" class="icon-btn" onclick="alternarValores()">👁️</button>
+            <button class="icon-btn" onclick="toggleMenuMais()">⋮</button>
         </div>
     </div>
 
-    <div class="flex justify-center items-center gap-4 mb-3">
-        <button onclick="mudarMes(-1)" class="bg-black/10 light-mode:bg-slate-200 w-8 h-8 rounded-full text-sm">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        <h2 id="mesAtual" class="font-bold text-sm min-w-[120px] text-center"></h2>
-        <button onclick="mudarMes(1)" class="bg-black/10 light-mode:bg-slate-200 w-8 h-8 rounded-full text-sm">
-            <i class="fas fa-chevron-right"></i>
-        </button>
+    <div class="mes-navegacao">
+        <button onclick="mudarMes(-1)" class="btn-mes">‹</button>
+        <h2 id="mesAtual"></h2>
+        <button onclick="mudarMes(1)" class="btn-mes">›</button>
     </div>
 
-   <div class="mb-2 p-3 rounded-xl bg-slate-800 light-mode:bg-white light-mode:border light-mode:border-slate-200 text-white light-mode:text-slate-900 text-center shadow-md">
-   <p class="text- uppercase font-black opacity-80">LÍQUIDO DISPONÍVEL</p>
-        <p id="card-liquido" class="text-2xl font-black val-field">R$ 0,00</p>
+    <!-- 5 CARDS: Entrada-Saida=Saldo-Fatura=SaldoFinal -->
+    <div class="totais">
+        <div>
+            <span>Entradas</span>
+            <strong class="positivo" id="totalEntradas">R$ 0,00</strong>
+        </div>
+        <div>
+            <span>Saídas</span>
+            <strong class="negativo" id="totalSaidas">R$ 0,00</strong>
+        </div>
+        <div>
+            <span>Saldo</span>
+            <strong id="saldoMes">R$ 0,00</strong>
+        </div>
+        <div>
+            <span>Fatura</span>
+            <strong class="negativo" id="totalFatura">R$ 0,00</strong>
+        </div>
+        <div>
+            <span>Saldo Final</span>
+            <strong id="saldoFinal">R$ 0,00</strong>
+        </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-2">
-        <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-      <p class="text- uppercase font-black text-slate-400">ENTRADA</p>
-
-            <p id="card-entradas" class="text-sm font-bold text-emerald-500 val-field">R$ 0,00</p>
-        </div>
-        <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-         <p class="text- uppercase font-black text-slate-400">SAÍDA</p>
-            <p id="card-saidas" class="text-sm font-bold text-orange-500 val-field">R$ 0,00</p>
-        </div>
-        <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-            <p class="text- uppercase font-black text-slate-400">SALDO ATUAL</p>
-            <p id="card-saldo" class="text-sm font-bold text-blue-500 val-field">R$ 0,00</p>
-        </div>
-        <div class="bg-black/5 light-mode:bg-slate-100 p-2 rounded-lg text-center border border-black/5">
-        <p class="text- uppercase font-black text-slate-400">CARTÕES</p>
-            <p id="card-cartoes" class="text-sm font-bold text-rose-500 val-field">R$ 0,00</p>
-        </div>
+    <!-- Card de projeção, só aparece se ativar nos 3 pontinhos -->
+    <div id="saldoProjetado" class="projecao-card" style="display:none">
+        <span>Saldo Projetado Próximo Mês</span>
+        <strong id="saldoProjValor">R$ 0,00</strong>
     </div>
 </header>
 
-<main id="chat-box"></main>
+<main class="chat-area" id="chat-area">
+    <div class="chat-mensagens" id="chat-mensagens"></div>
+</main>
 
-<footer class="bg-[var(--card)] border-t border-slate-700/30">
-    <div class="p-3 pb-2">
-        <div class="flex gap-2 items-center bg-[var(--input-bg)] rounded-2xl px-4 py-1 border border-slate-700/30">
-            <input type="text" id="user-input" placeholder="Ex: Recebi 1000 | Gastei 50 | Cartão 300 3x"
-                class="w-full bg-transparent py-3 focus:outline-none text-sm text-inherit"
-                onkeydown="if(event.key==='Enter') processarMensagem()">
-            <button onclick="processarMensagem()" class="text-blue-500 p-2">
-                <i class="fas fa-paper-plane text-xl"></i>
-            </button>
-        </div>
-    </div>
-
-    <div class="flex justify-around px-2 py-1">
-        <button onclick="abrirExtrato()" class="menu-btn" data-page="extrato">
-            <i class="fas fa-list-ul"></i>
-            <span>Extrato</span>
-        </button>
-        <button onclick="abrirGraficos()" class="menu-btn" data-page="graficos">
-            <i class="fas fa-chart-pie"></i>
-            <span>Gráficos</span>
-        </button>
-        <button onclick="abrirFaturas()" class="menu-btn" data-page="faturas">
-            <i class="fas fa-credit-card"></i>
-            <span>Faturas</span>
-        </button>
-        <button onclick="toggleMenu()" id="btnMenu" class="menu-btn" data-page="mais">
-            <i class="fas fa-ellipsis-h"></i>
-            <span>Mais</span>
-        </button>
-    </div>
-
-   <div class="menu-dropdown" id="menuDropdown">
-    <button onclick="abrirContasCartoes()">
-        <i class="fas fa-wallet w-5"></i>
-        <span>Contas e Cartões</span>
-    </button>
-    <button onclick="abrirReserva()">
-        <i class="fas fa-piggy-bank w-5"></i>
-        <span>Reserva</span>
-    </button>
-    <button onclick="abrirContasFixas()">
-        <i class="fas fa-calendar-check w-5"></i>
-        <span>Contas Fixas</span>
-    </button>
-       <button onclick="abrirTutorial()">
-    <i class="fas fa-question-circle w-5"></i>
-    <span>Ajuda / Tutorial</span>
-</button>
-    <div class="border-t border-slate-600 light-mode:border-slate-200 my-1"></div>
-    <button onclick="abrirModalReset()" class="text-rose-500">
-        <i class="fas fa-trash-alt w-5"></i>
-        <span>Resetar Dados</span>
-    </button>
+<div class="input-area" id="input-area">
+    <input type="text" id="inputMsg" placeholder="Ex: cafe 15 | recebi 500 salario | celular 1200 3x" 
+           onkeydown="if(event.key==='Enter') enviar()">
+    <button onclick="enviar()" class="btn-enviar">➤</button>
 </div>
-</footer>
 
-<!-- MODAL GRAFICOS -->
-<div id="modal-graficos" class="modal">
-    <div class="modal-content" style="max-width: 600px; max-height: 90vh;">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-bold">Gráficos - <span id="grafico-mes"></span></h2>
-            <button onclick="fecharGraficos()" class="text-slate-400"><i class="fas fa-times"></i></button>
-        </div>
+<!-- ABA EXTRATO -->
+<div class="extrato-area" id="extrato-area" style="display:none">
+    <div class="filtros">
+        <input type="date" id="filtro-inicio" onchange="aplicarFiltros()">
+        <input type="date" id="filtro-fim" onchange="aplicarFiltros()">
+        <select id="filtro-categoria" onchange="aplicarFiltros()">
+            <option value="">Todas Categorias</option>
+        </select>
+        <select id="filtro-banco" onchange="aplicarFiltros()">
+            <option value="">Todas Contas/Cartões</option>
+        </select>
+    </div>
+    
+    <div class="resumo-filtro" id="resumoFiltro" style="display:none">
+        <div><span>Entradas:</span><strong id="resumoEntradas">R$ 0,00</strong></div>
+        <div><span>Saídas:</span><strong id="resumoSaidas">R$ 0,00</strong></div>
+        <div><span>Saldo:</span><strong id="resumoSaldo">R$ 0,00</strong></div>
+    </div>
+    
+    <div class="lista-transacoes" id="lista-transacoes"></div>
+</div>
 
-        <div class="flex gap-2 mb-4">
-            <button onclick="trocarGrafico('categoria')" id="btn-cat" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold">Categoria</button>
-            <button onclick="trocarGrafico('tipo')" id="btn-tipo" class="flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold">Entrada vs Saída</button>
-        </div>
-
-        <div style="height: 300px;">
-            <canvas id="grafico-canvas"></canvas>
-        </div>
-
-        <div id="grafico-legenda" class="mt-4 text-xs space-y-1"></div>
+<!-- ABA GRAFICOS -->
+<div class="graficos-area" id="graficos-area" style="display:none">
+    <div class="tabs-grafico">
+        <button class="tab-grafico active" onclick="mostrarGrafico('despesas')">Despesas</button>
+        <button class="tab-grafico" onclick="mostrarGrafico('receitas')">Receitas vs Despesas</button>
+        <button class="tab-grafico" onclick="mostrarGrafico('bancos')">Por Banco</button>
+    </div>
+    <div class="grafico-container">
+        <canvas id="chartCanvas"></canvas>
     </div>
 </div>
 
-<!-- MODAL FATURAS -->
-<div id="modal-faturas" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-bold">Faturas - <span id="fatura-mes"></span></h2>
-            <button onclick="fecharFaturas()" class="text-slate-400"><i class="fas fa-times"></i></button>
-        </div>
-        <div id="lista-faturas" class="space-y-3 max-h-96 overflow-y-auto"></div>
-    </div>
-</div>
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+    <button class="nav-item active" onclick="trocarAba('chat')">
+        <span>💬</span>
+        <span>Chat</span>
+    </button>
+    <button class="nav-item" onclick="trocarAba('extrato')">
+        <span>📋</span>
+        <span>Extrato</span>
+    </button>
+    <button class="nav-item" onclick="trocarAba('graficos')">
+        <span>📊</span>
+        <span>Gráficos</span>
+    </button>
+    <button class="nav-item" onclick="toggleMenuMais()">
+        <span>⋮</span>
+        <span>Mais</span>
+    </button>
+</nav>
 
-<!-- MODAL CONTAS CARTOES -->
-<div id="modal-contas-cartoes" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-bold">Contas e Cartões</h2>
-            <button onclick="fecharContasCartoes()" class="text-slate-400"><i class="fas fa-times"></i></button>
-        </div>
-
-        <div class="flex gap-2 mb-4">
-            <button onclick="abaContaCartao('contas')" id="aba-contas" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold">Contas</button>
-            <button onclick="abaContaCartao('cartoes')" id="aba-cartoes" class="flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold">Cartões</button>
-        </div>
-
-        <div id="lista-contas-cartoes" class="space-y-2 mb-4 max-h-64 overflow-y-auto"></div>
-
-        <button onclick="adicionarContaCartao()" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">
-            <i class="fas fa-plus mr-2"></i>Adicionar
-        </button>
-    </div>
-</div>
-<!-- MODAL ADD CONTA -->
-<div id="modal-add-conta" class="modal">
+<!-- MODAL CONTAS/CARTÕES -->
+<div id="modal-conta" class="modal" style="display:none">
     <div class="modal-content">
-        <h3 class="font-bold mb-4 text-lg">Nova Conta</h3>
-        <label class="text-xs opacity-70">Nome da Conta</label>
-        <input type="text" id="conta-nome" class="w-full p-2 rounded-lg border mb-3 text-sm" placeholder="Ex: Nubank">
+        <div class="modal-header">
+            <h3>Gerenciar Contas e Cartões</h3>
+            <button onclick="fecharModal('modal-conta')">✕</button>
+        </div>
         
-        <label class="text-xs opacity-70">Saldo Inicial - opcional</label>
-        <input type="number" id="conta-saldo" step="0.01" class="w-full p-2 rounded-lg border mb-4 text-sm" placeholder="Ex: 1000.00">
+        <div class="modal-body">
+            <div class="form-section">
+                <h4>Contas</h4>
+                <div class="input-group">
+                    <input type="text" id="conta-nome" placeholder="Nome da conta">
+                    <input type="number" id="conta-saldo" placeholder="Saldo inicial" step="0.01">
+                    <button onclick="addTempConta()" class="btn-add">+</button>
+                </div>
+                <div id="lista-contas-temp" class="lista-temp"></div>
+            </div>
+            
+            <div class="form-section">
+                <h4>Cartões</h4>
+                <div class="input-group">
+                    <input type="text" id="cartao-nome" placeholder="Nome do cartão">
+                    <input type="number" id="cartao-fechamento" placeholder="Dia fechamento" min="1" max="31">
+                    <input type="number" id="cartao-vencimento" placeholder="Dia vencimento" min="1" max="31">
+                    <button onclick="addTempCartao()" class="btn-add">+</button>
+                </div>
+                <div id="lista-cartoes-temp" class="lista-temp"></div>
+            </div>
+        </div>
         
-        <div class="flex gap-2">
-            <button onclick="fecharModalAddConta()" class="flex-1 bg-slate-600 text-white py-2 rounded-lg">Cancelar</button>
-            <button onclick="salvarConta()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold">Salvar</button>
+        <div class="modal-footer">
+            <button onclick="fecharModal('modal-conta')" class="btn-cancelar">Cancelar</button>
+            <button onclick="finalizarCadastro()" class="btn-salvar">Salvar</button>
         </div>
-    </div>
-</div>
-<!-- MODAL ADD CARTAO -->
-<div id="modal-add-cartao" class="modal">
-    <div class="modal-content">
-        <h3 class="font-bold mb-4 text-lg">Novo Cartão</h3>
-        <label class="text-xs opacity-70">Nome do Cartão</label>
-        <input type="text" id="cartao-nome" class="w-full p-2 rounded-lg border mb-3 text-sm" placeholder="Ex: Nubank">
-
-        <label class="text-xs opacity-70">Dia de Fechamento</label>
-        <input type="number" id="cartao-fechamento" min="1" max="31" class="w-full p-2 rounded-lg border mb-3 text-sm" placeholder="Ex: 7">
-
-        <label class="text-xs opacity-70">Dia de Vencimento</label>
-        <input type="number" id="cartao-vencimento" min="1" max="31" class="w-full p-2 rounded-lg border mb-4 text-sm" placeholder="Ex: 15">
-
-        <div class="flex gap-2">
-            <button onclick="fecharModalAddCartao()" class="flex-1 bg-slate-600 text-white py-2 rounded-lg">Cancelar</button>
-            <button onclick="salvarCartao()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold">Salvar</button>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL EXTRATO -->
-<div id="modal-extrato" class="modal">
-    <div class="modal-content">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-bold">Extrato</h2>
-            <button onclick="fecharExtrato()" class="text-slate-400"><i class="fas fa-times"></i></button>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2 mb-3 text-sm">
-            <select id="filtro-tipo" class="p-2 rounded" onchange="filtrarExtrato()">
-                <option value="">Todos os tipos</option>
-                <option value="entrada">Entrada</option>
-                <option value="saida">Saída</option>
-                <option value="cartao">Cartão</option>
-            </select>
-            <select id="filtro-categoria" class="p-2 rounded" onchange="filtrarExtrato()">
-                <option value="">Todas categorias</option>
-            </select>
-            <select id="filtro-conta" class="p-2 rounded" onchange="filtrarExtrato()">
-                <option value="">Todas contas</option>
-            </select>
-            <!-- Adiciona depois do select de Conta/Cartão -->
-<div class="flex items-center gap-2 mt-4 mb-2 p-3 bg-slate-800 rounded-lg border border-slate-700">
-    <input type="checkbox" id="edit-fixa" class="w-5 h-5 rounded accent-blue-600">
-    <label for="edit-fixa" class="text-sm font-bold cursor-pointer">
-        <i class="fas fa-repeat text-blue-500 mr-1"></i>
-        Conta Fixa - Repetir todo mês
-    </label>
-</div>
-<div id="edit-fixa-info" class="hidden text-xs text-slate-400 mb-3 px-3">
-    <i class="fas fa-info-circle"></i> Será lançada todo dia <span id="edit-fixa-dia">01</span> automaticamente
-</div>
-            <input type="month" id="filtro-mes" class="p-2 rounded" onchange="filtrarExtrato()">
-        </div>
-
-        <div id="lista-extrato" class="max-h-96 overflow-y-auto space-y-2"></div>
-        <div id="total-extrato" class="mt-3 pt-3 border-t border-slate-600 text-right font-bold"></div>
     </div>
 </div>
 
 <!-- MODAL EDITAR -->
-<div id="modal" class="modal" onclick="if(event.target===this) fecharModalSemSalvar()">
+<div id="modal-editar" class="modal" style="display:none">
     <div class="modal-content">
-        <h3 class="font-bold mb-4 text-lg">Editar Transação</h3>
-
-        <label class="text-xs opacity-70">Descrição</label>
-        <input type="text" id="edit-desc" class="w-full p-2 rounded-lg border mb-3 text-sm">
-
-        <label class="text-xs opacity-70">Valor</label>
-        <div id="info-parcela" class="text-xs text-blue-400 mb-3 hidden"></div>
-        <input type="number" id="edit-valor" step="0.01" class="w-full p-2 rounded-lg border mb-3 text-sm">
-
-        <label class="text-xs opacity-70">Data</label>
-        <input type="date" id="edit-data" class="w-full p-2 rounded-lg border mb-3 text-sm">
-
-        <label class="text-xs opacity-70">Tipo</label>
-        <select id="edit-tipo" class="w-full p-2 rounded-lg border mb-3 text-sm" onchange="atualizarCategorias()">
-            <option value="entrada">Entrada</option>
-            <option value="saida">Saída</option>
-            <option value="cartao">Cartão</option>
-        </select>
-
-        <label class="text-xs opacity-70">Categoria</label>
-        <select id="edit-categoria" class="w-full p-2 rounded-lg border mb-3 text-sm"></select>
-
-        <label class="text-xs opacity-70">Conta/Cartão</label>
-        <select id="edit-conta" class="w-full p-2 rounded-lg border mb-4 text-sm"></select>
-
-        <div class="flex justify-between items-center">
-            <button onclick="excluirMensagem()" class="text-rose-500 font-bold">Excluir</button>
-            <button onclick="fecharModal()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">Salvar</button>
+        <div class="modal-header">
+            <h3>Editar Transação</h3>
+            <button onclick="fecharModal('modal-editar')">✕</button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Descrição</label>
+                <input type="text" id="edit-desc">
+            </div>
+            <div class="form-group">
+                <label>Valor</label>
+                <input type="number" id="edit-valor" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Tipo</label>
+                <select id="edit-tipo">
+                    <option value="entrada">Entrada</option>
+                    <option value="saida">Saída</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Método</label>
+                <select id="edit-metodo">
+                    <option value="conta">Conta</option>
+                    <option value="cartao">Cartão</option>
+                    <option value="dinheiro">Dinheiro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Banco/Cartão</label>
+                <select id="edit-banco"></select>
+            </div>
+            <div class="form-group">
+                <label>Categoria</label>
+                <select id="edit-categoria"></select>
+            </div>
+            <div class="form-group">
+                <label>Data</label>
+                <input type="date" id="edit-data">
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button onclick="deletarTransacao()" class="btn-excluir">Excluir</button>
+            <button onclick="salvarEdicao()" class="btn-salvar">Salvar</button>
         </div>
     </div>
 </div>
-<!-- MODAL RESET -->
-<div id="modal-reset" class="modal">
-    <div class="modal-content" style="max-width: 400px;">
-        <div class="flex items-center gap-3 mb-4">
-            <div class="bg-rose-500/20 text-rose-500 w-10 h-10 rounded-full flex items-center justify-center">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <h3 class="font-bold text-lg">Resetar Dados</h3>
-        </div>
-        
-        <p class="text-sm text-slate-400 mb-4">Essa ação não pode ser desfeita. Escolha o que deseja apagar:</p>
-        
-        <div class="space-y-2">
-            <button onclick="confirmarReset('transacoes')" class="w-full bg-slate-700 light-mode:bg-slate-100 hover:bg-slate-600 light-mode:hover:bg-slate-200 p-4 rounded-lg text-left transition-colors">
-                <div class="font-bold">Apenas Transações</div>
-                <div class="text-xs text-slate-400">Apaga lançamentos mas mantém contas e cartões</div>
-            </button>
-            
-            <button onclick="confirmarReset('tudo')" class="w-full bg-slate-700 light-mode:bg-slate-100 hover:bg-slate-600 light-mode:hover:bg-slate-200 p-4 rounded-lg text-left transition-colors">
-                <div class="font-bold text-rose-500">Apagar Tudo</div>
-                <div class="text-xs text-slate-400">Remove transações, contas, cartões e fixas</div>
-            </button>
-        </div>
-        
-        <button onclick="fecharModalReset()" class="w-full mt-4 bg-slate-600 text-white py-2 rounded-lg">Cancelar</button>
-    </div>
-</div>
-    <!-- MODAL CONTAS FIXAS -->
-<div id="modal-contas-fixas" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-bold">Contas Fixas</h2>
-            <button onclick="fecharContasFixas()" class="text-slate-400"><i class="fas fa-times"></i></button>
-        </div>
-        <div id="lista-contas-fixas" class="space-y-2 max-h-96 overflow-y-auto"></div>
-        <p class="text-xs text-slate-400 mt-3 text-center">Para criar, digite "fixo dia X" numa transação</p>
-    </div>
-</div>
 
-<!-- MODAL EDITAR FIXA -->
-<div id="modal-edit-fixa" class="modal">
-    <div class="modal-content">
-        <h3 class="font-bold mb-4 text-lg">Editar Conta Fixa</h3>
-        
-        <label class="text-xs opacity-70">Descrição</label>
-        <input type="text" id="fixa-desc" class="w-full p-2 rounded-lg border mb-3 text-sm">
-        
-        <label class="text-xs opacity-70">Valor</label>
-        <input type="number" id="fixa-valor" step="0.01" class="w-full p-2 rounded-lg border mb-3 text-sm">
-        
-        <label class="text-xs opacity-70">Dia do mês</label>
-        <input type="number" id="fixa-dia" min="1" max="31" class="w-full p-2 rounded-lg border mb-3 text-sm">
-        
-        <label class="text-xs opacity-70">Conta</label>
-        <select id="fixa-conta" class="w-full p-2 rounded-lg border mb-4 text-sm"></select>
-        
-        <p class="text-xs text-slate-400 mb-3 text-center">Aplicar alteração em:</p>
-        <div class="flex gap-2">
-            <button onclick="salvarEdicaoFixa('atual')" class="flex-1 bg-slate-600 text-white py-2 rounded-lg text-sm">Só este mês</button>
-            <button onclick="salvarEdicaoFixa('todas')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold">Todos os meses</button>
-        </div>
-        <button onclick="fecharModalEditFixa()" class="w-full mt-2 text-slate-400 text-sm">Cancelar</button>
-    </div>
-</div>
-
-<!-- MODAL EXCLUIR FIXA -->
-<div id="modal-excluir-fixa" class="modal">
-    <div class="modal-content" style="max-width: 400px;">
-        <div class="flex items-center gap-3 mb-4">
-            <div class="bg-rose-500/20 text-rose-500 w-10 h-10 rounded-full flex items-center justify-center">
-                <i class="fas fa-trash"></i>
-            </div>
-            <h3 class="font-bold text-lg">Excluir Conta Fixa</h3>
-        </div>
-        
-        <p class="text-sm mb-4">Excluir <span id="fixa-excluir-nome" class="font-bold"></span>?</p>
-        
-        <div class="space-y-2">
-            <button onclick="confirmarExcluirFixa('atual')" class="w-full bg-slate-700 light-mode:bg-slate-100 hover:bg-slate-600 light-mode:hover:bg-slate-200 p-3 rounded-lg text-left">
-                <div class="font-bold text-sm">Só deste mês</div>
-                <div class="text-xs text-slate-400">Mantém nos próximos meses</div>
-            </button>
-            
-            <button onclick="confirmarExcluirFixa('todas')" class="w-full bg-slate-700 light-mode:bg-slate-100 hover:bg-slate-600 light-mode:hover:bg-slate-200 p-3 rounded-lg text-left">
-                <div class="font-bold text-sm text-rose-500">Todos os meses futuros</div>
-                <div class="text-xs text-slate-400">Remove o modelo e lançamentos futuros</div>
-            </button>
-        </div>
-        
-        <button onclick="fecharModalExcluirFixa()" class="w-full mt-3 bg-slate-600 text-white py-2 rounded-lg">Cancelar</button>
-    </div>
-</div>
-    <!-- TUTORIAL ONBOARDING -->
-<div id="tutorial" class="modal" style="display: none; background: rgba(0,0,0,0.95);">
-    <div class="w-full max-w-sm mx-auto">
-        <div id="tutorial-step-1" class="tutorial-step">
-            <div class="text-center mb-6">
-                <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-comments-dollar text-white text-2xl"></i>
-                </div>
-                <h2 class="text-2xl font-black mb-2">Bem-vindo ao BankDay!</h2>
-                <p class="text-slate-400">Controle financeiro no chat. Sem planilha, sem complicação.</p>
-            </div>
-            <div class="bg-slate-800 p-4 rounded-lg mb-4 text-sm">
-                <p class="font-bold mb-2">Como funciona:</p>
-                <p>• Digite: <code class="bg-slate-700 px-2 py-1 rounded">gastei 50 mercado</code></p>
-                <p>• Digite: <code class="bg-slate-700 px-2 py-1 rounded">recebi 3000 salario</code></p>
-                <p>• Digite: <code class="bg-slate-700 px-2 py-1 rounded">cartao 200 3x nike</code></p>
-            </div>
-        </div>
-
-        <div id="tutorial-step-2" class="tutorial-step hidden">
-            <div class="text-center mb-6">
-                <div class="bg-emerald-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-robot text-white text-2xl"></i>
-                </div>
-                <h2 class="text-xl font-black mb-2">Reconhecimento Inteligente</h2>
-                <p class="text-slate-400">O app entende tudo automático</p>
-            </div>
-            <div class="bg-slate-800 p-4 rounded-lg mb-4 text-sm space-y-2">
-                <p><i class="fas fa-check text-emerald-500"></i> <b>Categoria:</b> ifood → Alimentação</p>
-                <p><i class="fas fa-check text-emerald-500"></i> <b>Banco:</b> @nubank → Conta Nubank</p>
-                <p><i class="fas fa-check text-emerald-500"></i> <b>Fixo:</b> fixo dia 10 → Todo mês</p>
-                <p><i class="fas fa-check text-emerald-500"></i> <b>Parcela:</b> 3x → Divide automático</p>
-            </div>
-        </div>
-
-        <div id="tutorial-step-3" class="tutorial-step hidden">
-            <div class="text-center mb-6">
-                <div class="bg-orange-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-chart-line text-white text-2xl"></i>
-                </div>
-                <h2 class="text-xl font-black mb-2">Cards e Gráficos</h2>
-                <p class="text-slate-400">Visualize seu mês em segundos</p>
-            </div>
-            <div class="bg-slate-800 p-4 rounded-lg mb-4 text-sm space-y-2">
-                <p><i class="fas fa-square text-emerald-500"></i> <b>Entradas</b> - Tudo que entrou</p>
-                <p><i class="fas fa-square text-orange-500"></i> <b>Saídas</b> - Gastos do mês</p>
-                <p><i class="fas fa-square text-blue-500"></i> <b>Saldo</b> - Quanto sobrou</p>
-                <p><i class="fas fa-square text-rose-500"></i> <b>Cartões</b> - Fatura total</p>
-            </div>
-        </div>
-
-        <div id="tutorial-step-4" class="tutorial-step hidden">
-            <div class="text-center mb-6">
-                <div class="bg-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-shield-alt text-white text-2xl"></i>
-                </div>
-                <h2 class="text-xl font-black mb-2">Segurança Total</h2>
-                <p class="text-slate-400">Seus dados são só seus</p>
-            </div>
-            <div class="bg-slate-800 p-4 rounded-lg mb-4 text-sm space-y-2">
-                <p><i class="fas fa-lock text-blue-500"></i> PIN de 4 dígitos na entrada</p>
-                <p><i class="fas fa-database text-blue-500"></i> Salvo só no seu celular</p>
-                <p><i class="fas fa-cloud-slash text-blue-500"></i> Nada vai pra nuvem</p>
-                <p><i class="fas fa-trash text-blue-500"></i> Reset apaga tudo se precisar</p>
-            </div>
-        </div>
-
-        <div class="flex gap-2 mt-6">
-            <button onclick="pularTutorial()" class="flex-1 bg-slate-700 text-white py-3 rounded-lg font-bold">Pular</button>
-            <button id="btn-tutorial-prox" onclick="proximoTutorial()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold">Próximo</button>
-        </div>
-        
-        <div class="flex justify-center gap-2 mt-4">
-            <div class="tutorial-dot w-2 h-2 rounded-full bg-blue-600"></div>
-            <div class="tutorial-dot w-2 h-2 rounded-full bg-slate-600"></div>
-            <div class="tutorial-dot w-2 h-2 rounded-full bg-slate-600"></div>
-            <div class="tutorial-dot w-2 h-2 rounded-full bg-slate-600"></div>
-        </div>
-    </div>
-</div>
-    <!-- TELA DE PIN -->
-<div id="tela-pin" class="fixed inset-0 bg-[var(--bg-dark)] light-mode:bg-[var(--bg-light)] z-50 flex items-center justify-center p-4">
-    <div class="w-full max-w-sm">
-        <div class="text-center mb-8">
-            <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-lock text-white text-2xl"></i>
-            </div>
-            <h2 id="pin-titulo" class="text-2xl font-black mb-2">Digite seu PIN</h2>
-            <p id="pin-subtitulo" class="text-sm text-slate-400">Para acessar o app</p>
-        </div>
-
-        <div class="flex gap-3 justify-center mb-6">
-            <input type="password" maxlength="1" class="pin-input w-14 h-14 text-center text-2xl font-black rounded-xl border-2 border-slate-600 light-mode:border-slate-300 bg-slate-800 light-mode:bg-white focus:border-blue-500 outline-none" inputmode="numeric">
-            <input type="password" maxlength="1" class="pin-input w-14 h-14 text-center text-2xl font-black rounded-xl border-2 border-slate-600 light-mode:border-slate-300 bg-slate-800 light-mode:bg-white focus:border-blue-500 outline-none" inputmode="numeric">
-            <input type="password" maxlength="1" class="pin-input w-14 h-14 text-center text-2xl font-black rounded-xl border-2 border-slate-600 light-mode:border-slate-300 bg-slate-800 light-mode:bg-white focus:border-blue-500 outline-none" inputmode="numeric">
-            <input type="password" maxlength="1" class="pin-input w-14 h-14 text-center text-2xl font-black rounded-xl border-2 border-slate-600 light-mode:border-slate-300 bg-slate-800 light-mode:bg-white focus:border-blue-500 outline-none" inputmode="numeric">
-        </div>
-
-        <p id="pin-erro" class="text-rose-500 text-sm text-center mb-4 hidden"></p>
-
-        <button id="btn-esqueci" onclick="esqueciPin()" class="w-full text-sm text-slate-400 hover:text-blue-500 py-2 hidden">
-            Esqueci meu PIN
-        </button>
-    </div>
-</div>
-    <body>
-<!-- TELA DE PIN... código acima... -->
-
-<div id="app-content" style="display: none;">
-    <header class="p-3 header-bg shadow-sm">
-  
-    </footer>
-</div> <!-- fecha app-content -->
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="chart.js"></script>
-<script src="script.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
