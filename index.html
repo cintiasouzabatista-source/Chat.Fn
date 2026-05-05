@@ -7,7 +7,7 @@
 
     <!-- PWA -->
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#25d366">
+    <meta name="theme-color" content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -128,45 +128,45 @@
 
 <!-- APP CONTENT -->
 <div id="app-content" class="flex flex-col h-screen" style="display: none;">
-    <header class="header-bg p-4 shadow-lg bg-slate-800 border-b border-slate-700">
-        <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-black">BankDay</h1>
-            <div class="flex items-center gap-4">
+    <header class="bg-slate-800 border-b border-slate-700 p-4">
+        <div class="flex justify-between items-center mb-3">
+            <h1 class="text-xl font-black">BankDay</h1>
+            <div class="flex gap-3">
                 <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon text-blue-500 text-lg"></i></button>
                 <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye text-lg"></i></button>
                 <button onclick="toggleMenu()" id="btnMenu"><i class="fas fa-ellipsis-v text-lg"></i></button>
             </div>
         </div>
-        <div class="mt-3 flex items-center justify-center gap-4">
-            <button onclick="mudarMes(-1)"><i class="fas fa-chevron-left text-slate-400"></i></button>
-            <span id="mesAtual" class="text-lg font-bold"></span>
-            <button onclick="mudarMes(1)"><i class="fas fa-chevron-right text-slate-400"></i></button>
-        </div>
-    </header>
 
-    <div class="p-4">
-        <div class="bg-slate-800 light-mode:bg-white p-4 rounded-xl shadow-lg border border-slate-700 light-mode:border-slate-200">
+        <div class="flex justify-between items-center">
+            <button onclick="mudarMes(-1)" class="text-2xl"><i class="fas fa-chevron-left text-slate-400"></i></button>
+            <h2 id="mesAtual" class="font-bold"></h2>
+            <button onclick="mudarMes(1)" class="text-2xl"><i class="fas fa-chevron-right text-slate-400"></i></button>
+        </div>
+
+        <!-- CARDS -->
+        <div class="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700 mt-4">
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <div onclick="abrirResumo('entrada')" class="bg-black/5 light-mode:bg-slate-100 p-3 rounded-lg cursor-pointer">
-                    <p class="text-xs text-slate-400">Entradas</p>
+                <div onclick="abrirResumo('entrada')" class="bg-slate-700 p-3 rounded-lg cursor-pointer hover:bg-slate-600 transition-all">
+                    <p class="text-xs text-slate-400 mb-1">Entradas</p>
                     <p id="card-entradas" class="val-field text-lg font-black text-emerald-500 mt-1">R$ 0,00</p>
                 </div>
-                <div onclick="abrirResumo('saida')" class="bg-black/5 light-mode:bg-slate-100 p-3 rounded-lg cursor-pointer">
-                    <p class="text-xs text-slate-400">Saídas</p>
+                <div onclick="abrirResumo('saida')" class="bg-slate-700 p-3 rounded-lg cursor-pointer hover:bg-slate-600 transition-all">
+                    <p class="text-xs text-slate-400 mb-1">Saídas</p>
                     <p id="card-saidas" class="val-field text-lg font-black text-orange-500 mt-1">R$ 0,00</p>
                 </div>
-                <div onclick="abrirResumo('saldo')" class="bg-black/5 light-mode:bg-slate-100 p-3 rounded-lg cursor-pointer">
-                    <p class="text-xs text-slate-400">Saldo</p>
+                <div onclick="abrirResumo('saldo')" class="bg-slate-700 p-3 rounded-lg cursor-pointer hover:bg-slate-600 transition-all">
+                    <p class="text-xs text-slate-400 mb-1">Saldo</p>
                     <p id="card-saldo" class="val-field text-lg font-black text-blue-500 mt-1">R$ 0,00</p>
                 </div>
-                <div onclick="abrirResumo('cartao')" class="bg-black/5 light-mode:bg-slate-100 p-3 rounded-lg cursor-pointer">
-                    <p class="text-xs text-slate-400">Cartões</p>
+                <div onclick="abrirResumo('cartao')" class="bg-slate-700 p-3 rounded-lg cursor-pointer hover:bg-slate-600 transition-all">
+                    <p class="text-xs text-slate-400 mb-1">Cartões</p>
                     <p id="card-cartoes" class="val-field text-lg font-black text-rose-500 mt-1">R$ 0,00</p>
                 </div>
             </div>
 
             <!-- CARD LÍQUIDO -->
-            <div onclick="abrirResumo('saldo')" class="bg-black/5 light-mode:bg-slate-100 p-3 rounded-lg cursor-pointer">
+            <div onclick="abrirResumo('saldo')" class="bg-slate-700 p-3 rounded-lg cursor-pointer hover:bg-slate-600 transition-all">
                 <div class="flex justify-between items-center">
                     <p class="text-xs text-slate-400">Líquido</p>
                     <i class="fas fa-circle-question text-slate-500 text-xs"></i>
@@ -174,17 +174,17 @@
                 <p id="card-liquido" class="val-field text-xl font-black text-emerald-500 mt-1">R$ 0,00</p>
             </div>
         </div>
-    </div>
+    </header>
 
     <!-- CHAT BOX -->
     <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
 
     <!-- INPUT -->
-    <footer class="p-3 border-t border-slate-700 light-mode:border-slate-200">
+    <footer class="p-3 border-t border-slate-700">
         <div class="flex gap-2">
             <input id="user-input" type="text" placeholder="Ex: cafe 15 | recebi 500 salario"
                    onkeydown="if(event.key==='Enter') processarMensagem()"
-                   class="flex-1 bg-slate-700 light-mode:bg-slate-100 text-white light-mode:text-slate-900 px-4 py-3 rounded-xl outline-none">
+                   class="flex-1 bg-slate-700 text-white px-4 py-3 rounded-xl outline-none">
             <button onclick="processarMensagem()" class="bg-blue-600 text-white px-5 rounded-xl">
                 <i class="fas fa-paper-plane"></i>
             </button>
@@ -194,19 +194,19 @@
     <!-- BOTTOM NAV -->
     <nav class="bg-slate-800 border-t border-slate-700 flex justify-around py-2">
         <button class="nav-item active flex-col items-center gap-1 text-blue-500">
-            <span>💬</span>
+            <i class="fas fa-comment"></i>
             <span class="text-xs">Chat</span>
         </button>
         <button class="nav-item flex flex-col items-center gap-1 text-slate-400" onclick="abrirExtrato()">
-            <span>📋</span>
+            <i class="fas fa-clipboard-list"></i>
             <span class="text-xs">Extrato</span>
         </button>
         <button class="nav-item flex flex-col items-center gap-1 text-slate-400" onclick="abrirFaturas()">
-            <span>📊</span>
+            <i class="fas fa-chart-bar"></i>
             <span class="text-xs">Faturas</span>
         </button>
         <button class="nav-item flex flex-col items-center gap-1 text-slate-400" onclick="toggleMenu()">
-            <span>⋮</span>
+            <i class="fas fa-ellipsis-h"></i>
             <span class="text-xs">Mais</span>
         </button>
     </nav>
@@ -250,8 +250,6 @@
         <div id="resumo-lista" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
     </div>
 </div>
-
-<!-- RESTO DOS MODAIS MANTÉM IGUAL -->
 
 <script src="script.js"></script>
 </body>
