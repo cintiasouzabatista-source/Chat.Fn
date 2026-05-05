@@ -385,3 +385,18 @@ body.light-mode .bg-slate-600 {
 .modal[style*="display: flex"] {
     display: flex !important;
 }
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.modal[style*="display: flex"] {
+    display: flex !important;
+}
