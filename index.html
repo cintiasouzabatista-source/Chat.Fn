@@ -211,26 +211,28 @@
         </button>
     </nav>
 
-    <!-- MENU DROPDOWN -->
-    <div id="menuDropdown" class="hidden fixed bottom-16 right-4 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-2 w-48 z-50">
-        <button onclick="abrirContasCartoes()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm">
-            <i class="fas fa-credit-card mr-2"></i> Contas & Cartões
-        </button>
-        <button onclick="abrirContasFixas()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm">
-            <i class="fas fa-repeat mr-2"></i> Contas Fixas
-        </button>
-        <button id="btnSaldoProjetado" onclick="toggleSaldoProjetado()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm text-slate-400">
-            <i class="fas fa-chart-line mr-2"></i> Saldo Projetado
-        </button>
-        <button onclick="abrirTutorial()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm">
-            <i class="fas fa-question-circle mr-2"></i> Ajuda
-        </button>
-        <button onclick="abrirModalReset()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm text-rose-500">
-            <i class="fas fa-trash mr-2"></i> Resetar App
-        </button>
-    </div>
+<!-- MENU DROPDOWN -->
+<div id="menuDropdown" class="hidden fixed bottom-16 right-4 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-2 w-56 z-50">
+    <button onclick="abrirContasCartoes()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3">
+        <i class="fas fa-credit-card text-slate-400"></i> Contas & Cartões
+    </button>
+    <button onclick="abrirContasFixas()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3">
+        <i class="fas fa-repeat text-slate-400"></i> Contas Fixas
+    </button>
+    <button id="btnSaldoProjetado" onclick="toggleSaldoProjetado()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3 text-slate-400">
+        <i class="fas fa-chart-line"></i> Saldo Projetado
+    </button>
+    <div class="border-t border-slate-700 my-1"></div>
+    <button onclick="abrirTutorial()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3">
+        <i class="fas fa-question-circle text-slate-400"></i> Ajuda
+    </button>
+    <button onclick="esqueciPin()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3 text-amber-500">
+        <i class="fas fa-key"></i> Esqueci PIN
+    </button>
+    <button onclick="abrirModalReset()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3 text-rose-500">
+        <i class="fas fa-trash"></i> Resetar App
+    </button>
 </div>
-
 <!-- MODAL RESUMO CARDS -->
 <div id="modal-resumo-card" class="modal" style="display: none;">
     <div class="bg-slate-900 w-full max-w-md rounded-2xl border border-slate-700 max-h-[90vh] flex flex-col">
