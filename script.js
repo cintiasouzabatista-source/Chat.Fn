@@ -1403,15 +1403,14 @@ function abrirTutorial() {
 function iniciarApp() {
     console.log('Iniciando BankDay...');
     
-    // Força checar se é primeiro acesso ANTES de tudo
+    // Recalcula SEMPRE se tem PIN
     const PIN_SALVO_AGORA = localStorage.getItem('bankday_pin');
-    const EH_PRIMEIRO_ACESSO =!PIN_SALVO_AGORA;
     
-    if (EH_PRIMEIRO_ACESSO) {
-        // Primeiro acesso: cria PIN direto
+    if (!PIN_SALVO_AGORA) {
+        // Primeiro acesso: cria PIN
         initPin();
     } else {
-        // Já tem PIN: verifica teste expirado antes de pedir
+        // Já tem PIN: verifica teste expirado antes
         if (verificarTesteExpirado()) return;
         initPin();
     }
@@ -1428,6 +1427,7 @@ function initPin() {
     const subtitulo = document.getElementById('pin-subtitulo');
     const btnEsqueci = document.getElementById('btn-esqueci');
     
+    // RECALCULA AQUI DENTRO
     const PIN_SALVO = localStorage.getItem('bankday_pin');
     const EH_PRIMEIRO =!PIN_SALVO;
 
@@ -1447,7 +1447,10 @@ function initPin() {
     }
 
     const inputs = document.querySelectorAll('.pin-input');
-    inputs.forEach(i => i.value = '');
+    inputs.forEach(i => {
+        i.value = '';
+        i.disabled = false;
+    });
     inputs[0].focus();
     
     inputs.forEach((input, idx) => {
@@ -1470,27 +1473,67 @@ function initPin() {
     appContent.style.display = 'none';
 }
 
-// MENU - garante que abre
+function validarPin() {
+    const inputs = document.querySelectorAll('.pin-input');
+    const pinDigitado = Array.from(inputs).map(i => i.value).join('');
+    if (pinDigitado.length!== 4) return;
+    
+    const erro = document.getElementById('pin-erro');
+    // RECALCULA AQUI TAMBÉM
+    const PIN_SALVO = localStorage.getItem('bankday_pin');
+    const EH_PRIMEIRO =!PIN_SALVO;
+    
+    if (EH_PRIMEIRO) {
+        localStorage.setItem('bankday_pin', btoa(pinDigitado));
+        liberarApp();
+    } else {
+        if (btoa(pinDigitado) === PIN_SALVO) {
+            tentativasPin = 0;
+            liberarApp();
+        } else {
+            tentativasPin++;
+            erro.textContent = `PIN incorreto. ${3 - tentativasPin} tentativas restantes`;
+            erro.classList.remove('hidden');
+            inputs.forEach(i => {
+                i.value = '';
+                i.classList.add('border-rose-500');
+            });
+            inputs[0].focus();
+            setTimeout(() => {
+                inputs.forEach(i => i.classList.remove('border-rose-500'));
+            }, 1000);
+            if (tentativasPin >= 3) {
+                pinBloqueadoAte = Date.now() + 30000;
+                bloquearPin(30);
+            }
+        }
+    }
+}
+
+// MENU - USA classList, NÃO style.display
 function toggleMenu() {
     const menu = document.getElementById('menuDropdown');
     if (!menu) return;
-    const isOpen =!menu.classList.contains('hidden');
+    
+    const isHidden = menu.classList.contains('hidden');
     
     if (menuTimeout) clearTimeout(menuTimeout);
     
-    if (isOpen) {
-        menu.classList.add('hidden');
-    } else {
+    if (isHidden) {
         menu.classList.remove('hidden');
         menuTimeout = setTimeout(() => {
             menu.classList.add('hidden');
         }, 10000);
+    } else {
+        menu.classList.add('hidden');
     }
 }
+
 document.addEventListener('click', function(e) {
     const menu = document.getElementById('menuDropdown');
     const btn = document.getElementById('btnMenu');
-    if (!menu.classList.contains('hidden') &&!menu.contains(e.target) &&!btn.contains(e.target)) {
+    if (!menu || menu.classList.contains('hidden')) return;
+    if (!menu.contains(e.target) &&!btn.contains(e.target)) {
         menu.classList.add('hidden');
         if (menuTimeout) clearTimeout(menuTimeout);
     }
