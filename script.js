@@ -1402,28 +1402,96 @@ function abrirTutorial() {
 // Init - RODA SEMPRE
 function iniciarApp() {
     console.log('Iniciando BankDay...');
-    initPin();
+    
+    // Força checar se é primeiro acesso ANTES de tudo
+    const PIN_SALVO_AGORA = localStorage.getItem('bankday_pin');
+    const EH_PRIMEIRO_ACESSO =!PIN_SALVO_AGORA;
+    
+    if (EH_PRIMEIRO_ACESSO) {
+        // Primeiro acesso: cria PIN direto
+        initPin();
+    } else {
+        // Já tem PIN: verifica teste expirado antes de pedir
+        if (verificarTesteExpirado()) return;
+        initPin();
+    }
+    
     atualizarMes();
     aplicarVisualSaldoProjetado();
     atualizarCalculos();
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', iniciarApp);
-} else {
-    iniciarApp(); // Roda direto se o HTML já carregou
-}
-// Init - RODA SEMPRE
-function iniciarApp() {
-    console.log('Iniciando BankDay...');
-    initPin();
-    atualizarMes();
-    aplicarVisualSaldoProjetado();
-    atualizarCalculos();
+function initPin() {
+    const telaPin = document.getElementById('tela-pin');
+    const appContent = document.getElementById('app-content');
+    const titulo = document.getElementById('pin-titulo');
+    const subtitulo = document.getElementById('pin-subtitulo');
+    const btnEsqueci = document.getElementById('btn-esqueci');
+    
+    const PIN_SALVO = localStorage.getItem('bankday_pin');
+    const EH_PRIMEIRO =!PIN_SALVO;
+
+    if (EH_PRIMEIRO) {
+        titulo.textContent = 'Crie seu PIN';
+        subtitulo.textContent = '4 dígitos para proteger o app';
+        btnEsqueci.classList.add('hidden');
+    } else {
+        titulo.textContent = 'Digite seu PIN';
+        subtitulo.textContent = 'Para acessar o app';
+        btnEsqueci.classList.remove('hidden');
+        const agora = Date.now();
+        if (pinBloqueadoAte > agora) {
+            const segundos = Math.ceil((pinBloqueadoAte - agora) / 1000);
+            bloquearPin(segundos);
+        }
+    }
+
+    const inputs = document.querySelectorAll('.pin-input');
+    inputs.forEach(i => i.value = '');
+    inputs[0].focus();
+    
+    inputs.forEach((input, idx) => {
+        input.oninput = (e) => {
+            if (e.target.value.length === 1 && idx < 3) {
+                inputs[idx + 1].focus();
+            }
+            if (idx === 3 && e.target.value.length === 1) {
+                setTimeout(validarPin, 100);
+            }
+        };
+        input.onkeydown = (e) => {
+            if (e.key === 'Backspace' && e.target.value === '' && idx > 0) {
+                inputs[idx - 1].focus();
+            }
+        };
+    });
+
+    telaPin.style.display = 'flex';
+    appContent.style.display = 'none';
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', iniciarApp);
-} else {
-    iniciarApp();
+// MENU - garante que abre
+function toggleMenu() {
+    const menu = document.getElementById('menuDropdown');
+    if (!menu) return;
+    const isOpen =!menu.classList.contains('hidden');
+    
+    if (menuTimeout) clearTimeout(menuTimeout);
+    
+    if (isOpen) {
+        menu.classList.add('hidden');
+    } else {
+        menu.classList.remove('hidden');
+        menuTimeout = setTimeout(() => {
+            menu.classList.add('hidden');
+        }, 10000);
+    }
 }
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('menuDropdown');
+    const btn = document.getElementById('btnMenu');
+    if (!menu.classList.contains('hidden') &&!menu.contains(e.target) &&!btn.contains(e.target)) {
+        menu.classList.add('hidden');
+        if (menuTimeout) clearTimeout(menuTimeout);
+    }
+});
