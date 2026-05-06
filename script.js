@@ -65,21 +65,28 @@ function identificarCategoria(desc, tipo = 'saida') {
 // INIT
 function iniciarApp() {
     const modo = localStorage.getItem('bankday_modo');
+    
+    const modalOnboarding = document.getElementById('modal-onboarding');
+    const telaPin = document.getElementById('tela-pin');
+    const appContent = document.getElementById('app-content');
+    
     if (!modo) {
-        document.getElementById('app-content').style.display = 'none';
-        document.getElementById('tela-pin').style.display = 'none';
-        setTimeout(() => document.getElementById('modal-onboarding').style.display = 'flex', 300);
+        if (appContent) appContent.style.display = 'none';
+        if (telaPin) telaPin.style.display = 'none';
+        if (modalOnboarding) modalOnboarding.style.display = 'flex';
         atualizarMes();
         atualizar();
         return;
     }
+    
     if (modo === 'teste') {
-        document.getElementById('tela-pin').style.display = 'none';
-        document.getElementById('app-content').style.display = 'flex';
+        if (telaPin) telaPin.style.display = 'none';
+        if (appContent) appContent.style.display = 'flex';
         if (!contas.length) contas = [{nome: 'Conta Teste', saldoInicial: 0}];
     } else {
         initPin();
     }
+    
     atualizarMes();
     atualizar();
 }
