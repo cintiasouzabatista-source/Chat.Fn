@@ -844,57 +844,47 @@ function abrirExtrato(tipo) {
     filtrarExtrato();
 }
 
-window.onload = function() {
-    try {
-        console.log('Iniciando app...');
-        const modo = localStorage.getItem('bankday_modo');
-
-        if (!modo) {
-            document.getElementById('modal-onboarding').style.display = 'flex';
-            document.getElementById('app-content').style.display = 'none';
-            document.getElementById('tela-pin').style.display = 'none';
-        } else if (modo === 'teste') {
-            document.getElementById('modal-onboarding').style.display = 'none';
-            document.getElementById('tela-pin').style.display = 'none';
-            document.getElementById('app-content').style.display = 'flex';
-            if (!contas.length) contas = [{nome: 'Principal', saldoInicial: 0}];
-            salvar();
-        } else if (modo === 'producao') {
-            document.getElementById('modal-onboarding').style.display = 'none';
-            document.getElementById('app-content').style.display = 'none';
-            initPin();
-        }
-
-        atualizarMes();
-        atualizar();
-
-        // LIGA O ENTER
-        const input = document.getElementById('user-input');
-        if (input) {
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    console.log('Enter pressionado');
-                    processarMensagem();
-                }
-            });
-            console.log('Input ligado');
-        } else {
-            console.error('user-input não encontrado');
-        }
-
-        // LIGA O BOTÃO
-        const btn = document.querySelector('.btn-send');
-        if (btn) {
-            btn.onclick = processarMensagem;
-            console.log('Botão ligado');
-        } else {
-            console.error('btn-send não encontrado');
-        }
-
-        console.log('App carregado');
-    } catch(e) {
-        console.error('ERRO AO INICIAR:', e);
-        alert('Erro: ' + e.message);
+// LIGA TUDO QUANDO O DOM CARREGAR
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado');
+    
+    const modo = localStorage.getItem('bankday_modo');
+    
+    if (!modo) {
+        document.getElementById('modal-onboarding').style.display = 'flex';
+        document.getElementById('app-content').style.display = 'none';
+        document.getElementById('tela-pin').style.display = 'none';
+    } else if (modo === 'teste') {
+        document.getElementById('modal-onboarding').style.display = 'none';
+        document.getElementById('tela-pin').style.display = 'none';
+        document.getElementById('app-content').style.display = 'flex';
+        if (!contas.length) contas = [{nome: 'Principal', saldoInicial: 0}];
+        salvar();
+    } else if (modo === 'producao') {
+        document.getElementById('modal-onboarding').style.display = 'none';
+        document.getElementById('app-content').style.display = 'none';
+        initPin();
     }
-};
+    
+    atualizarMes();
+    atualizar();
+    
+    // LIGA INPUT E BOTÃO AQUI
+    const input = document.getElementById('user-input');
+    const btn = document.getElementById('btn-enviar');
+    
+    if(input) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                processarMensagem();
+            }
+        });
+        console.log('Input OK');
+    }
+    
+    if(btn) {
+        btn.addEventListener('click', processarMensagem);
+        console.log('Botão OK');
+    }
+});
