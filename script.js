@@ -61,10 +61,8 @@ function identificarCategoria(desc, tipo = 'saida') {
     return tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
 }
 
-// INIT
 function iniciarApp() {
     const modo = localStorage.getItem('bankday_modo');
-
     const modalOnboarding = document.getElementById('modal-onboarding');
     const telaPin = document.getElementById('tela-pin');
     const appContent = document.getElementById('app-content');
@@ -97,7 +95,6 @@ function iniciarApp() {
     atualizar();
 }
 
-// PIN
 function initPin() {
     const telaPin = document.getElementById('tela-pin');
     const PIN_SALVO = localStorage.getItem('bankday_pin');
@@ -231,7 +228,6 @@ function selecionarModo(tipo) {
     document.getElementById('app-content').style.display = 'flex';
 }
 
-// CHAT
 function addMensagem(texto, tipo = 'system', info = '', autoLimpar = true, id = null) {
     const chat = document.getElementById("chat-box");
     if (!chat) return;
@@ -367,7 +363,6 @@ function parceleiNoCartao(descricao, valorTotal, parcelas, cartaoNome) {
     atualizar();
 }
 
-// ATUALIZAR CARDS
 function atualizar() {
     const mes = mesAtual.getMonth(), ano = mesAtual.getFullYear();
     const dadosMes = dados.filter(d => {
@@ -408,7 +403,6 @@ function mudarMes(d) {
     atualizarMes();
 }
 
-// HEADER
 function toggleTheme() {
     document.body.classList.toggle('dark');
     const icon = document.getElementById('theme-icon');
@@ -445,7 +439,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// NAVEGAÇÃO
 function trocarAba(aba) {
     document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
     if (event && event.target) event.target.closest('.nav-item')?.classList.add('active');
@@ -458,7 +451,6 @@ function trocarAba(aba) {
     }
 }
 
-// MODAIS
 function abrirModal(id) {
     const modal = document.getElementById(id);
     if (modal) modal.style.display = 'flex';
@@ -476,7 +468,6 @@ function fecharModal(id) {
     if (modal) modal.style.display = 'none';
 }
 
-// EXTRATO
 function filtrarExtrato() {
     const tipo = document.getElementById('filtro-tipo')?.value || '';
     const cat = document.getElementById('filtro-categoria')?.value || '';
@@ -512,7 +503,6 @@ function filtrarExtrato() {
     }
 }
 
-// GRÁFICOS
 function abrirGraficos() {
     trocarAba('graficos');
     document.getElementById('modal-graficos').style.display = 'flex';
@@ -537,10 +527,10 @@ function trocarGrafico(tipo) {
     const btnCat = document.getElementById('btn-cat');
     const btnTipo = document.getElementById('btn-tipo');
     if (btnCat) btnCat.className = tipo === 'categoria'
-    ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+   ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
         : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
     if (btnTipo) btnTipo.className = tipo === 'tipo'
-    ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+   ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
         : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
     desenharGrafico();
 }
@@ -697,7 +687,6 @@ function desenharGrafico() {
     }
 }
 
-// CONTAS E CARTÕES
 function renderizarListaTemp() {
     const listaContas = document.getElementById('lista-contas-temp');
     const listaCartoes = document.getElementById('lista-cartoes-temp');
@@ -766,7 +755,6 @@ function finalizarCadastro() {
     addMensagem(`Configuração salva: ${contas.length} contas e ${cartoes.length} cartões`, 'system');
 }
 
-// EDITAR TRANSAÇÃO
 function abrirModalEditar(id) {
     editandoId = id;
     const t = dados.find(d => d.id === id);
@@ -799,4 +787,93 @@ function atualizarContasModal() {
 }
 
 function atualizarCategorias() {
-    const tipo = document.get
+    const tipo = document.getElementById('edit-tipo').value;
+    const selectCat = document.getElementById('edit-categoria');
+    selectCat.innerHTML = '';
+    const catsDoTipo = CATEGORIAS || CATEGORIAS['saida'];
+    Object.keys(catsDoTipo).forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        selectCat.appendChild(opt);
+    });
+}
+
+
+
+function salvarEdicao() {
+    const t = dados.find(d => d.id === editandoId);
+    if (!t) return;
+    t.descricao = document.getElementById('edit-desc').value;
+    t.valor = parseFloat(document.getElementById('edit-valor').value) || t.valor;
+    t.tipo = document.getElementById('edit-tipo').value;
+    t.metodo = document.getElementById('edit-metodo').value;
+    t.banco = document.getElementById('edit-banco').value;
+    t.categoria = document.getElementById('edit-categoria').value;
+    t.data = new Date(document.getElementById('edit-data').value).toISOString();
+    salvar();
+    atualizar();
+    fecharModal('modal-editar');
+    addMensagem('Transação editada', 'system', `${t.descricao} - R$ ${t.valor.toFixed(2)}`);
+}
+
+function deletarTransacao() {
+    dados = dados.filter(d => d.id!== editandoId);
+    salvar();
+    atualizar();
+    fecharModal('modal-editar');
+    addMensagem('Transação excluída', 'system');
+}
+
+function resetarTransacoes() {
+    if (!confirm('Apagar todas as transações? Contas e cartões serão mantidos.')) return;
+    dados = [];
+    salvar();
+    atualizar();
+    addMensagem('Transações limpas', 'system');
+    toggleMenu();
+}
+
+function resetarApp() {
+    if (!confirm('Apagar TUDO? Não tem volta.')) return;
+    localStorage.clear();
+    location.reload();
+}
+
+function toggleProjetado() {
+    config.projetarSaldo =!config.projetarSaldo;
+    salvar();
+    aplicarVisualSaldoProjetado();
+    atualizar();
+    toggleMenu();
+    addMensagem(`Projeção ${config.projetarSaldo? 'ativada' : 'desativada'}`, 'system');
+}
+
+function aplicarVisualSaldoProjetado() {
+    const btn = document.getElementById('btnProjetado');
+    if (!btn) return;
+    if (config.projetarSaldo) {
+        btn.classList.remove('text-slate-400');
+        btn.classList.add('text-blue-500');
+    } else {
+        btn.classList.add('text-slate-400');
+        btn.classList.remove('text-blue-500');
+    }
+}
+
+function editarContaCartao(tipo, idx) {
+    // placeholder pra edição futura
+    alert('Edição em breve');
+}
+
+function abrirExtrato(tipo) {
+    if (tipo === 'entrada') document.getElementById('filtro-tipo').value = 'entrada';
+    if (tipo === 'saida') document.getElementById('filtro-tipo').value = 'saida';
+    if (tipo === 'cartao') document.getElementById('filtro-tipo').value = 'cartao';
+    if (tipo === 'saldo') document.getElementById('filtro-tipo').value = '';
+    abrirModal('modal-extrato');
+    filtrarExtrato();
+}
+
+// INIT FINAL
+document.addEventListener('DOMContentLoaded', iniciarApp);
