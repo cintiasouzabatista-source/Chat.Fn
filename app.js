@@ -1,8 +1,14 @@
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker
-    .register('./sw.js')
-    .catch(err => console.error('SW erro:', err));
+   .register('./sw.js')
+   .catch(err => console.error('SW erro:', err));
 }
+
+// VARIÁVEIS GLOBAIS
+let tentativasPin = 0;
+let pinBloqueadoAte = 0;
+let modoTeste = localStorage.getItem('bankday_modo') === 'teste';
+let modoProducao = localStorage.getItem('bankday_modo') === 'producao';
 
 let dados = JSON.parse(localStorage.getItem('bankday') || '[]');
 let contas = JSON.parse(localStorage.getItem('bankday_contas') || '[]');
@@ -23,11 +29,13 @@ let tempContas = [];
 let tempCartoes = [];
 let editandoContaCartao = {tipo: null, index: -1};
 let chartInstance = null;
+let tutorialStep = 1;
+const TOTAL_STEPS = 4;
 
 const formatar = v => {
  v = Number(v) || 0;
  return valoresOcultos
-  ? 'R$ ••••'
+? 'R$ ••••'
    : `R$ ${v.toFixed(2).replace('.',',')}`;
 };
 const cap = s => s? s.charAt(0).toUpperCase() + s.slice(1) : '';
@@ -65,6 +73,389 @@ function identificarCategoria(descricao, tipo = 'saida') {
     return tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
 }
 
+// FUNÇÕES TESTE OU PRODUÇÃO
+function verificarTesteExpirado() {
+    if (!modoTeste) return false;
+    const expira = parseInt(localStorage.getItem('bankday_teste_expira') || '0');
+    const agora = Date.now();
+    if (agora > expira && expira > 0) {
+        bloquearTesteExpirado();
+        return true;
+    }
+    return false;
+}
+
+function bloquearTesteExpirado() {
+    document.getElementById('app-content').innerHTML = `
+        <div class="flex items-center justify-center min-h-screen p-6">
+            <div class="max-w-sm w-full text-center">
+                <div class="bg-amber-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-clock text-white text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-black mb-2">Teste Expirado</h2>
+                <p class="text-slate-400 mb-6">Seu período de teste de 48h acabou. Para continuar usando o BankDay, migre para Produção.</p>
+                <button onclick="converterParaProducao()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold mb-3">
+                    Migrar para Produção
+                </button>
+                <button onclick="resetarApp()" class="w-full bg-slate-700 text-slate-300 py-3 rounded-lg font-bold">
+                    Apagar tudo e recomeçar
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function converterParaProducao() {
+    if (confirm('Migrar para Produção?\n\nOs dados de teste serão apagados.')) {
+        localStorage.setItem('bankday_modo', 'producao');
+        localStorage.removeItem('bankday');
+        localStorage.removeItem('bankday_teste_expira');
+        location.reload();
+    }
+}
+
+function resetarApp() {
+    if (confirm('Isso vai apagar TODOS os dados e voltar pro início. Confirma?')) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+function mostrarBannerTeste() {
+    if (!modoTeste) return;
+    const appContent = document.getElementById('app-content');
+    const bannerExiste = document.getElementById('banner-teste');
+    if (bannerExiste) return;
+    const banner = document.createElement('div');
+    banner.id = 'banner-teste';
+    banner.className = 'bg-amber-600/20 border-b border-amber-600 text-amber-500 text-center py-2 px-4 text-xs font-bold';
+    banner.innerHTML = `
+        <div class="flex items-center justify-between max-w-4xl mx-auto">
+            <span><i class="fas fa-flask mr-2"></i>Modo Teste Ativo</span>
+            <button onclick="converterParaProducao()" class="bg-amber-600 text-white px-3 py-1 rounded text-xs font-bold">
+                Migrar para Produção
+            </button>
+        </div>
+    `;
+    appContent.insertBefore(banner, appContent.firstChild);
+}
+
+function mostrarToastExpiracao() {
+    const expira = parseInt(localStorage.getItem('bankday_teste_expira') || '0');
+    const agora = Date.now();
+    const msRestantes = expira - agora;
+    if (msRestantes <= 0) return;
+    const horasRestantes = Math.floor(msRestantes / (1000 * 60 * 60));
+    const minutosRestantes = Math.floor((msRestantes % (1000 * 60 * 60)) / (1000 * 60));
+    const toast = document.getElementById('toast-expiracao');
+    if (!toast) return;
+    const titulo = document.getElementById('toast-titulo');
+    const tempo = document.getElementById('toast-tempo');
+    if (horasRestantes <= 1) {
+        toast.querySelector('div').className = 'bg-rose-600 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 min-w-[280px] animate-pulse';
+        titulo.textContent = 'Teste acabando!';
+        tempo.textContent = minutosRestantes > 0? `Faltam ${minutosRestantes}min` : 'Menos de 1min';
+    } else if (horasRestantes <= 6) {
+        toast.querySelector('div').className = 'bg-orange-600 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 min-w-[280px]';
+        titulo.textContent = 'Teste expirando';
+        tempo.textContent = `Faltam ${horasRestantes}h`;
+    } else {
+        toast.querySelector('div').className = 'bg-amber-600 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 min-w-[280px]';
+        titulo.textContent = 'Modo Teste';
+        tempo.textContent = `Faltam ${horasRestantes}h`;
+    }
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 5000);
+}
+
+function fecharToastExpiracao() {
+    const toast = document.getElementById('toast-expiracao');
+    if (toast) toast.classList.add('hidden');
+}
+
+function selecionarModo(tipo) {
+    const agora = Date.now();
+    localStorage.setItem('bankday_modo', tipo);
+    localStorage.setItem('bankday_modo_inicio', agora);
+    document.getElementById('modal-onboarding').style.display = 'none';
+    if (tipo === 'producao') {
+        modoProducao = true;
+        modoTeste = false;
+        setTimeout(() => {
+            document.getElementById('modal-cadastro-conta').style.display = 'flex';
+        }, 300);
+    } else {
+        modoTeste = true;
+        modoProducao = false;
+        localStorage.setItem('bankday_teste_expira', agora + (48 * 60 * 60 * 1000));
+        if (!contas.length || contas[0].nome!== 'Conta Teste') {
+            contas = [{nome: 'Conta Teste', saldoInicial: 0}];
+            localStorage.setItem('bankday_contas', JSON.stringify(contas));
+        }
+        document.getElementById('app-content').style.display = 'flex';
+        mostrarBannerTeste();
+        mostrarToastExpiracao();
+        setTimeout(() => {
+            document.getElementById('tutorial').style.display = 'flex';
+        }, 300);
+    }
+}
+
+function salvarContaProducao() {
+    const nome = document.getElementById('cadastro-conta-nome').value.trim();
+    const saldo = parseFloat(document.getElementById('cadastro-conta-saldo').value) || 0;
+    if (!nome) {
+        alert('Digite o nome da conta');
+        return;
+    }
+    contas = [{nome, saldoInicial: saldo}];
+    localStorage.setItem('bankday_contas', JSON.stringify(contas));
+    if (saldo > 0) {
+        dados.push({
+            id: Date.now(),
+            descricao: 'Saldo inicial',
+            valor: saldo,
+            tipo: 'entrada',
+            metodo: 'conta',
+            banco: nome,
+            data: new Date().toISOString(),
+            categoria: 'Outras Receitas',
+            isSaldoInicial: true
+        });
+        salvar();
+    }
+    document.getElementById('modal-cadastro-conta').style.display = 'none';
+    initPin();
+}
+
+// INIT PRINCIPAL
+function iniciarApp() {
+    console.log('Iniciando BankDay...');
+
+    const modo = localStorage.getItem('bankday_modo');
+
+    if (!modo) {
+        document.getElementById('app-content').style.display = 'none';
+        document.getElementById('tela-pin').style.display = 'none';
+        setTimeout(() => {
+            document.getElementById('modal-onboarding').style.display = 'flex';
+        }, 300);
+        atualizarMes();
+        aplicarVisualSaldoProjetado();
+        atualizar();
+        return;
+    }
+
+    if (modo === 'teste') {
+        if (verificarTesteExpirado()) return;
+        document.getElementById('tela-pin').style.display = 'none';
+        document.getElementById('app-content').style.display = 'flex';
+        mostrarBannerTeste();
+        mostrarToastExpiracao();
+        verificarTutorial();
+    }
+    else if (modo === 'producao') {
+        initPin();
+    }
+
+    atualizarMes();
+    aplicarVisualSaldoProjetado();
+    atualizar();
+}
+
+function initPin() {
+    const telaPin = document.getElementById('tela-pin');
+    const appContent = document.getElementById('app-content');
+    const titulo = document.getElementById('pin-titulo');
+    const subtitulo = document.getElementById('pin-subtitulo');
+    const btnEsqueci = document.getElementById('btn-esqueci');
+
+    const PIN_SALVO = localStorage.getItem('bankday_pin');
+    const EH_PRIMEIRO =!PIN_SALVO;
+
+    if (EH_PRIMEIRO) {
+        titulo.textContent = 'Crie seu PIN';
+        subtitulo.textContent = '4 dígitos para proteger o app';
+        btnEsqueci.classList.add('hidden');
+    } else {
+        titulo.textContent = 'Digite seu PIN';
+        subtitulo.textContent = 'Para acessar o app';
+        btnEsqueci.classList.remove('hidden');
+        const agora = Date.now();
+        if (pinBloqueadoAte > agora) {
+            const segundos = Math.ceil((pinBloqueadoAte - agora) / 1000);
+            bloquearPin(segundos);
+        }
+    }
+
+    const inputs = document.querySelectorAll('.pin-input');
+    inputs.forEach(i => {
+        i.value = '';
+        i.disabled = false;
+        i.classList.remove('border-rose-500');
+    });
+    inputs[0].focus();
+
+    inputs.forEach((input, idx) => {
+        input.oninput = (e) => {
+            if (e.target.value.length === 1 && idx < 3) {
+                inputs[idx + 1].focus();
+            }
+            if (idx === 3 && e.target.value.length === 1) {
+                setTimeout(validarPin, 100);
+            }
+        };
+        input.onkeydown = (e) => {
+            if (e.key === 'Backspace' && e.target.value === '' && idx > 0) {
+                inputs[idx - 1].focus();
+            }
+        };
+    });
+
+    telaPin.style.display = 'flex';
+    appContent.style.display = 'none';
+}
+
+function validarPin() {
+    const inputs = document.querySelectorAll('.pin-input');
+    const pinDigitado = Array.from(inputs).map(i => i.value).join('');
+    if (pinDigitado.length!== 4) return;
+
+    const erro = document.getElementById('pin-erro');
+    const PIN_SALVO = localStorage.getItem('bankday_pin');
+    const EH_PRIMEIRO =!PIN_SALVO;
+
+    if (EH_PRIMEIRO) {
+        localStorage.setItem('bankday_pin', btoa(pinDigitado));
+        liberarApp();
+    } else {
+        if (btoa(pinDigitado) === PIN_SALVO) {
+            tentativasPin = 0;
+            liberarApp();
+        } else {
+            tentativasPin++;
+            erro.textContent = `PIN incorreto. ${3 - tentativasPin} tentativas restantes`;
+            erro.classList.remove('hidden');
+            inputs.forEach(i => {
+                i.value = '';
+                i.classList.add('border-rose-500');
+            });
+            inputs[0].focus();
+            setTimeout(() => {
+                inputs.forEach(i => i.classList.remove('border-rose-500'));
+            }, 1000);
+            if (tentativasPin >= 3) {
+                pinBloqueadoAte = Date.now() + 30000;
+                bloquearPin(30);
+            }
+        }
+    }
+}
+
+function bloquearPin(segundos) {
+    const inputs = document.querySelectorAll('.pin-input');
+    const erro = document.getElementById('pin-erro');
+    inputs.forEach(i => {
+        i.disabled = true;
+        i.value = '';
+    });
+    let contador = segundos;
+    erro.classList.remove('hidden');
+    const interval = setInterval(() => {
+        erro.textContent = `Muitas tentativas. Tente em ${contador}s`;
+        contador--;
+        if (contador < 0) {
+            clearInterval(interval);
+            inputs.forEach(i => i.disabled = false);
+            erro.classList.add('hidden');
+            inputs[0].focus();
+            tentativasPin = 0;
+        }
+    }, 1000);
+}
+
+function liberarApp() {
+    document.getElementById('tela-pin').style.display = 'none';
+    document.getElementById('app-content').style.display = 'flex';
+    verificarTutorial();
+}
+
+function esqueciPin() {
+    if (confirm('Esqueceu o PIN?\n\nIsso vai apagar TODOS os dados do app:\n- Transações\n- Contas\n- Cartões\n\nNão tem volta!')) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+// MENU
+function toggleMenu() {
+    const menu = document.getElementById('menuDropdown');
+    if (!menu) return;
+
+    const isHidden = menu.classList.contains('hidden');
+
+    if (menuTimeout) clearTimeout(menuTimeout);
+
+    if (isHidden) {
+        menu.classList.remove('hidden');
+        menuTimeout = setTimeout(() => {
+            menu.classList.add('hidden');
+        }, 10000);
+    } else {
+        menu.classList.add('hidden');
+    }
+}
+
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('menuDropdown');
+    const btn = document.getElementById('btnMenu');
+    if (!menu || menu.classList.contains('hidden')) return;
+    if (!menu.contains(e.target) &&!btn.contains(e.target)) {
+        menu.classList.add('hidden');
+        if (menuTimeout) clearTimeout(menuTimeout);
+    }
+});
+
+// TUTORIAL
+function verificarTutorial() {
+    const viuTutorial = localStorage.getItem('bankday_tutorial');
+    const PIN_SALVO = localStorage.getItem('bankday_pin');
+    const EH_PRIMEIRO =!PIN_SALVO;
+
+    if (!viuTutorial && modoProducao) {
+        setTimeout(() => {
+            document.getElementById('tutorial').style.display = 'flex';
+        }, 500);
+    }
+}
+
+function proximoTutorial() {
+    document.getElementById(`tutorial-step-${tutorialStep}`).classList.add('hidden');
+    document.querySelectorAll('.tutorial-dot')[tutorialStep - 1].classList.replace('bg-blue-600', 'bg-slate-600');
+    tutorialStep++;
+    if (tutorialStep > TOTAL_STEPS) {
+        finalizarTutorial();
+        return;
+    }
+    document.getElementById(`tutorial-step-${tutorialStep}`).classList.remove('hidden');
+    document.querySelectorAll('.tutorial-dot')[tutorialStep - 1].classList.replace('bg-slate-600', 'bg-blue-600');
+    if (tutorialStep === TOTAL_STEPS) {
+        document.getElementById('btn-tutorial-prox').textContent = 'Começar';
+    }
+}
+
+function pularTutorial() {
+    if (confirm('Pular tutorial? Você pode ver depois em Mais > Ajuda')) {
+        finalizarTutorial();
+    }
+}
+
+function finalizarTutorial() {
+    localStorage.setItem('bankday_tutorial', 'true');
+    document.getElementById('tutorial').style.display = 'none';
+    document.getElementById('user-input').focus();
+}
+
 function addMensagem(texto, tipo = 'system', info = '', autoLimpar = true, id = null) {
     const chat = document.getElementById("chat-mensagens");
     const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -74,34 +465,9 @@ function addMensagem(texto, tipo = 'system', info = '', autoLimpar = true, id = 
     div.innerHTML = `<div class="msg-bubble">${texto}${info? `<div class="msg-info">${info}</div>` : ''}<div class="msg-time">${hora}</div></div>`;
     chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
-  if (autoLimpar) { // remove o '&& tipo === 'system''
-    setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 8000);
-}
-}
-
-function toggleMenu() {
-    let m = document.getElementById('menuDropdown');
-    if (!m) {
-        m = document.createElement('div');
-        m.id = 'menuDropdown';
-        m.className = 'menu-dropdown';
-        document.body.appendChild(m);
+    if (autoLimpar) {
+        setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 8000);
     }
-    m.innerHTML = `
-        <button onclick="abrirCadastroInicial()">Gerenciar Contas/Cartões</button>
-        <button onclick="toggleProjetarSaldo()">${config.projetarSaldo? '✓' : ''} Projetar Saldo Próximo Mês</button>
-        <button onclick="resetarTransacoes()">Resetar Transações</button>
-        <button onclick="resetarTudo()">Resetar Tudo</button>
-    `;
-    m.style.display = m.style.display === 'flex'? 'none' : 'flex';
-}
-
-function toggleProjetarSaldo() {
-    config.projetarSaldo =!config.projetarSaldo;
-    salvar();
-    toggleMenu();
-    atualizar();
-    addMensagem(`Projeção ${config.projetarSaldo? 'ativada' : 'desativada'}`, 'system');
 }
 
 function toggleMenuMais() {
@@ -117,7 +483,7 @@ function toggleMenuMais() {
             <span>💳</span> Gerenciar Contas/Cartões
         </button>
         <button onclick="toggleProjetarSaldo()">
-            <span>${config.projetarSaldo ? '✓' : ''}</span> Projetar Saldo Próximo Mês
+            <span>${config.projetarSaldo? '✓' : ''}</span> Projetar Saldo Próximo Mês
         </button>
         <button onclick="resetarTransacoes()">
             <span>🗑️</span> Resetar Transações
@@ -126,8 +492,9 @@ function toggleMenuMais() {
             <span>⚠️</span> Resetar Tudo
         </button>
     `;
-    m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+    m.style.display = m.style.display === 'flex'? 'none' : 'flex';
 }
+
 function abrirCadastroInicial() {
     tempContas = [...contas];
     tempCartoes = [...cartoes];
@@ -372,34 +739,22 @@ function mostrarGrafico(tipo){
             },
             options: { indexAxis: 'x' }
         });
-  } else if (tipo === 'bancos') {
-    const bancos = {};
-
-    dadosMes.forEach(d => {
-        bancos[d.banco] =
-            (bancos[d.banco] || 0) + d.valor;
-    });
-
-    chartInstance = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: Object.keys(bancos),
-            datasets: [{
-                data: Object.values(bancos),
-                backgroundColor: [
-                    '#25d366',
-                    '#00a884',
-                    '#075e54',
-                    '#4ade80',
-                    '#ef4444',
-                    '#f87171',
-                    '#fbbf24',
-                    '#a78bfa'
-                ]
-            }]
-        }
-    });
-  }
+    } else if (tipo === 'bancos') {
+        const bancos = {};
+        dadosMes.forEach(d => {
+            bancos[d.banco] = (bancos[d.banco] || 0) + d.valor;
+        });
+        chartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(bancos),
+                datasets: [{
+                    data: Object.values(bancos),
+                    backgroundColor: ['#25d366', '#00a884', '#075e54', '#4ade80', '#ef4444', '#f87171', '#fbbf24', '#a78bfa']
+                }]
+            }
+        });
+    }
 }
 
 function abrirModalEditar(id) {
@@ -591,46 +946,52 @@ function enviar() {
 
 function atualizar() {
     const mes = mesAtual.getMonth(), ano = mesAtual.getFullYear();
-    const dadosMes = dados.filter(d => { 
-        const dt = new Date(d.data); 
-        return dt.getMonth() === mes && dt.getFullYear() === ano; 
+    const dadosMes = dados.filter(d => {
+        const dt = new Date(d.data);
+        return dt.getMonth() === mes && dt.getFullYear() === ano;
     });
-    
+
     const ent = dadosMes.filter(d => d.tipo === 'entrada').reduce((s,d) => s + d.valor, 0);
-    const sai = dadosMes.filter(d => d.tipo === 'saida' && d.metodo !== 'cartao').reduce((s,d) => s + d.valor, 0);
+    const sai = dadosMes.filter(d => d.tipo === 'saida' && d.metodo!== 'cartao').reduce((s,d) => s + d.valor, 0);
     const fat = dadosMes.filter(d => d.tipo === 'saida' && d.metodo === 'cartao').reduce((s,d) => s + d.valor, 0);
     const saldo = ent - sai;
     const saldoFinal = saldo - fat;
-    
+
     document.getElementById('totalEntradas').textContent = formatar(ent);
     document.getElementById('totalSaidas').textContent = formatar(sai);
     document.getElementById('saldoMes').textContent = formatar(saldo);
     document.getElementById('totalFatura').textContent = formatar(fat);
     document.getElementById('saldoFinal').textContent = formatar(saldoFinal);
-    
+
     const saldoMesEl = document.getElementById('saldoMes');
     const saldoFinalEl = document.getElementById('saldoFinal');
-    saldoMesEl.className = saldo >= 0 ? 'positivo' : 'negativo';
-    saldoFinalEl.className = saldoFinal >= 0 ? 'positivo' : 'negativo';
-    
+    saldoMesEl.className = saldo >= 0? 'positivo' : 'negativo';
+    saldoFinalEl.className = saldoFinal >= 0? 'positivo' : 'negativo';
+
     document.getElementById('mesAtual').textContent = cap(mesAtual.toLocaleDateString('pt-BR', {month:'long', year:'numeric'}).replace(' de ',' '));
 
     // Se projetar saldo tá ativo, leva o saldo atual pro próximo mês
     if (config.projetarSaldo) {
         const projMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 1);
-        const dadosProj = dados.filter(d => { 
-            const dt = new Date(d.data); 
-            return dt.getMonth() === projMes.getMonth() && dt.getFullYear() === projMes.getFullYear(); 
+        const dadosProj = dados.filter(d => {
+            const dt = new Date(d.data);
+            return dt.getMonth() === projMes.getMonth() && dt.getFullYear() === projMes.getFullYear();
         });
-        
+
         const entProj = dadosProj.filter(d => d.tipo === 'entrada').reduce((s,d) => s + d.valor, 0);
-        const saiProj = dadosProj.filter(d => d.tipo === 'saida' && d.metodo !== 'cartao').reduce((s,d) => s + d.valor, 0);
+        const saiProj = dadosProj.filter(d => d.tipo === 'saida' && d.metodo!== 'cartao').reduce((s,d) => s + d.valor, 0);
         const fatProj = dadosProj.filter(d => d.tipo === 'saida' && d.metodo === 'cartao').reduce((s,d) => s + d.valor, 0);
-        
-        // Soma o saldo do mês atual com as entradas do próximo mês
+
         const saldoProjetado = saldo + entProj - saiProj - fatProj;
-        document.getElementById('saldoProjValor').textContent = formatar(saldoProjetado);
-       function mudarMes(d) { mesAtual.setMonth(mesAtual.getMonth() + d); atualizar(); }
+        const saldoProjEl = document.getElementById('saldoProjValor');
+        if (saldoProjEl) saldoProjEl.textContent = formatar(saldoProjetado);
+    }
+}
+
+function mudarMes(d) {
+    mesAtual.setMonth(mesAtual.getMonth() + d);
+    atualizar();
+}
 
 document.addEventListener('click', (e) => {
     const m = document.getElementById('menuDropdown');
@@ -664,5 +1025,11 @@ document.addEventListener('DOMContentLoaded', () => {
 window.onload = () => {
     atualizar();
     if (!contas.length) abrirCadastroInicial();
-   
 };
+
+// INIT COM PIN/TESTE/PRODUÇÃO
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciarApp);
+} else {
+    iniciarApp();
+}
