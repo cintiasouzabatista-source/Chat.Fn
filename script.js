@@ -114,7 +114,7 @@ function initPin() {
 function validarPin() {
     const inputs = document.querySelectorAll('.pin-input');
     const pin = Array.from(inputs).map(i => i.value).join('');
-    if (pin.length!== 4) return;
+    if (pin.length!== 4) return;[F12]
 
     const PIN_SALVO = localStorage.getItem('bankday_pin');
     const EH_PRIMEIRO =!PIN_SALVO;
@@ -122,18 +122,26 @@ function validarPin() {
 
     if (EH_PRIMEIRO) {
         localStorage.setItem('bankday_pin', btoa(pin));
+        tentativasPin = 0;
+        pinBloqueadoAte = 0;
         liberarApp();
     } else {
         if (btoa(pin) === PIN_SALVO) {
             tentativasPin = 0;
+            pinBloqueadoAte = 0;
+            erro.classList.add('hidden');
             liberarApp();
         } else {
             tentativasPin++;
             erro.textContent = `PIN incorreto. ${3 - tentativasPin} tentativas restantes`;
             erro.classList.remove('hidden');
-            inputs.forEach(i => { i.value = ''; i.classList.add('border-rose-500'); });
+            inputs.forEach(i => {
+                i.value = '';
+                i.classList.add('border-rose-500');
+            });
             inputs[0].focus();
             setTimeout(() => inputs.forEach(i => i.classList.remove('border-rose-500')), 1000);
+
             if (tentativasPin >= 3) {
                 pinBloqueadoAte = Date.now() + 30000;
                 bloquearPin(30);
@@ -145,27 +153,66 @@ function validarPin() {
 function bloquearPin(s) {
     const inputs = document.querySelectorAll('.pin-input');
     const erro = document.getElementById('pin-erro');
-    inputs.forEach(i => { i.disabled = true; i.value = ''; });
+    inputs.forEach(i => {
+        i.disabled = true;
+        i.value = '';
+    });
     let contador = s;
     erro.classList.remove('hidden');
+    erro.textContent = `Muitas tentativas. Tente em ${contador}s`;
+
     const interval = setInterval(() => {
-        erro.textContent = `Muitas tentativas. Tente em ${contador}s`;
         contador--;
-        if (contador < 0) {
+        if (contador <= 0) {
             clearInterval(interval);
             inputs.forEach(i => i.disabled = false);
             erro.classList.add('hidden');
             inputs[0].focus();
             tentativasPin = 0;
+            pinBloqueadoAte = 0;
+        } else {
+            erro.textContent = `Muitas tentativas. Tente em ${contador}s`;
         }
     }, 1000);
 }
 
-function liberarApp() {
-    document.getElementById('tela-pin').style.display = 'none';
-    document.getElementById('app-content').style.display = 'flex';
-}
+function initPin() {
+    const telaPin = document.getElementById('tela-pin');
+    const PIN_SALVO = localStorage.getItem('bankday_pin');
+    const EH_PRIMEIRO =!PIN_SALVO;
 
+    document.getElementById('pin-titulo').textContent = EH_PRIMEIRO? 'Crie seu PIN' : 'Digite seu PIN';
+    document.getElementById('pin-subtitulo').textContent = EH_PRIMEIRO? '4 dígitos para proteger o app' : 'Para acessar o app';
+    document.getElementById('btn-esqueci').style.display = EH_PRIMEIRO? 'none' : 'block';
+
+    const inputs = document.querySelectorAll('.pin-input');
+    inputs.forEach((input, idx) => {
+        input.value = '';
+        input.disabled = false;
+        input.classList.remove('border-rose-500');
+        input.oninput = (e) => {
+            if (e.target.value.length === 1 && idx < 3) inputs[idx + 1].focus();
+            if (idx === 3 && e.target.value.length === 1) setTimeout(validarPin, 100);
+        };
+        input.onkeydown = (e) => {
+            if (e.key === 'Backspace' && e.target.value === '' && idx > 0) inputs[idx - 1].focus();
+        };
+    });
+
+    // CHECA SE TÁ BLOQUEADO
+    const agora = Date.now();
+    if (pinBloqueadoAte > agora) {
+        const segundos = Math.ceil((pinBloqueadoAte - agora) / 1000);
+        bloquearPin(segundos);
+    } else {
+        inputs[0].focus();
+        pinBloqueadoAte = 0;
+        tentativasPin = 0;
+    }
+
+    telaPin.style.display = 'flex';
+    document.getElementById('app-content').style.display = 'none';
+}
 function esqueciPin() {
     if (confirm('Esqueceu o PIN?\n\nIsso vai apagar TODOS os dados.')) {
         localStorage.clear();
