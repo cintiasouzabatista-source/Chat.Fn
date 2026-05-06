@@ -976,6 +976,23 @@ function atualizar() {
     if (elSaldo) elSaldo.className = `val-field text-lg font-black mt-1 ${saldo >= 0? 'text-blue-500' : 'text-rose-500'}`;
     if (elLiquido) elLiquido.className = `val-field text-xl font-black mt-1 ${liquido >= 0? 'text-emerald-500' : 'text-rose-500'}`;
 }
+
+function atualizarMes() {
+    const el = document.getElementById('mesAtual');
+    if (el) el.textContent = cap(mesAtual.toLocaleDateString('pt-BR', {month:'long', year:'numeric'}).replace(' de ',' '));
+}
+
+function aplicarVisualSaldoProjetado() {
+    const btn = document.getElementById('btnSaldoProjetado');
+    if (!btn) return;
+    if (config.projetarSaldo) {
+        btn.classList.remove('text-slate-400');
+        btn.classList.add('text-blue-500');
+    } else {
+        btn.classList.add('text-slate-400');
+        btn.classList.remove('text-blue-500');
+    }
+}
 function mudarMes(d) {
     mesAtual.setMonth(mesAtual.getMonth() + d);
     atualizar();
