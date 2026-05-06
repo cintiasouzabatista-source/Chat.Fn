@@ -1038,3 +1038,103 @@ if (document.readyState === 'loading') {
 } else {
     iniciarApp();
 }
+// FUNÇÃO QUE O HTML CHAMA NO BOTÃO
+function processarMensagem() {
+    const input = document.getElementById("user-input");
+    if (!input) return;
+
+    let textoOriginal = input.value.trim();
+    if (!textoOriginal) return;
+    input.value = "";
+
+    let texto = textoOriginal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const extensoNum = {'uma':1,'duas':2,'tres':3,'quatro':4,'cinco':5,'seis':6,'sete':7,'oito':8,'nove':9,'dez':10,'onze':11,'doze':12};
+    for (const [ext, num] of Object.entries(extensoNum)) {
+        texto = texto.replace(new RegExp(`\\b${ext}\\s+vezes\\b`, 'g'), `${num}x`);
+    }
+
+    const tipo = texto.includes('recebi') || texto.includes('vendi') || texto.includes('ganhei')? 'entrada' : 'saida';
+
+    let banco = contas[0]?.nome || 'Principal';
+    let metodo = "conta";
+    for (const conta of contas) {
+        const nomeConta = conta.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const regex = new RegExp(`(?:no|na|em)\\s+(?:conta\\s+)?${nomeConta}\\b`);
+        if (regex.test(texto)) {
+            banco = conta.nome;
+            metodo = conta.nome.toLowerCase().includes('dinheiro') || conta.nome.toLowerCase().includes('carteira')? "dinheiro" : "conta";
+            break;
+        }
+    }
+
+    const regexParcelado = /(?:comprei\s+)?(.+?)\s+(\d+(?:[.,]\d+)?)\s*(?:reais?)?\s*(?:em\s+)?(\d{1,2})x?(?:\s+vezes)?(?:\s+(?:no\s+)?(.+))?/;
+    const matchParc = texto.match(regexParcelado);
+
+    if (matchParc && (texto.includes('x') || texto.includes('vezes'))) {
+        const [, desc, valorStr, parcelasStr, cartaoNome] = matchParc;
+        const valor = parseFloat(valorStr.replace(',', '.'));
+        const parcelas = parseInt(parcelasStr);
+        if (parcelas > 1 && valor) {
+            const nomeCartao = cartaoNome? cap(cartaoNome) : (cartoes[0]?.nome || 'Cartão');
+            if (!cartoes.length) {
+                addMensagem("Cadastre um cartão primeiro", 'system');
+                return;
+            }
+            parceleiNoCartao(cap(desc.trim()), valor, parcelas, nomeCartao);
+            return;
+        }
+    }
+
+    const valorNum = parseFloat(texto.match(/\d+(?:[.,]\d+)?/)?.[0]?.replace(',', '.'));
+    if (isNaN(valorNum)) {
+        addMensagem("Ex: 'cafe 15' ou 'recebi 500 salario'", 'system');
+        return;
+    }
+
+    const desc = texto.replace(/recebi|gastei|comprei|paguei|vendi|ganhei|no|na|em|conta|\d+(?:[.,]\d+)?|reais?|credito|x|vezes|a\s*vista|avista/gi, '').trim() || 'Lançamento';
+    const id = Date.now();
+
+    dados.push({
+        id: id,
+        descricao: cap(desc),
+        valor: valorNum,
+        tipo: tipo,
+        metodo: metodo,
+        banco: banco,
+        data: new Date().toISOString(),
+        texto: textoOriginal,
+        categoria: identificarCategoria(desc, tipo)
+    });
+    addMensagem(textoOriginal, 'user', `Categoria: ${identificarCategoria(desc, tipo)}`, false, id);
+    salvar();
+    atualizar();
+}
+
+// FUNÇÃO PRA TROCAR MÊS - HTML CHAMA ESSA
+function mudarMes(d) {
+    mesAtual.setMonth(mesAtual.getMonth() + d);
+    atualizar();
+    atualizarMes();
+}
+
+// ADICIONA ESSA PRA MOSTRAR MSG NO CHAT
+function addMensagem(texto, tipo = 'system', info = '', autoLimpar = true, id = null) {
+    const chat = document.getElementById("chat-box");
+    if (!chat) return;
+    const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const div = document.createElement("div");
+    div.className = `flex ${tipo === 'user'? 'justify-end' : 'justify-start'} mb-3`;
+    if (id) div.onclick = () => abrirModalEditar(id);
+    div.innerHTML = `
+        <div class="${tipo === 'user'? 'bg-blue-600' : 'bg-slate-700'} text-white px-4 py-2 rounded-2xl max-w-[80%] cursor-pointer">
+            <p class="text-sm">${texto}</p>
+            ${info? `<p class="text-xs opacity-70 mt-1">${info}</p>` : ''}
+            <p class="text-xs opacity-50 mt-1">${hora}</p>
+        </div>
+    `;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    if (autoLimpar && tipo === 'system') {
+        setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 8000);
+    }
+}
