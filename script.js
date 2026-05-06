@@ -955,39 +955,27 @@ function atualizar() {
     const sai = dadosMes.filter(d => d.tipo === 'saida' && d.metodo!== 'cartao').reduce((s,d) => s + d.valor, 0);
     const fat = dadosMes.filter(d => d.tipo === 'saida' && d.metodo === 'cartao').reduce((s,d) => s + d.valor, 0);
     const saldo = ent - sai;
-    const saldoFinal = saldo - fat;
+    const liquido = saldo - fat;
 
-    document.getElementById('totalEntradas').textContent = formatar(ent);
-    document.getElementById('totalSaidas').textContent = formatar(sai);
-    document.getElementById('saldoMes').textContent = formatar(saldo);
-    document.getElementById('totalFatura').textContent = formatar(fat);
-    document.getElementById('saldoFinal').textContent = formatar(saldoFinal);
+    // IDs CORRETOS DO TEU HTML
+    const elEntradas = document.getElementById('card-entradas');
+    const elSaidas = document.getElementById('card-saidas');
+    const elSaldo = document.getElementById('card-saldo');
+    const elCartoes = document.getElementById('card-cartoes');
+    const elLiquido = document.getElementById('card-liquido');
+    const elMes = document.getElementById('mesAtual');
 
-    const saldoMesEl = document.getElementById('saldoMes');
-    const saldoFinalEl = document.getElementById('saldoFinal');
-    saldoMesEl.className = saldo >= 0? 'positivo' : 'negativo';
-    saldoFinalEl.className = saldoFinal >= 0? 'positivo' : 'negativo';
+    if (elEntradas) elEntradas.textContent = formatar(ent);
+    if (elSaidas) elSaidas.textContent = formatar(sai);
+    if (elSaldo) elSaldo.textContent = formatar(saldo);
+    if (elCartoes) elCartoes.textContent = formatar(fat);
+    if (elLiquido) elLiquido.textContent = formatar(liquido);
+    if (elMes) elMes.textContent = cap(mesAtual.toLocaleDateString('pt-BR', {month:'long', year:'numeric'}).replace(' de ',' '));
 
-    document.getElementById('mesAtual').textContent = cap(mesAtual.toLocaleDateString('pt-BR', {month:'long', year:'numeric'}).replace(' de ',' '));
-
-    // Se projetar saldo tá ativo, leva o saldo atual pro próximo mês
-    if (config.projetarSaldo) {
-        const projMes = new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 1);
-        const dadosProj = dados.filter(d => {
-            const dt = new Date(d.data);
-            return dt.getMonth() === projMes.getMonth() && dt.getFullYear() === projMes.getFullYear();
-        });
-
-        const entProj = dadosProj.filter(d => d.tipo === 'entrada').reduce((s,d) => s + d.valor, 0);
-        const saiProj = dadosProj.filter(d => d.tipo === 'saida' && d.metodo!== 'cartao').reduce((s,d) => s + d.valor, 0);
-        const fatProj = dadosProj.filter(d => d.tipo === 'saida' && d.metodo === 'cartao').reduce((s,d) => s + d.valor, 0);
-
-        const saldoProjetado = saldo + entProj - saiProj - fatProj;
-        const saldoProjEl = document.getElementById('saldoProjValor');
-        if (saldoProjEl) saldoProjEl.textContent = formatar(saldoProjetado);
-    }
+    // Cores
+    if (elSaldo) elSaldo.className = `val-field text-lg font-black mt-1 ${saldo >= 0? 'text-blue-500' : 'text-rose-500'}`;
+    if (elLiquido) elLiquido.className = `val-field text-xl font-black mt-1 ${liquido >= 0? 'text-emerald-500' : 'text-rose-500'}`;
 }
-
 function mudarMes(d) {
     mesAtual.setMonth(mesAtual.getMonth() + d);
     atualizar();
