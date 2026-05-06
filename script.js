@@ -9,6 +9,7 @@ let tentativasPin = 0;
 let pinBloqueadoAte = 0;
 let modoTeste = localStorage.getItem('bankday_modo') === 'teste';
 let modoProducao = localStorage.getItem('bankday_modo') === 'producao';
+let menuTimeout = null;
 
 let dados = JSON.parse(localStorage.getItem('bankday') || '[]');
 let contas = JSON.parse(localStorage.getItem('bankday_contas') || '[]');
@@ -457,19 +458,25 @@ function finalizarTutorial() {
 }
 
 function addMensagem(texto, tipo = 'system', info = '', autoLimpar = true, id = null) {
-    const chat = document.getElementById("chat-mensagens");
+    const chat = document.getElementById("chat-box"); // CORRIGIDO
+    if (!chat) return;
     const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const div = document.createElement("div");
-    div.className = `msg ${tipo}`;
+    div.className = `flex ${tipo === 'user'? 'justify-end' : 'justify-start'} mb-3`;
     if (id) div.onclick = () => abrirModalEditar(id);
-    div.innerHTML = `<div class="msg-bubble">${texto}${info? `<div class="msg-info">${info}</div>` : ''}<div class="msg-time">${hora}</div></div>`;
+    div.innerHTML = `
+        <div class="${tipo === 'user'? 'bg-blue-600' : 'bg-slate-700'} text-white px-4 py-2 rounded-2xl max-w-[80%] cursor-pointer">
+            <p class="text-sm">${texto}</p>
+            ${info? `<p class="text-xs opacity-70 mt-1">${info}</p>` : ''}
+            <p class="text-xs opacity-50 mt-1">${hora}</p>
+        </div>
+    `;
     chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
-    if (autoLimpar) {
+    if (autoLimpar && tipo === 'system') {
         setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 8000);
     }
 }
-
 function toggleMenuMais() {
     let m = document.getElementById('menuDropdown');
     if (!m) {
@@ -1027,6 +1034,80 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+function abrirModalEditar(id) {
+    editandoId = id;
+    const t = dados.find(d => d.id === id);
+    if (!t) return;
+    document.getElementById('edit-desc').value = t.descricao;
+    document.getElementById('edit-valor').value = t.valor;
+    document.getElementById('edit-tipo').value = t.tipo;
+    document.getElementById('edit-metodo').value = t.metodo;
+    document.getElementById('edit-data').value = new Date(t.data).toISOString().split('T')[0];
+
+    const selectBanco = document.getElementById('edit-banco');
+    selectBanco.innerHTML = '';
+    const lista = t.metodo === 'cartao'? cartoes : contas;
+    lista.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.nome;
+        opt.textContent = item.nome;
+        if (item.nome === t.banco) opt.selected = true;
+        selectBanco.appendChild(opt);
+    });
+
+    const selectCat = document.getElementById('edit-categoria');
+    selectCat.innerHTML = '';
+    const catsDoTipo = CATEGORIAS[t.tipo] || CATEGORIAS['saida'];
+    Object.keys(catsDoTipo).forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        if (cat === t.categoria) opt.selected = true;
+        selectCat.appendChild(opt);
+    });
+    abrirModal('modal');
+}
+
+function toggleVisibility() {
+    valoresOcultos =!valoresOcultos;
+    document.getElementById('eye-icon').className = valoresOcultos? 'fas fa-eye-slash text-lg' : 'fas fa-eye text-lg';
+    atualizar();
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('dark');
+    const icon = document.getElementById('theme-icon');
+    if (icon) icon.className = document.body.classList.contains('dark')? 'fas fa-sun text-amber-500 text-lg' : 'fas fa-moon text-blue-500 text-lg';
+    localStorage.setItem('bankday_tema', document.body.classList.contains('dark')? 'dark' : 'light');
+}
+
+// Funções que o menu chama
+function abrirExtrato() {
+    addMensagem('Use o menu Mais > Extrato em breve', 'system');
+}
+function abrirFaturas() {
+    addMensagem('Faturas em desenvolvimento', 'system');
+}
+function abrirTutorial() {
+    document.getElementById('tutorial').style.display = 'flex';
+}
+function abrirModalReset() {
+    if (confirm('Resetar tudo? Isso apaga TODOS os dados.')) resetarTudo();
+}
+function abrirContasCartoes() {
+    addMensagem('Gerenciar contas em Mais > Gerenciar Contas/Cartões', 'system');
+}
+function abrirContasFixas() {
+    addMensagem('Contas fixas em desenvolvimento', 'system');
+}
+function toggleSaldoProjetado() {
+    config.projetarSaldo =!config.projetarSaldo;
+    salvar();
+    aplicarVisualSaldoProjetado();
+    atualizar();
+    toggleMenu();
+    addMensagem(`Projeção ${config.projetarSaldo? 'ativada' : 'desativada'}`, 'system');
+}
 window.onload = () => {
     atualizar();
     if (!contas.length) abrirCadastroInicial();
