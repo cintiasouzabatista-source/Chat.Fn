@@ -2,11 +2,11 @@ let graficoAtual = null;
 let tipoGraficoAtivo = 'categoria';
 
 function abrirGraficos() {
-    trocarAba('graficos'); // CORRIGIDO
+    trocarAba('graficos');
     document.getElementById('modal-graficos').style.display = 'flex';
     const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const mes = mesAtual.getMonth(); // CORRIGIDO
-    const ano = mesAtual.getFullYear(); // CORRIGIDO
+    const mes = mesAtual.getMonth();
+    const ano = mesAtual.getFullYear();
     document.getElementById('grafico-mes').textContent = `${meses[mes]} ${ano}`;
     trocarGrafico('categoria');
 }
@@ -22,18 +22,18 @@ function fecharGraficos() {
 function trocarGrafico(tipo) {
     tipoGraficoAtivo = tipo;
     document.getElementById('btn-cat').className = tipo === 'categoria'
-      ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
-        : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
+   ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+    : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
     document.getElementById('btn-tipo').className = tipo === 'tipo'
-      ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
-        : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
+   ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+    : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
     desenharGrafico();
 }
 
 function desenharGrafico() {
-    const mes = mesAtual.getMonth(); // CORRIGIDO
-    const ano = mesAtual.getFullYear(); // CORRIGIDO
-    const transacoesMes = dados.filter(t => { // CORRIGIDO: dados em vez de transacoes
+    const mes = mesAtual.getMonth();
+    const ano = mesAtual.getFullYear();
+    const transacoesMes = dados.filter(t => {
         const dt = new Date(t.data);
         return dt.getMonth() === mes && dt.getFullYear() === ano;
     });
@@ -46,15 +46,14 @@ function desenharGrafico() {
     const corGrid = isLight? '#e2e8f0' : '#334155';
 
     if (tipoGraficoAtivo === 'categoria') {
-        // CATEGORIA = BARRA HORIZONTAL
         const gastosPorCat = {};
         transacoesMes.filter(t => t.tipo!== 'entrada').forEach(t => {
             gastosPorCat[t.categoria] = (gastosPorCat[t.categoria] || 0) + t.valor;
         });
 
         const dadosGraf = Object.entries(gastosPorCat)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 8); // Top 8 categorias
+       .sort((a, b) => b[1] - a[1])
+       .slice(0, 8);
 
         if (dadosGraf.length === 0) {
             document.getElementById('grafico-legenda').innerHTML = '<p class="text-center text-slate-500 py-8">Sem gastos no mês</p>';
@@ -77,7 +76,7 @@ function desenharGrafico() {
                 }]
             },
             options: {
-                indexAxis: 'y', // HORIZONTAL
+                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
@@ -93,7 +92,7 @@ function desenharGrafico() {
                 },
                 scales: {
                     x: {
-                        ticks: { 
+                        ticks: {
                             color: corTexto,
                             callback: (v) => `R$ ${v}`
                         },
@@ -107,7 +106,6 @@ function desenharGrafico() {
             }
         });
 
-        // Legenda custom
         document.getElementById('grafico-legenda').innerHTML = dadosGraf.map(([cat, val]) => {
             const pct = ((val / total) * 100).toFixed(1);
             return `
@@ -119,7 +117,6 @@ function desenharGrafico() {
         }).join('');
 
     } else {
-        // ENTRADA VS SAÍDA = PIZZA
         let entrada = 0, saida = 0, cartao = 0;
         transacoesMes.forEach(t => {
             if (t.tipo === 'entrada') entrada += t.valor;
@@ -162,7 +159,6 @@ function desenharGrafico() {
             }
         });
 
-        // Legenda custom
         const dadosLegenda = [
             { label: 'Entradas', valor: entrada, cor: '#10b981' },
             { label: 'Saídas', valor: saida, cor: '#f97316' },
