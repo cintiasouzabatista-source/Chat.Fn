@@ -892,3 +892,46 @@ document.addEventListener('DOMContentLoaded', () => {
     
     iniciarApp();
 });
+// INIT SEGURO
+window.onload = function() {
+    try {
+        console.log('Iniciando app...');
+        const modo = localStorage.getItem('bankday_modo');
+        
+        if (!modo) {
+            document.getElementById('modal-onboarding').style.display = 'flex';
+            document.getElementById('app-content').style.display = 'none';
+            document.getElementById('tela-pin').style.display = 'none';
+        } else if (modo === 'teste') {
+            document.getElementById('modal-onboarding').style.display = 'none';
+            document.getElementById('tela-pin').style.display = 'none';
+            document.getElementById('app-content').style.display = 'flex';
+            if (!contas.length) contas = [{nome: 'Principal', saldoInicial: 0}];
+        } else if (modo === 'producao') {
+            document.getElementById('modal-onboarding').style.display = 'none';
+            document.getElementById('app-content').style.display = 'none';
+            initPin();
+        }
+        
+        atualizarMes();
+        atualizar();
+        
+        // Liga o Enter
+        const input = document.getElementById('user-input');
+        if (input) {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    processarMensagem();
+                }
+            });
+        }
+        const btn = document.querySelector('.btn-send');
+        if (btn) btn.onclick = processarMensagem;
+        
+        console.log('App carregado');
+    } catch(e) {
+        console.error('ERRO AO INICIAR:', e);
+        alert('Erro: ' + e.message);
+    }
+};
