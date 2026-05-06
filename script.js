@@ -875,5 +875,23 @@ function abrirExtrato(tipo) {
     filtrarExtrato();
 }
 
-// INIT FINAL
-document.addEventListener('DOMContentLoaded', iniciarApp);
+// LIGA O ENTER NO INPUT
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('user-input');
+    if (input) {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                processarMensagem();
+            }
+        });
+    }
+    
+    // LIGA O BOTÃO ENVIAR TAMBÉM
+    const btnEnviar = document.querySelector('.btn-send');
+    if (btnEnviar) {
+        btnEnviar.onclick = () => processarMensagem();
+    }
+    
+    iniciarApp();
+});
