@@ -303,22 +303,19 @@ function processarMensagem() {
     const desc = texto.replace(/recebi|gastei|comprei|paguei|vendi|ganhei|no|na|em|conta|\d+(?:[.,]\d+)?|reais?|credito|x|vezes|a\s*vista|avista/gi, '').trim() || 'Lançamento';
     const id = Date.now();
 
-    dados.push({
-        id: id,
-        descricao: cap(desc),
-        valor: valorNum,
-        tipo: tipo,
-        metodo: metodo,
-        banco: banco,
-        data: new Date().toISOString(),
-        texto: textoOriginal,
-        categoria: identificarCategoria(desc, tipo)
-    });
-    addMensagem(textoOriginal, 'user', `Categoria: ${identificarCategoria(desc, tipo)}`, false, id);
-    salvar();
-    atualizar();
-}
-
+   dados.push({
+    id: Date.now(),
+    descricao: 'Teste',
+    valor: 15,
+    tipo: 'saida',
+    metodo: 'conta',
+    banco: 'Principal',
+    data: new Date().toISOString(),
+    texto: 'cafe 15',
+    categoria: 'Alimentação'
+});
+salvar();
+atualizar();
 function parceleiNoCartao(descricao, valorTotal, parcelas, cartaoNome) {
     let cartao = cartoes.find(c => c.nome.toLowerCase() === cartaoNome.toLowerCase()) || cartoes[0];
     if (!cartao) {
