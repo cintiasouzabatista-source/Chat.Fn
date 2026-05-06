@@ -57,14 +57,13 @@
 </div>
 
 <!-- APP -->
-<div id="app-content" style="display: none;">
     <header>
         <div class="header-top">
             <h1>BankDay</h1>
             <div class="header-actions">
                 <button onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon"></i></button>
                 <button onclick="toggleVisibility()"><i id="eye-icon" class="fas fa-eye"></i></button>
-                <button onclick="toggleMenu()"><i class="fas fa-ellipsis-v"></i></button>
+                <button onclick="toggleMenu()" id="btnMenu"><i class="fas fa-ellipsis-v"></i></button>
             </div>
         </div>
         <div class="mes-nav">
@@ -131,7 +130,7 @@
         <button onclick="resetarApp()" class="text-rose"><i class="fas fa-trash"></i> Resetar App</button>
     </div>
 </div>
-
+    
 <!-- MODAL EXTRATO -->
 <div id="modal-extrato" class="modal">
     <div class="modal-content full">
