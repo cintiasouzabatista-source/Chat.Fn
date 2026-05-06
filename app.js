@@ -113,17 +113,21 @@ function toggleMenuMais() {
         document.body.appendChild(m);
     }
     m.innerHTML = `
-        <button onclick="abrirCadastroInicial()">Gerenciar Contas/Cartões</button>
-        <button onclick="toggleProjetarSaldo()">${config.projetarSaldo? '✓ ' : ''}Projetar Saldo Próximo Mês</button>
-        <button onclick="resetarTransacoes()">Resetar Transações</button>
-        <button onclick="resetarTudo()">Resetar Tudo</button>
+        <button onclick="abrirCadastroInicial()">
+            <span>💳</span> Gerenciar Contas/Cartões
+        </button>
+        <button onclick="toggleProjetarSaldo()">
+            <span>${config.projetarSaldo ? '✓' : ''}</span> Projetar Saldo Próximo Mês
+        </button>
+        <button onclick="resetarTransacoes()">
+            <span>🗑️</span> Resetar Transações
+        </button>
+        <button onclick="resetarTudo()">
+            <span>⚠️</span> Resetar Tudo
+        </button>
     `;
-    m.style.display = m.style.display === 'flex'? 'none' : 'flex';
-    m.style.bottom = 'calc(56px + env(safe-area-inset-bottom))';
-    m.style.right = '8px';
-    m.style.top = 'auto';
+    m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
 }
-
 function abrirCadastroInicial() {
     tempContas = [...contas];
     tempCartoes = [...cartoes];
