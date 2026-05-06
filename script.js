@@ -220,7 +220,10 @@ function addMensagem(texto, tipo = 'system', info = '', autoLimpar = true, id = 
 
 function processarMensagem() {
     const input = document.getElementById("user-input");
-    if (!input) return;
+    if (!input) {
+        console.error('Input não encontrado');
+        return;
+    }
     let textoOriginal = input.value.trim();
     if (!textoOriginal) return;
     input.value = "";
@@ -286,8 +289,8 @@ function processarMensagem() {
     addMensagem(textoOriginal, 'user', `Categoria: ${identificarCategoria(desc, tipo)}`, false, id);
     salvar();
     atualizar();
+    console.log('Lançamento criado:', desc, valorNum);
 }
-
 function parceleiNoCartao(descricao, valorTotal, parcelas, cartaoNome) {
     let cartao = cartoes.find(c => c.nome.toLowerCase() === cartaoNome.toLowerCase()) || cartoes[0];
     if (!cartao) {
@@ -841,12 +844,11 @@ function abrirExtrato(tipo) {
     filtrarExtrato();
 }
 
-// INIT + LIGA ENTER
 window.onload = function() {
     try {
         console.log('Iniciando app...');
         const modo = localStorage.getItem('bankday_modo');
-        
+
         if (!modo) {
             document.getElementById('modal-onboarding').style.display = 'flex';
             document.getElementById('app-content').style.display = 'none';
@@ -862,22 +864,34 @@ window.onload = function() {
             document.getElementById('app-content').style.display = 'none';
             initPin();
         }
-        
+
         atualizarMes();
         atualizar();
-        
+
+        // LIGA O ENTER
         const input = document.getElementById('user-input');
         if (input) {
             input.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    console.log('Enter pressionado');
                     processarMensagem();
                 }
             });
+            console.log('Input ligado');
+        } else {
+            console.error('user-input não encontrado');
         }
+
+        // LIGA O BOTÃO
         const btn = document.querySelector('.btn-send');
-        if (btn) btn.onclick = processarMensagem;
-        
+        if (btn) {
+            btn.onclick = processarMensagem;
+            console.log('Botão ligado');
+        } else {
+            console.error('btn-send não encontrado');
+        }
+
         console.log('App carregado');
     } catch(e) {
         console.error('ERRO AO INICIAR:', e);
