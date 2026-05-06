@@ -126,6 +126,55 @@
     </div>
 </div>
 
+<!-- TUTORIAL -->
+<div id="tutorial" class="fixed inset-0 bg-slate-900/95 backdrop-blur-sm z-[70] flex items-center justify-center p-4" style="display: none;">
+    <div class="bg-slate-800 rounded-2xl border border-slate-700 max-w-sm w-full p-6">
+        <div id="tutorial-step-1" class="text-center">
+            <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-comment-dots text-white text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-black mb-2">Fale natural</h3>
+            <p class="text-slate-400 text-sm">Digite como se fosse WhatsApp:<br><span class="text-blue-400">"gastei 50 no ifood"</span></p>
+        </div>
+
+        <div id="tutorial-step-2" class="text-center hidden">
+            <div class="bg-emerald-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-robot text-white text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-black mb-2">App entende tudo</h3>
+            <p class="text-slate-400 text-sm">Ele identifica valor, categoria, data e até parcelamento automático</p>
+        </div>
+
+        <div id="tutorial-step-3" class="text-center hidden">
+            <div class="bg-amber-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-repeat text-white text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-black mb-2">Conta fixa?</h3>
+            <p class="text-slate-400 text-sm">Digite <span class="text-amber-400">"fixo dia 10"</span> na transação e ela se repete todo mês sozinha</p>
+        </div>
+
+        <div id="tutorial-step-4" class="text-center hidden">
+            <div class="bg-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-pen text-white text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-black mb-2">Tudo editável</h3>
+            <p class="text-slate-400 text-sm">Clique em qualquer card, mensagem ou use o menu "Mais" pra ajustar</p>
+        </div>
+
+        <div class="flex justify-center gap-2 mt-6 mb-4">
+            <div class="tutorial-dot w-2 h-2 rounded-full bg-blue-600"></div>
+            <div class="tutorial-dot w-2 h-2 rounded-full bg-slate-600"></div>
+            <div class="tutorial-dot w-2 h-2 rounded-full bg-slate-600"></div>
+            <div class="tutorial-dot w-2 h-2 rounded-full bg-slate-600"></div>
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="pularTutorial()" class="flex-1 bg-slate-700 text-slate-300 py-3 rounded-lg font-bold text-sm">Pular</button>
+            <button id="btn-tutorial-prox" onclick="proximoTutorial()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold text-sm">Próximo</button>
+        </div>
+    </div>
+</div>
+
 <!-- APP CONTENT -->
 <div id="app-content" class="flex flex-col h-screen" style="display: none;">
     <header class="bg-slate-800 border-b border-slate-700 p-4">
@@ -211,28 +260,30 @@
         </button>
     </nav>
 
-<!-- MENU DROPDOWN -->
-<div id="menuDropdown" class="hidden fixed bottom-16 right-4 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-2 w-56 z-50">
-    <button onclick="abrirContasCartoes()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3">
-        <i class="fas fa-credit-card text-slate-400"></i> Contas & Cartões
-    </button>
-    <button onclick="abrirContasFixas()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3">
-        <i class="fas fa-repeat text-slate-400"></i> Contas Fixas
-    </button>
-    <button id="btnSaldoProjetado" onclick="toggleSaldoProjetado()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3 text-slate-400">
-        <i class="fas fa-chart-line"></i> Saldo Projetado
-    </button>
-    <div class="border-t border-slate-700 my-1"></div>
-    <button onclick="abrirTutorial()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3">
-        <i class="fas fa-question-circle text-slate-400"></i> Ajuda
-    </button>
-    <button onclick="esqueciPin()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3 text-amber-500">
-        <i class="fas fa-key"></i> Esqueci PIN
-    </button>
-    <button onclick="abrirModalReset()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3 text-rose-500">
-        <i class="fas fa-trash"></i> Resetar App
-    </button>
+    <!-- MENU DROPDOWN -->
+    <div id="menuDropdown" class="hidden fixed bottom-16 right-4 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-2 w-56 z-50">
+        <button onclick="abrirContasCartoes()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3">
+            <i class="fas fa-credit-card text-slate-400"></i> Contas & Cartões
+        </button>
+        <button onclick="abrirContasFixas()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3">
+            <i class="fas fa-repeat text-slate-400"></i> Contas Fixas
+        </button>
+        <button id="btnSaldoProjetado" onclick="toggleSaldoProjetado()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3 text-slate-400">
+            <i class="fas fa-chart-line"></i> Saldo Projetado
+        </button>
+        <div class="border-t border-slate-700 my-1"></div>
+        <button onclick="abrirTutorial()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3">
+            <i class="fas fa-question-circle text-slate-400"></i> Ajuda
+        </button>
+        <button onclick="esqueciPin()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3 text-amber-500">
+            <i class="fas fa-key"></i> Esqueci PIN
+        </button>
+        <button onclick="abrirModalReset()" class="w-full text-left px-4 py-3 hover:bg-slate-700 rounded-lg text-sm flex items-center gap-3 text-rose-500">
+            <i class="fas fa-trash"></i> Resetar App
+        </button>
+    </div>
 </div>
+
 <!-- MODAL RESUMO CARDS -->
 <div id="modal-resumo-card" class="modal" style="display: none;">
     <div class="bg-slate-900 w-full max-w-md rounded-2xl border border-slate-700 max-h-[90vh] flex flex-col">
@@ -252,6 +303,91 @@
         <div id="resumo-lista" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
     </div>
 </div>
+
+<!-- MODAL EXTRATO -->
+<div id="modal-extrato" class="modal" style="display: none;">
+    <div class="bg-slate-900 w-full max-w-md rounded-2xl border border-slate-700 max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center p-4 border-b border-slate-700">
+            <h3 class="text-lg font-bold">Extrato</h3>
+            <button onclick="fecharExtrato()" class="text-slate-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="p-4 space-y-3 border-b border-slate-700">
+            <select id="filtro-tipo" onchange="filtrarExtrato()" class="w-full bg-slate-800 border-slate-700 rounded-lg p-2 text-sm">
+                <option value="">Todos os tipos</option>
+                <option value="entrada">Entradas</option>
+                <option value="saida">Saídas</option>
+                <option value="cartao">Cartão</option>
+            </select>
+            <select id="filtro-categoria" onchange="filtrarExtrato()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-sm">
+                <option value="">Todas categorias</option>
+            </select>
+            <select id="filtro-conta" onchange="filtrarExtrato()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-sm">
+                <option value="">Todas contas</option>
+            </select>
+            <input type="month" id="filtro-mes" onchange="filtrarExtrato()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-sm">
+        </div>
+        <div id="lista-extrato" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
+        <div class="p-4 border-t border-slate-700">
+            <p id="total-extrato" class="text-sm font-bold"></p>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR TRANSAÇÃO -->
+<div id="modal" class="modal" style="display: none;">
+    <div class="bg-slate-900 w-full max-w-sm rounded-2xl border border-slate-700 p-6">
+        <h3 class="text-lg font-bold mb-4">Editar Transação</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="text-sm font-bold mb-2 block">Descrição</label>
+                <input type="text" id="edit-desc" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm">
+            </div>
+            <div>
+                <label class="text-sm font-bold mb-2 block">Valor</label>
+                <input type="number" id="edit-valor" step="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm">
+            </div>
+            <div>
+                <label class="text-sm font-bold mb-2 block">Data</label>
+                <input type="date" id="edit-data" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm">
+            </div>
+            <div>
+                <label class="text-sm font-bold mb-2 block">Tipo</label>
+                <select id="edit-tipo" onchange="atualizarCategorias()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm">
+                    <option value="entrada">Entrada</option>
+                    <option value="saida">Saída</option>
+                    <option value="cartao">Cartão</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-sm font-bold mb-2 block">Categoria</label>
+                <select id="edit-categoria" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm"></select>
+            </div>
+            <div>
+                <label class="text-sm font-bold mb-2 block">Conta</label>
+                <select id="edit-conta" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm"></select>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="edit-fixa" class="w-4 h-4">
+                <label for="edit-fixa" class="text-sm">Conta fixa</label>
+            </div>
+            <div id="edit-fixa-info" class="hidden bg-blue-600/20 border-blue-600 rounded-lg p-3 text-xs">
+                <p>Será lançada todo dia <span id="edit-fixa-dia" class="font-bold">--</span></p>
+            </div>
+            <p id="info-parcela" class="hidden text-xs text-slate-400"></p>
+            <div class="flex gap-3">
+                <button onclick="fecharModal()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold text-sm">Salvar</button>
+                <button onclick="excluirMensagem()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-3 rounded-lg">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OUTROS MODAIS: faturas, contas-cartoes, contas-fixas, add-conta, add-cartao, edit-fixa, excluir-fixa, reset -->
+<!-- [Cola aqui os outros modais do seu código original] -->
 
 <script src="script.js"></script>
 </body>
