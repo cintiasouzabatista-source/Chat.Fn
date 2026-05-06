@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BankDay</title>
- 
+    
     <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="./manifest.json">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -56,7 +57,8 @@
     </div>
 </div>
 
-<!-- APP -->
+<!-- APP CONTENT - ESSE DIV FALTAVA -->
+<div id="app-content" style="display:none;">
     <header>
         <div class="header-top">
             <h1>BankDay</h1>
@@ -101,8 +103,8 @@
     <main id="chat-box"></main>
 
     <footer>
-        <input id="user-input" type="text" placeholder="Ex: cafe 15 | recebi 500" onkeydown="if(event.key==='Enter') processarMensagem()">
-        <button onclick="processarMensagem()"><i class="fas fa-paper-plane"></i></button>
+        <input id="user-input" type="text" placeholder="Ex: cafe 15 | recebi 500">
+        <button class="btn-send"><i class="fas fa-paper-plane"></i></button>
     </footer>
 
     <nav>
@@ -163,14 +165,17 @@
             <h3>Gráficos</h3>
             <button onclick="fecharModal('modal-graficos')"><i class="fas fa-times"></i></button>
         </div>
-        <div class="tabs">
-            <button class="tab active" onclick="mostrarGrafico('despesas',this)">Despesas</button>
-            <button class="tab" onclick="mostrarGrafico('receitas',this)">Receitas</button>
-            <button class="tab" onclick="mostrarGrafico('bancos',this)">Bancos</button>
+        <div class="grafico-header">
+            <h4 id="grafico-mes"></h4>
+            <div class="grafico-tabs">
+                <button id="btn-cat" onclick="trocarGrafico('categoria')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold">Categoria</button>
+                <button id="btn-tipo" onclick="trocarGrafico('tipo')" class="flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold">Tipo</button>
+            </div>
         </div>
         <div class="chart-container">
-            <canvas id="chartCanvas"></canvas>
+            <canvas id="grafico-canvas"></canvas>
         </div>
+        <div id="grafico-legenda" class="grafico-legenda"></div>
     </div>
 </div>
 
@@ -215,7 +220,6 @@
             <select id="edit-tipo" onchange="atualizarCategorias()">
                 <option value="entrada">Entrada</option>
                 <option value="saida">Saída</option>
-                <option value="cartao">Cartão</option>
             </select>
             <select id="edit-metodo" onchange="atualizarContasModal()">
                 <option value="conta">Conta</option>
