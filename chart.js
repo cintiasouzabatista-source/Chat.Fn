@@ -2,11 +2,12 @@ let graficoAtual = null;
 let tipoGraficoAtivo = 'categoria';
 
 function abrirGraficos() {
-    setMenuAtivo('graficos');
+    trocarAba('graficos'); // CORRIGIDO
     document.getElementById('modal-graficos').style.display = 'flex';
     const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const [ano, mes] = mesAtual.split('-');
-    document.getElementById('grafico-mes').textContent = `${meses[parseInt(mes)-1]} ${ano}`;
+    const mes = mesAtual.getMonth(); // CORRIGIDO
+    const ano = mesAtual.getFullYear(); // CORRIGIDO
+    document.getElementById('grafico-mes').textContent = `${meses[mes]} ${ano}`;
     trocarGrafico('categoria');
 }
 
@@ -21,19 +22,20 @@ function fecharGraficos() {
 function trocarGrafico(tipo) {
     tipoGraficoAtivo = tipo;
     document.getElementById('btn-cat').className = tipo === 'categoria'
-       ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+      ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
         : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
     document.getElementById('btn-tipo').className = tipo === 'tipo'
-       ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
+      ? 'flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-bold'
         : 'flex-1 bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold';
     desenharGrafico();
 }
 
 function desenharGrafico() {
-    const [ano, mes] = mesAtual.split('-').map(Number);
-    const transacoesMes = transacoes.filter(t => {
+    const mes = mesAtual.getMonth(); // CORRIGIDO
+    const ano = mesAtual.getFullYear(); // CORRIGIDO
+    const transacoesMes = dados.filter(t => { // CORRIGIDO: dados em vez de transacoes
         const dt = new Date(t.data);
-        return dt.getMonth() === mes - 1 && dt.getFullYear() === ano;
+        return dt.getMonth() === mes && dt.getFullYear() === ano;
     });
 
     if (graficoAtual) graficoAtual.destroy();
@@ -50,17 +52,17 @@ function desenharGrafico() {
             gastosPorCat[t.categoria] = (gastosPorCat[t.categoria] || 0) + t.valor;
         });
 
-        const dados = Object.entries(gastosPorCat)
-           .sort((a, b) => b[1] - a[1])
-           .slice(0, 8); // Top 8 categorias
+        const dadosGraf = Object.entries(gastosPorCat)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8); // Top 8 categorias
 
-        if (dados.length === 0) {
+        if (dadosGraf.length === 0) {
             document.getElementById('grafico-legenda').innerHTML = '<p class="text-center text-slate-500 py-8">Sem gastos no mês</p>';
             return;
         }
 
-        const labels = dados.map(d => d[0]);
-        const valores = dados.map(d => d[1]);
+        const labels = dadosGraf.map(d => d[0]);
+        const valores = dadosGraf.map(d => d[1]);
         const total = valores.reduce((s, v) => s + v, 0);
 
         graficoAtual = new Chart(ctx, {
@@ -106,7 +108,7 @@ function desenharGrafico() {
         });
 
         // Legenda custom
-        document.getElementById('grafico-legenda').innerHTML = dados.map(([cat, val]) => {
+        document.getElementById('grafico-legenda').innerHTML = dadosGraf.map(([cat, val]) => {
             const pct = ((val / total) * 100).toFixed(1);
             return `
                 <div class="flex justify-between text-xs py-1">
@@ -121,8 +123,8 @@ function desenharGrafico() {
         let entrada = 0, saida = 0, cartao = 0;
         transacoesMes.forEach(t => {
             if (t.tipo === 'entrada') entrada += t.valor;
-            else if (t.tipo === 'saida') saida += t.valor;
-            else if (t.tipo === 'cartao') cartao += t.valor;
+            else if (t.tipo === 'saida' && t.metodo!== 'cartao') saida += t.valor;
+            else if (t.tipo === 'saida' && t.metodo === 'cartao') cartao += t.valor;
         });
 
         const totalGasto = saida + cartao;
@@ -161,13 +163,13 @@ function desenharGrafico() {
         });
 
         // Legenda custom
-        const dados = [
+        const dadosLegenda = [
             { label: 'Entradas', valor: entrada, cor: '#10b981' },
             { label: 'Saídas', valor: saida, cor: '#f97316' },
             { label: 'Cartões', valor: cartao, cor: '#ef4444' }
         ].filter(d => d.valor > 0);
 
-        document.getElementById('grafico-legenda').innerHTML = dados.map(d => {
+        document.getElementById('grafico-legenda').innerHTML = dadosLegenda.map(d => {
             const pct = ((d.valor / total) * 100).toFixed(1);
             return `
                 <div class="flex justify-between items-center text-xs py-1">
