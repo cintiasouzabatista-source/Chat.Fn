@@ -940,15 +940,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('user-input');
     const btn = document.getElementById('btn-enviar');
     
-input.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        processarMensagem();
-        const texto = textoOriginal.toLowerCase();
-    }
-});
-        console.log('Input OK');
-    }
+if(input) {
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            processarMensagem();
+        }
+    });
+
+    console.log('Input OK');
+}
     
     
     if(btn) {
