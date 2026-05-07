@@ -248,22 +248,28 @@ function processarMensagem() {
         salvar();
     }
 
-    let texto = textoOriginal.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const tipo = texto.includes('recebi') || texto.includes('vendi') || texto.includes('ganhei')? 'entrada' : 'saida';
-    let banco = metodo === 'cartao'
+  const tipo = texto.includes('recebi') || texto.includes('vendi') || texto.includes('ganhei')
+    ? 'entrada'
+    : 'saida';
+
+let metodo = "conta";
+
+if (
+    texto.includes('cartao') ||
+    texto.includes('crédito') ||
+    texto.includes('credito') ||
+    texto.includes('nubank') ||
+    texto.includes('visa') ||
+    texto.includes('master') ||
+    texto.includes('fatura')
+) {
+    metodo = 'cartao';
+}
+
+let banco = metodo === 'cartao'
     ? (cartoes[0]?.nome || 'Cartão')
     : contas[0].nome;
-    let metodo = "conta";
-
-    for (const conta of contas) {
-        const nomeConta = conta.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const regex = new RegExp(`(?:no|na|em)\\s+(?:conta\\s+)?${nomeConta}\\b`);
-        if (regex.test(texto)) {
-            banco = conta.nome;
-            metodo = conta.nome.toLowerCase().includes('dinheiro') || conta.nome.toLowerCase().includes('carteira')? "dinheiro" : "conta";
-            break;
-        }
-    }
+    
     if (
     texto.includes('cartao') ||
     texto.includes('crédito') ||
@@ -815,7 +821,7 @@ function atualizarCategorias() {
     const tipo = document.getElementById('edit-tipo').value;
     const selectCat = document.getElementById('edit-categoria');
     selectCat.innerHTML = '';
-    const catsDoTipo = CATEGORIAS || CATEGORIAS['saida'];
+  const catsDoTipo = CATEGORIAS[tipo] || CATEGORIAS['saida'];
     Object.keys(catsDoTipo).forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat;
@@ -944,20 +950,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-const input = document.getElementById('user-input');
-const btnSend = document.querySelector('.btn-send');
 
-if (btnSend) {
-    btnSend.addEventListener('click', processarMensagem);
-}
-
-if (input) {
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            processarMensagem();
-        }
-    });
-}
 atualizar();
 atualizarMes();
 
