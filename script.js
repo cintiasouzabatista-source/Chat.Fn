@@ -933,3 +933,13 @@ if (input) {
         }
     });
 }
+atualizar();
+atualizarMes();
+
+if (!modoTeste && !modoProducao) {
+    document.getElementById('modal-onboarding').style.display = 'flex';
+} else if (modoProducao) {
+    initPin();
+} else {
+    document.getElementById('app-content').style.display = 'flex';
+}
