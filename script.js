@@ -53,13 +53,28 @@ function salvar() {
 }
 
 function identificarCategoria(desc, tipo = 'saida') {
-    if (!desc) return tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
-    const d = desc.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const cats = CATEGORIAS;
-    for (const [cat, palavras] of Object.entries(cats)) {
-        if (palavras.some(p => d.includes(p))) return cat;
+    if (!desc) {
+        return tipo === 'entrada'
+            ? 'Outras Receitas'
+            : 'Outras Despesas';
     }
-    return tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
+
+    const d = desc
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+    const categorias = CATEGORIAS[tipo];
+
+    for (const [categoria, palavras] of Object.entries(categorias)) {
+        if (palavras.some(p => d.includes(p))) {
+            return categoria;
+        }
+    }
+
+    return tipo === 'entrada'
+        ? 'Outras Receitas'
+        : 'Outras Despesas';
 }
 
 function initPin() {
