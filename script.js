@@ -248,6 +248,7 @@ function processarMensagem() {
     const texto = textoOriginal.toLowerCase();
 
     input.value = "";
+}
     
     if (!contas.length) {
         contas = [{nome: 'Principal', saldoInicial: 0}];
