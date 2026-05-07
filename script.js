@@ -1114,8 +1114,12 @@ function abrirExtrato(tipo) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM carregado');
     
-    const modo = localStorage.getItem('bankday_modo');
-    
+    let modo = localStorage.getItem('bankday_modo');
+
+if (!modo) {
+    modo = 'teste';
+    localStorage.setItem('bankday_modo', 'teste');
+        }
     if (!modo) {
         document.getElementById('modal-onboarding').style.display = 'flex';
         document.getElementById('app-content').style.display = 'none';
