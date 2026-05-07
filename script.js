@@ -6,8 +6,8 @@ if ('serviceWorker' in navigator) {
 // VARIÁVEIS GLOBAIS
 let tentativasPin = 0;
 let pinBloqueadoAte = 0;
-let modoTeste = localStorage.getItem('bankday_modo') === 'teste';
-let modoProducao = localStorage.getItem('bankday_modo') === 'producao';
+let modoTeste = true;
+let modoProducao = false;
 let menuTimeout = null;
 
 let dados = JSON.parse(localStorage.getItem('bankday') || '[]');
@@ -201,7 +201,7 @@ function selecionarModo(tipo) {
     if (tipo === 'producao') {
         modoProducao = true;
         modoTeste = false;
-        initPin();
+     
     } else {
         modoTeste = true;
         modoProducao = false;
@@ -959,13 +959,9 @@ input.addEventListener('keydown', function(e) {
 atualizar();
 atualizarMes();
 
-if (!modoTeste && !modoProducao) {
-    document.getElementById('modal-onboarding').style.display = 'flex';
-} else if (modoProducao) {
-    initPin();
-} else {
-    document.getElementById('app-content').style.display = 'flex';
-}
+document.getElementById('modal-onboarding').style.display = 'none';
+document.getElementById('tela-pin').style.display = 'none';
+document.getElementById('app-content').style.display = 'flex';
 
 if (localStorage.getItem('bankday_tema') === 'light') {
     document.body.classList.add('light-mode');
