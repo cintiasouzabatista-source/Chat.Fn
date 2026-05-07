@@ -59,11 +59,11 @@ header{background:linear-gradient(180deg,#1e293b 0%,#0f172a 100%);padding:12px 1
 .card-item{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:12px;cursor:pointer}
 .card-item:active{background:#334155}
 .card-item p:first-child{font-size:11px;color:#64748b;font-weight:500;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
-.card-item.val{font-size:18px;font-weight:900;line-height:1}
+..card-item .val{font-size:18px;font-weight:900;line-height:1}
 .card-liquido{grid-column:1/-1;background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border:1px solid #334155;border-radius:16px;padding:16px;margin-top:2px}
 .card-liquido-top{display:flex;justify-content:space-between;align-items:center}
 .card-liquido-top p{font-size:11px;color:#64748b;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
-.card-liquido.val.big{font-size:28px;margin-top:4px}
+.card-liquido .val.big{font-size:28px;margin-top:4px}
 .text-emerald{color:#10b981}
 .text-orange{color:#f97316}
 .text-blue{color:#3b82f6}
