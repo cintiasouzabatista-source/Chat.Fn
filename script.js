@@ -337,6 +337,120 @@ let banco = metodo === 'cartao'
     atualizar();
     console.log('Lançamento criado:', desc, valorNum);
 }
+
+function importarMovimentacao(textoColado) {
+    if (!textoColado.trim()) {
+        addMensagem('Cole uma movimentação válida', 'system');
+        return;
+    }
+
+    const linhas = textoColado
+        .split('\n')
+        .map(l => l.trim())
+        .filter(Boolean);
+
+    let adicionadas = 0;
+
+    linhas.forEach(linha => {
+
+        // tenta achar valor no final da linha
+        const matchValor = linha.match(/(\d+[.,]\d{2})$/);
+
+        if (!matchValor) return;
+
+        const valor = parseFloat(
+            matchValor[1].replace('.', '').replace(',', '.')
+        );
+
+        if (isNaN(valor)) return;
+
+        // remove valor da descrição
+        let descricao = linha
+            .replace(matchValor[1], '')
+            .trim();
+
+        // remove data do começo
+        descricao = descricao.replace(
+            /^\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?\s*/,
+            ''
+        );
+
+        const texto = descricao.toLowerCase();
+
+        // detectar entrada
+        const entradaKeywords = [
+            'recebido',
+            'salario',
+            'salário',
+            'pix recebido',
+            'deposito',
+            'depósito',
+            'credito',
+            'crédito',
+            'ted',
+            'doc'
+        ];
+
+        const tipo = entradaKeywords.some(p =>
+            texto.includes(p)
+        )
+            ? 'entrada'
+            : 'saida';
+
+        let metodo = 'conta';
+
+        if (
+            texto.includes('credito') ||
+            texto.includes('crédito') ||
+            texto.includes('nubank') ||
+            texto.includes('visa') ||
+            texto.includes('master')
+        ) {
+            metodo = 'cartao';
+        }
+
+        const banco = metodo === 'cartao'
+            ? (cartoes[0]?.nome || 'Cartão')
+            : (contas[0]?.nome || 'Principal');
+
+        dados.push({
+            id: Date.now() + Math.random(),
+            descricao: cap(descricao),
+            valor,
+            tipo,
+            metodo,
+            banco,
+            data: new Date().toISOString(),
+            texto: linha,
+            categoria: identificarCategoria(descricao, tipo)
+        });
+
+        adicionadas++;
+    });
+
+    salvar();
+    atualizar();
+
+    addMensagem(
+        `${adicionadas} transações importadas`,
+        'system'
+    );
+}
+
+function executarImportacao() {
+    const texto = document.getElementById(
+        'texto-importacao'
+    ).value;
+
+    importarMovimentacao(texto);
+
+    document.getElementById(
+        'texto-importacao'
+    ).value = '';
+
+    fecharModal('modal-importar');
+}
+
 function parceleiNoCartao(descricao, valorTotal, parcelas, cartaoNome) {
     let cartao = cartoes.find(c => c.nome.toLowerCase() === cartaoNome.toLowerCase()) || cartoes[0];
     if (!cartao) {
