@@ -447,48 +447,103 @@ function executarImportacao() {
     const linhas = texto.split('\n');
     let importadas = 0;
     let erros = 0;
+    let formatoDetectado = null;
 
-    linhas.forEach(linha => {
+    linhas.forEach((linha, idx) => {
         linha = linha.trim();
-        if (!linha || linha.toUpperCase().includes('DATA') || linha.toUpperCase().includes('HISTÓRICO')) return;
         
-        // Ignora linhas de SALDO
-        if (linha.toUpperCase().includes('SALDO ANTERIOR') || linha.toUpperCase().includes('SALDO ATUAL')) return;
+        // Pula linhas vazias, cabeçalhos e saldos
+        if (!linha || 
+            linha.toUpperCase().includes('DATA') || 
+            linha.toUpperCase().includes('HISTÓRICO') ||
+            linha.toUpperCase().includes('LANÇAMENTO') ||
+            linha.toUpperCase().includes('SALDO')) return;
 
-        // Regex: 02/05/2026 PIX RECEBIDO - CLARA 500,00 C
-        const regex = /^(\d{2}\/\d{2}\/\d{4})\s+(.+?)\s+([\d.,]+)\s*([CD])?$/i;
-        const match = linha.match(regex);
+        let data, desc, valor, tipo;
+
+        // FORMATO 1: 02/05/2026 PIX RECEBIDO 500,00 C
+        let match = linha.match(/^(\d{2}\/\d{2}\/\d{4})\s+(.+?)\s+([\d.,]+)\s*([CD])?$/i);
+        if (match) {
+            [, data, desc, valor, tipo] = match;
+            formatoDetectado = 'BANCO_1';
+        }
+
+        // FORMATO 2: 02/05/2026 PIX RECEBIDO - CLARA + R$ 500,00
+        if (!match) {
+            match = linha.match(/^(\d{2}\/\d{2}\/\d{4})\s+(.+?)\s*([+-])\s*R?\$?\s*([\d.,]+)$/i);
+            if (match) {
+                [, data, desc, tipo, valor] = match;
+                formatoDetectado = 'BANCO_2';
+            }
+        }
+
+        // FORMATO 3: 02/05 COMPRA CARTÃO 350,00-
+        if (!match) {
+            match = linha.match(/^(\d{2}\/\d{2})\s+(.+?)\s+([\d.,]+)([+-])$/i);
+            if (match) {
+                [, data, desc, valor, tipo] = match;
+                data += '/' + new Date().getFullYear(); // Adiciona ano atual
+                formatoDetectado = 'BANCO_3';
+            }
+        }
+
+        // FORMATO 4: 02/05/26 PIX RECEBIDO 500.00
+        if (!match) {
+            match = linha.match(/^(\d{2}\/\d{2}\/\d{2,4})\s+(.+?)\s+([\d.,]+)$/i);
+            if (match) {
+                [, data, desc, valor] = match;
+                // Deduz tipo pela descrição
+                tipo = desc.toLowerCase().match(/receb|depós|créd|estorno|salár/)? 'C' : 'D';
+                formatoDetectado = 'BANCO_4';
+            }
+        }
+
+        // FORMATO 5: 02/05/2026 - PIX RECEBIDO - R$ 500,00
+        if (!match) {
+            match = linha.match(/^(\d{2}\/\d{2}\/\d{4})\s*[-–]\s*(.+?)\s*[-–]\s*R?\$?\s*([\d.,]+)$/i);
+            if (match) {
+                [, data, desc, valor] = match;
+                tipo = desc.toLowerCase().match(/receb|depós|créd|estorno|salár/)? 'C' : 'D';
+                formatoDetectado = 'BANCO_5';
+            }
+        }
 
         if (match) {
-            const [, dataStr, desc, valorStr, tipoLetra] = match;
-            
-            // Converte data DD/MM/YYYY pra ISO
-            const [dia, mes, ano] = dataStr.split('/');
-            const data = new Date(ano, mes - 1, dia).toISOString();
-            
-            // Converte valor BR pra número
-            const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
-            
-            // C = Crédito = entrada, D = Débito = saída
-            const tipo = tipoLetra?.toUpperCase() === 'C' ? 'entrada' : 'saida';
-            
-            // Se não tem C/D, tenta deduzir pela descrição
-            const tipoFinal = tipoLetra ? tipo : (desc.toLowerCase().includes('receb') || desc.toLowerCase().includes('pix receb') ? 'entrada' : 'saida');
+            try {
+                // Converte data DD/MM/YYYY ou DD/MM/YY
+                let partesData = data.split('/');
+                let dia = partesData[0];
+                let mes = partesData[1];
+                let ano = partesData[2];
+                if (ano.length === 2) ano = '20' + ano;
+                const dataISO = new Date(ano, mes - 1, dia).toISOString();
+                
+                // Converte valor BR: 1.500,00 -> 1500.00
+                const valorNum = parseFloat(valor.replace(/\./g, '').replace(',', '.'));
+                
+                // Define tipo: C/+ = entrada, D/- = saída
+                const tipoFinal = (tipo?.toUpperCase() === 'C' || tipo === '+')? 'entrada' : 'saida';
+                
+                // Limpa descrição
+                desc = desc.trim().replace(/\s+/g, ' ');
 
-            const id = Date.now() + Math.random();
-            dados.push({
-                id: id,
-                descricao: cap(desc.trim()),
-                valor: valor,
-                tipo: tipoFinal,
-                metodo: 'conta',
-                banco: contas[0]?.nome || 'Principal',
-                data: data,
-                texto: linha,
-                categoria: identificarCategoria(desc, tipoFinal)
-            });
-            importadas++;
-        } else {
+                const id = Date.now() + Math.random() + idx;
+                dados.push({
+                    id: id,
+                    descricao: cap(desc),
+                    valor: valorNum,
+                    tipo: tipoFinal,
+                    metodo: desc.toLowerCase().includes('cartão') || desc.toLowerCase().includes('cartao')? 'cartao' : 'conta',
+                    banco: contas[0]?.nome || 'Principal',
+                    data: dataISO,
+                    texto: linha,
+                    categoria: identificarCategoria(desc, tipoFinal)
+                });
+                importadas++;
+            } catch (e) {
+                erros++;
+            }
+        } else if (linha.length > 10) {
             erros++;
         }
     });
@@ -497,13 +552,14 @@ function executarImportacao() {
         salvar();
         atualizar();
         fecharModal('modal-importar');
-        addMensagem(`${importadas} transações importadas com sucesso`, 'system');
-        if (erros > 0) addMensagem(`${erros} linhas ignoradas por formato inválido`, 'system');
+        addMensagem(`${importadas} transações importadas`, 'system');
+        if (formatoDetectado) addMensagem(`Formato detectado: ${formatoDetectado}`, 'system');
+        if (erros > 0) addMensagem(`${erros} linhas ignoradas`, 'system');
     } else {
-        addMensagem('Nenhuma transação válida encontrada. Formato: DD/MM/AAAA DESCRIÇÃO VALOR C/D', 'system');
+        addMensagem('Nenhuma transação reconhecida. Verifique o formato', 'system');
+        addMensagem('Formatos aceitos: DD/MM/AAAA DESCRIÇÃO VALOR C/D ou com +/- ou R$', 'system');
     }
 }
-
 function atualizar() {
     const mes = mesAtual.getMonth();
     const ano = mesAtual.getFullYear();
