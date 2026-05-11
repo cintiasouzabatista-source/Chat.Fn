@@ -164,11 +164,26 @@
 <!-- MODAL IMPORTAR -->
 <div id="modal-importar" class="modal">
     <div class="modal-content">
-        <h2>Importar movimentação</h2>
-        <textarea id="texto-importacao" placeholder="Cole aqui o extrato copiado do banco..." style="width:100%;height:250px"></textarea>
-        <div style="display:flex;gap:10px;margin-top:15px">
-            <button onclick="fecharModal('modal-importar')">Cancelar</button>
-            <button onclick="executarImportacao()">Importar</button>
+        <div class="modal-head">
+            <h3>Importar movimentação</h3>
+            <button onclick="fecharModal('modal-importar')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-hint">Cole o extrato copiado do banco. Formato aceito:</p>
+            <div class="code-example">
+                02/05/2026 PIX RECEBIDO 500,00 C<br>
+                03/05/2026 PAGAMENTO LUZ 150,00 D
+            </div>
+            <textarea id="texto-importacao" placeholder="Cole aqui..."></textarea>
+            
+            <div class="modal-actions">
+                <button onclick="fecharModal('modal-importar')" class="btn-cancelar">
+                    Cancelar
+                </button>
+                <button onclick="executarImportacao()" class="btn-save">
+                    Importar
+                </button>
+            </div>
         </div>
     </div>
 </div>
