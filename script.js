@@ -557,24 +557,40 @@ function executarImportacao() {
 
 function lerArquivoExtrato(event) {
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file) {
+        addMensagem('Nenhum arquivo selecionado', 'system');
+        return;
+    }
+
+    console.log('Arquivo selecionado:', file.name);
+    addMensagem(`Lendo arquivo ${file.name}...`, 'system');
 
     const reader = new FileReader();
+    
     reader.onload = function(e) {
         const conteudo = e.target.result;
         const extensao = file.name.split('.').pop().toLowerCase();
+        
+        console.log('Conteúdo lido:', conteudo.substring(0, 200));
         
         if (extensao === 'csv') {
             importarCSV(conteudo);
         } else if (extensao === 'ofx') {
             importarOFX(conteudo);
         } else {
-            addMensagem('Formato não suportado. Use CSV ou OFX', 'system');
+            addMensagem('Formato inválido. Use.csv ou.ofx', 'system');
         }
     };
-    reader.readAsText(file);
-}
 
+    reader.onerror = function() {
+        addMensagem('Erro ao ler arquivo', 'system');
+    };
+
+    reader.readAsText(file, 'UTF-8');
+    
+    // Limpa o input pra poder selecionar o mesmo arquivo de novo
+    event.target.value = '';
+}
 function importarCSV(texto) {
     const linhas = texto.split('\n');
     let importadas = 0;
