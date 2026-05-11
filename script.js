@@ -554,6 +554,147 @@ function executarImportacao() {
         addMensagem('Mercado Pago: precisa ter o valor antes do ID longo', 'system');
     }
 }
+
+function lerArquivoExtrato(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const conteudo = e.target.result;
+        const extensao = file.name.split('.').pop().toLowerCase();
+        
+        if (extensao === 'csv') {
+            importarCSV(conteudo);
+        } else if (extensao === 'ofx') {
+            importarOFX(conteudo);
+        } else {
+            addMensagem('Formato não suportado. Use CSV ou OFX', 'system');
+        }
+    };
+    reader.readAsText(file);
+}
+
+function importarCSV(texto) {
+    const linhas = texto.split('\n');
+    let importadas = 0;
+    let erros = 0;
+
+    // Detecta separador: ; ou,
+    const primeiraLinha = linhas[0];
+    const separador = primeiraLinha.includes(';')? ';' : ',';
+
+    linhas.forEach((linha, idx) => {
+        if (idx === 0 ||!linha.trim()) return; // Pula cabeçalho
+        
+        const cols = linha.split(separador);
+        if (cols.length < 3) { erros++; return; }
+
+        try {
+            // Tenta detectar colunas automaticamente
+            let data, desc, valor, tipo;
+            
+            // Formato comum: Data,Descrição,Valor ou Data,Histórico,Valor,Tipo
+            data = cols[0].trim();
+            desc = cols[1].trim();
+            valor = cols[2].trim();
+            tipo = cols[3]? cols[3].trim() : null;
+
+            // Limpa data: 01/04/2026 ou 01-04-2026
+            data = data.replace(/-/g, '/');
+            let partesData = data.split('/');
+            if (partesData[2].length === 2) partesData[2] = '20' + partesData[2];
+            const dataISO = new Date(partesData[2], partesData[1] - 1, partesData[0]).toISOString();
+
+            // Limpa valor: R$ 1.500,00 -> 1500.00
+            valor = parseFloat(valor.replace(/R\$\s?/g, '').replace(/\./g, '').replace(',', '.'));
+            if (isNaN(valor)) { erros++; return; }
+
+            // Detecta tipo
+            let tipoFinal = 'saida';
+            if (tipo) {
+                tipoFinal = tipo.toUpperCase().match(/C|CRÉD|CRED|\+/)? 'entrada' : 'saida';
+            } else {
+                tipoFinal = valor > 0? 'entrada' : 'saida';
+                valor = Math.abs(valor);
+            }
+
+            const id = Date.now() + Math.random() + idx;
+            dados.push({
+                id: id,
+                descricao: cap(desc),
+                valor: valor,
+                tipo: tipoFinal,
+                metodo: 'conta',
+                banco: contas[0]?.nome || 'Principal',
+                data: dataISO,
+                texto: linha,
+                categoria: identificarCategoria(desc, tipoFinal)
+            });
+            importadas++;
+        } catch (e) {
+            erros++;
+        }
+    });
+
+    if (importadas > 0) {
+        salvar();
+        atualizar();
+        fecharModal('modal-importar');
+        addMensagem(`${importadas} transações importadas do CSV`, 'system');
+        if (erros > 0) addMensagem(`${erros} linhas com erro`, 'system');
+    } else {
+        addMensagem('Nenhuma transação válida no CSV', 'system');
+    }
+    
+    document.getElementById('arquivo-extrato').value = '';
+}
+
+function importarOFX(texto) {
+    // OFX é XML, parser simples
+    const transacoes = texto.match(/<STMTTRN>[\s\S]*?<\/STMTTRN>/g);
+    if (!transacoes) {
+        addMensagem('Arquivo OFX inválido', 'system');
+        return;
+    }
+
+    let importadas = 0;
+    transacoes.forEach((trans, idx) => {
+        try {
+            const data = trans.match(/<DTPOSTED>(\d{8})/)[1];
+            const valor = parseFloat(trans.match(/<TRNAMT>(-?[\d.]+)/)[1]);
+            const desc = trans.match(/<MEMO>([^<]+)/)[1];
+
+            const ano = data.substr(0, 4);
+            const mes = data.substr(4, 2);
+            const dia = data.substr(6, 2);
+            const dataISO = new Date(ano, mes - 1, dia).toISOString();
+
+            const id = Date.now() + Math.random() + idx;
+            dados.push({
+                id: id,
+                descricao: cap(desc),
+                valor: Math.abs(valor),
+                tipo: valor > 0? 'entrada' : 'saida',
+                metodo: 'conta',
+                banco: contas[0]?.nome || 'Principal',
+                data: dataISO,
+                texto: desc,
+                categoria: identificarCategoria(desc, valor > 0? 'entrada' : 'saida')
+            });
+            importadas++;
+        } catch (e) {}
+    });
+
+    if (importadas > 0) {
+        salvar();
+        atualizar();
+        fecharModal('modal-importar');
+        addMensagem(`${importadas} transações importadas do OFX`, 'system');
+    }
+    document.getElementById('arquivo-extrato').value = '';
+}
+
 function atualizar() {
     const mes = mesAtual.getMonth();
     const ano = mesAtual.getFullYear();
