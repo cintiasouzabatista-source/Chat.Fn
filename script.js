@@ -1192,4 +1192,93 @@ function abrirExtrato(tipo) {
     filtrarExtrato();
 }
 
+// LIGA EVENTOS SEMPRE QUE O APP APARECER
+function ligarEventosInput() {
+    const input = document.getElementById('user-input');
+    const btn = document.getElementById('btn-enviar');
+    
+    if (input && !input.dataset.ligado) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                processarMensagem();
+            }
+        });
+        input.dataset.ligado = 'true';
+        console.log('Input ligado');
+    }
+    
+    if (btn && !btn.dataset.ligado) {
+        btn.addEventListener('click', processarMensagem);
+        btn.dataset.ligado = 'true';
+        console.log('Botão ligado');
+    }
+}
 
+// MODIFICA A FUNÇÃO liberarApp - ADICIONA ESSA LINHA NO FINAL
+function liberarApp() {
+    tentativasPin = 0;
+    pinBloqueadoAte = 0;
+    document.getElementById('pin-erro').classList.add('hidden');
+    document.getElementById('tela-pin').style.display = 'none';
+    document.getElementById('app-content').style.display = 'flex';
+
+    const inputs = document.querySelectorAll('.pin-input');
+    inputs.forEach(i => {
+        i.disabled = false;
+        i.value = '';
+    });
+    
+    ligarEventosInput(); // <-- ADICIONA ESSA LINHA
+}
+
+// MODIFICA A FUNÇÃO selecionarModo - ADICIONA ESSA LINHA NO FINAL DO 'else if modo teste'
+function selecionarModo(tipo) {
+    localStorage.setItem('bankday_modo', tipo);
+    document.getElementById('modal-onboarding').style.display = 'none';
+    if (tipo === 'producao') {
+        modoProducao = true;
+        modoTeste = false;
+    } else {
+        modoTeste = true;
+        modoProducao = false;
+        if (!contas.length) contas = [{nome: 'Principal', saldoInicial: 0}];
+        salvar();
+        document.getElementById('app-content').style.display = 'flex';
+        document.getElementById('tela-pin').style.display = 'none';
+        ligarEventosInput(); // <-- ADICIONA ESSA LINHA
+    }
+}
+
+// INIT FINAL
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado');
+    
+    const modo = localStorage.getItem('bankday_modo');
+    
+    if (!modo) {
+        document.getElementById('modal-onboarding').style.display = 'flex';
+        document.getElementById('app-content').style.display = 'none';
+        document.getElementById('tela-pin').style.display = 'none';
+    } else if (modo === 'teste') {
+        document.getElementById('modal-onboarding').style.display = 'none';
+        document.getElementById('tela-pin').style.display = 'none';
+        document.getElementById('app-content').style.display = 'flex';
+        if (!contas.length) contas = [{nome: 'Principal', saldoInicial: 0}];
+        salvar();
+        ligarEventosInput(); // <-- LIGA AQUI TAMBÉM
+    } else if (modo === 'producao') {
+        document.getElementById('modal-onboarding').style.display = 'none';
+        document.getElementById('app-content').style.display = 'none';
+        initPin();
+    }
+    
+    atualizarMes();
+    atualizar();
+    
+    if (localStorage.getItem('bankday_tema') === 'light') {
+        document.body.classList.add('light-mode');
+        const icon = document.getElementById('theme-icon');
+        if (icon) icon.className = 'fas fa-sun';
+    }
+});
