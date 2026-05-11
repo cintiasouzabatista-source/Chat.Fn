@@ -496,11 +496,99 @@ function parceleiNoCartao(descricao, valorTotal, parcelas, cartaoNome) {
 }
 
 function atualizar() {
-    const mes = mesAtual.getMonth(), ano = mesAtual.getFullYear();
-    const dadosMes = dados.filter(d => {
+    const mes = mesAtual.getMonth();
+    const ano = mesAtual.getFullYear();
+
+    let dadosMes = dados.filter(d => {
         const dt = new Date(d.data);
-        return dt.getMonth() === mes && dt.getFullYear() === ano;
+        return dt.getMonth() === mes &&
+               dt.getFullYear() === ano;
     });
+
+    let ent = dadosMes
+        .filter(d => d.tipo === 'entrada')
+        .reduce((s, d) => s + d.valor, 0);
+
+    let sai = dadosMes
+        .filter(d =>
+            d.tipo === 'saida' &&
+            d.metodo !== 'cartao'
+        )
+        .reduce((s, d) => s + d.valor, 0);
+
+    let fat = dadosMes
+        .filter(d =>
+            d.tipo === 'saida' &&
+            d.metodo === 'cartao'
+        )
+        .reduce((s, d) => s + d.valor, 0);
+
+    let saldo = ent - sai;
+    let liquido = saldo - fat;
+
+    // SALDO PROJETADO
+    if (config.projetarSaldo) {
+
+        const hoje = new Date();
+
+        const futuras = dados.filter(d => {
+            const dt = new Date(d.data);
+
+            return dt > hoje &&
+                   dt.getMonth() === mes &&
+                   dt.getFullYear() === ano;
+        });
+
+        const futurasEntradas = futuras
+            .filter(d => d.tipo === 'entrada')
+            .reduce((s, d) => s + d.valor, 0);
+
+        const futurasSaidas = futuras
+            .filter(d => d.tipo === 'saida')
+            .reduce((s, d) => s + d.valor, 0);
+
+        saldo += futurasEntradas - futurasSaidas;
+        liquido += futurasEntradas - futurasSaidas;
+    }
+
+    document.getElementById('card-entradas').textContent =
+        formatar(ent);
+
+    document.getElementById('card-saidas').textContent =
+        formatar(sai);
+
+    document.getElementById('card-saldo').textContent =
+        formatar(saldo);
+
+    document.getElementById('card-cartoes').textContent =
+        formatar(fat);
+
+    document.getElementById('card-liquido').textContent =
+        formatar(liquido);
+
+    // CORES DINÂMICAS
+    document.getElementById('card-saldo').className =
+        `val ${saldo >= 0
+            ? 'text-blue'
+            : 'text-rose'}`;
+
+    document.getElementById('card-liquido').className =
+        `val big ${liquido >= 0
+            ? 'text-emerald'
+            : 'text-rose'}`;
+
+    document.getElementById('card-saidas').className =
+        `val ${sai > ent
+            ? 'text-rose'
+            : 'text-orange'}`;
+
+    document.getElementById('card-cartoes').className =
+        `val ${fat > saldo
+            ? 'text-rose'
+            : 'text-orange'}`;
+
+    aplicarVisualSaldoProjetado();
+}
 
     const ent = dadosMes.filter(d => d.tipo === 'entrada').reduce((s,d) => s + d.valor, 0);
     const sai = dadosMes.filter(d => d.tipo === 'saida' && d.metodo!== 'cartao').reduce((s,d) => s + d.valor, 0);
@@ -631,7 +719,18 @@ function filtrarExtrato() {
     const cat = document.getElementById('filtro-categoria')?.value || '';
 
     let filtrados = [...dados];
-    if (tipo) filtrados = filtrados.filter(d => d.tipo === tipo || d.metodo === tipo);
+  if (tipo) {
+
+    if (tipo === 'cartao') {
+        filtrados = filtrados.filter(
+            d => d.metodo === 'cartao'
+        );
+    } else {
+        filtrados = filtrados.filter(
+            d => d.tipo === tipo
+        );
+    }
+}
     if (cat) filtrados = filtrados.filter(d => d.categoria === cat);
 
     const ent = filtrados.filter(d => d.tipo === 'entrada').reduce((s,d) => s+d.valor, 0);
