@@ -438,61 +438,70 @@ function importarMovimentacao(textoColado) {
 }
 
 function executarImportacao() {
-    const texto = document.getElementById(
-        'texto-importacao'
-    ).value;
-
-    importarMovimentacao(texto);
-
-    document.getElementById(
-        'texto-importacao'
-    ).value = '';
-
-    fecharModal('modal-importar');
-}
-
-function parceleiNoCartao(descricao, valorTotal, parcelas, cartaoNome) {
-    let cartao = cartoes.find(c => c.nome.toLowerCase() === cartaoNome.toLowerCase()) || cartoes[0];
-    if (!cartao) {
-        addMensagem(`Cadastre um cartão primeiro`, 'system');
+    const texto = document.getElementById('texto-importacao').value.trim();
+    if (!texto) {
+        addMensagem('Cole o extrato primeiro', 'system');
         return;
     }
-    const valorParcela = Math.floor(valorTotal / parcelas * 100) / 100;
-    const resto = +(valorTotal - valorParcela * (parcelas - 1)).toFixed(2);
-    const hoje = new Date();
-    let primeiroId = null;
 
-    for (let i = 0; i < parcelas; i++) {
-        let dataCompra = new Date(hoje.getFullYear(), hoje.getMonth() + i, hoje.getDate());
-        let mesFatura = dataCompra.getMonth();
-        let anoFatura = dataCompra.getFullYear();
-        if (dataCompra.getDate() > cartao.diaFechamento) {
-            mesFatura++;
-            if (mesFatura > 11) { mesFatura = 0; anoFatura++; }
+    const linhas = texto.split('\n');
+    let importadas = 0;
+    let erros = 0;
+
+    linhas.forEach(linha => {
+        linha = linha.trim();
+        if (!linha || linha.toUpperCase().includes('DATA') || linha.toUpperCase().includes('HISTÓRICO')) return;
+        
+        // Ignora linhas de SALDO
+        if (linha.toUpperCase().includes('SALDO ANTERIOR') || linha.toUpperCase().includes('SALDO ATUAL')) return;
+
+        // Regex: 02/05/2026 PIX RECEBIDO - CLARA 500,00 C
+        const regex = /^(\d{2}\/\d{2}\/\d{4})\s+(.+?)\s+([\d.,]+)\s*([CD])?$/i;
+        const match = linha.match(regex);
+
+        if (match) {
+            const [, dataStr, desc, valorStr, tipoLetra] = match;
+            
+            // Converte data DD/MM/YYYY pra ISO
+            const [dia, mes, ano] = dataStr.split('/');
+            const data = new Date(ano, mes - 1, dia).toISOString();
+            
+            // Converte valor BR pra número
+            const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
+            
+            // C = Crédito = entrada, D = Débito = saída
+            const tipo = tipoLetra?.toUpperCase() === 'C' ? 'entrada' : 'saida';
+            
+            // Se não tem C/D, tenta deduzir pela descrição
+            const tipoFinal = tipoLetra ? tipo : (desc.toLowerCase().includes('receb') || desc.toLowerCase().includes('pix receb') ? 'entrada' : 'saida');
+
+            const id = Date.now() + Math.random();
+            dados.push({
+                id: id,
+                descricao: cap(desc.trim()),
+                valor: valor,
+                tipo: tipoFinal,
+                metodo: 'conta',
+                banco: contas[0]?.nome || 'Principal',
+                data: data,
+                texto: linha,
+                categoria: identificarCategoria(desc, tipoFinal)
+            });
+            importadas++;
+        } else {
+            erros++;
         }
-        const dataVencimento = new Date(anoFatura, mesFatura, cartao.diaVencimento);
-        const valorFinal = i === parcelas - 1? resto : valorParcela;
-        const id = Date.now() + i + Math.random();
-        if (i === 0) primeiroId = id;
+    });
 
-        dados.push({
-            id: id,
-            descricao: descricao,
-            valor: valorFinal,
-            tipo: "saida",
-            metodo: "cartao",
-            banco: cartao.nome,
-            data: dataVencimento.toISOString(),
-            texto: `${descricao} ${i+1}/${parcelas}`,
-            parcelaAtual: i + 1,
-            totalParcelas: parcelas,
-            valorTotalCompra: valorTotal,
-            categoria: identificarCategoria(descricao, 'saida')
-        });
+    if (importadas > 0) {
+        salvar();
+        atualizar();
+        fecharModal('modal-importar');
+        addMensagem(`${importadas} transações importadas com sucesso`, 'system');
+        if (erros > 0) addMensagem(`${erros} linhas ignoradas por formato inválido`, 'system');
+    } else {
+        addMensagem('Nenhuma transação válida encontrada. Formato: DD/MM/AAAA DESCRIÇÃO VALOR C/D', 'system');
     }
-    salvar();
-    addMensagem(`${descricao} ${parcelas}x de R$ ${valorParcela.toFixed(2)} no ${cartao.nome}`, 'user', `Fecha dia ${cartao.diaFechamento} | Vence dia ${cartao.diaVencimento}`, false, primeiroId);
-    atualizar();
 }
 
 function atualizar() {
