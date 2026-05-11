@@ -592,6 +592,12 @@ function lerArquivoExtrato(event) {
     event.target.value = '';
 }
 function importarCSV(texto) {
+    console.log('CSV recebido:', texto.substring(0, 300));
+    addMensagem('Processando CSV...', 'system');
+    
+    const linhas = texto.split('\n');
+    //... resto do código
+function importarCSV(texto) {
     const linhas = texto.split('\n');
     let importadas = 0;
     let erros = 0;
