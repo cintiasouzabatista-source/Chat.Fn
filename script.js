@@ -417,15 +417,14 @@ function importarCSV(texto) {
 }
 
 function atualizar() {
-    console.log("Dados totais:", dados.length); // Verifique isso no console do navegador (F12)
-    const mes = mesAtual.getMonth();
+    const mes = mesAtual.getMonth(); // Se houver outra linha 'const mes' abaixo, apague-a!
     const ano = mesAtual.getFullYear();
-    const mes = mesAtual.getMonth();
-    const ano = mesAtual.getFullYear();
+    
     let dadosMes = dados.filter(d => {
         const dt = new Date(d.data);
         return dt.getMonth() === mes && dt.getFullYear() === ano;
     });
+    // ... restante do código
     let ent = dadosMes.filter(d => d.tipo === 'entrada').reduce((s, d) => s + d.valor, 0);
     let sai = dadosMes.filter(d => d.tipo === 'saida' && d.metodo!== 'cartao').reduce((s, d) => s + d.valor, 0);
     let fat = dadosMes.filter(d => d.tipo === 'saida' && d.metodo === 'cartao').reduce((s, d) => s + d.valor, 0);
