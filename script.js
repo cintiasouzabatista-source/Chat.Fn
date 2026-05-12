@@ -305,11 +305,11 @@ function executarImportacao() {
 
     if (importadas > 0) {
         salvar();
-        atualizar();
-        atualizarMes();
+        atualizar(); // Esta função agora vai funcionar sem o erro de 'mes'
         fecharModal('modal-importar');
         if (textarea) textarea.value = "";
         addMensagem(`${importadas} transações importadas!`, 'system');
+    }
     } else {
         addMensagem('Nenhum valor reconhecido no texto.', 'system');
     }
