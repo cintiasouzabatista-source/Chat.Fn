@@ -211,20 +211,37 @@ function addMensagem(texto, tipo = 'system', info = '', autoLimpar = true, id = 
     if (autoLimpar && tipo === 'system') setTimeout(() => div.remove(), 5000);
 }
 
-// --- INICIALIZAÇÃO ---
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Forçar esconder tudo antes de decidir
+    const onboarding = document.getElementById('modal-onboarding');
+    const appContent = document.getElementById('app-content');
+    const telaPin = document.getElementById('tela-pin');
+    
+    if(onboarding) onboarding.style.display = 'none';
+    if(appContent) appContent.style.display = 'none';
+    if(telaPin) telaPin.style.display = 'none';
+
+    // 2. Checar o modo salvo
     const modo = localStorage.getItem('bankday_modo');
+    const pinSalvo = localStorage.getItem('bankday_pin');
 
     if (!modo) {
-        abrirModal('modal-onboarding');
+        // Se não tem modo, obrigatoriamente vai para o Boas-vindas
+        if(onboarding) onboarding.style.display = 'flex';
     } else if (modo === 'teste') {
-        document.getElementById('app-content').style.display = 'flex';
+        // Modo teste entra direto
+        if(appContent) appContent.style.display = 'flex';
         atualizarMes();
         atualizar();
-    } else {
-        initPin();
+    } else if (modo === 'producao') {
+        // Só abre o PIN se o modo for explicitamente PRODUÇÃO
+        if (telaPin) {
+            telaPin.style.display = 'flex';
+            initPin(); // Inicia a lógica dos quadradinhos do PIN
+        }
     }
 
+    // Listener do input de chat
     const input = document.getElementById('user-input');
     if (input) {
         input.addEventListener('keypress', (e) => {
