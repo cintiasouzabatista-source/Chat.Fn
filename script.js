@@ -291,32 +291,26 @@ function executarImportacao() {
                 
                 const desc = linha.replace(matchValor[0], '').replace(/R\$/g, '').trim() || 'Lançamento Importado';
 
-                dados.push({
-                    id: Date.now() + Math.random(),
-                    descricao: cap(desc),
-                    valor: valorNum,
-                    tipo: tipoFinal,
-                    metodo: 'conta',
-                    banco: contas[0]?.nome || 'Principal',
-                    data: new Date().toISOString(),
-                    categoria: identificarCategoria(desc, tipoFinal)
-                });
-                importadas++;
-            }
-        }
-    });
-
-    if (importadas > 0) {
-        salvar();
-        atualizar();
+               // Dentro do loop da função executarImportacao, substitua a criação do objeto:
+dados.push({
+    id: Date.now() + Math.random(),
+    descricao: cap(desc),
+    valor: valorNum,
+    tipo: tipoFinal,
+    metodo: 'conta',
+    banco: contas[0]?.nome || 'Principal',
+    // ESTA LINHA GARANTE QUE CAIA NO MÊS QUE VOCÊ ESTÁ VENDO:
+    data: new Date(mesAtual.getFullYear(), mesAtual.getMonth(), new Date().getDate()).toISOString(), 
+    categoria: identificarCategoria(desc, tipoFinal)
+});
+   if (importadas > 0) {
+        salvar();      // Grava no localStorage
+        atualizar();   // Recalcula totais e redesenha cards
+        atualizarMes(); // Garante que a navegação de data esteja certa
         fecharModal('modal-importar');
         textarea.value = "";
         addMensagem(`${importadas} transações importadas!`, 'system');
-    } else {
-        addMensagem('Nenhum valor reconhecido no texto.', 'system');
     }
-}
-
 // Corrigindo a leitura do arquivo para bater com o ID do HTML
 function lerArquivoExtrato(event) {
     const file = event.target.files[0];
@@ -446,13 +440,28 @@ function atualizar() {
     const elSaldo = document.getElementById('card-saldo');
     const elCartoes = document.getElementById('card-cartoes');
     const elLiquido = document.getElementById('card-liquido');
+    // ... (mantenha seus cálculos iniciais igual)
+
     if (elEntradas) elEntradas.textContent = formatar(ent);
     if (elSaidas) elSaidas.textContent = formatar(sai);
     if (elSaldo) elSaldo.textContent = formatar(saldo);
     if (elCartoes) elCartoes.textContent = formatar(fat);
     if (elLiquido) elLiquido.textContent = formatar(liquido);
-    if (elSaldo) elSaldo.className = `val ${saldo >= 0? 'text-blue' : 'text-rose'}`;
-    if (elLiquido) elLiquido.className = `val big ${liquido >= 0? 'text-emerald' : 'text-rose'}`;
+   // Ajuste de classes para manter o visual limpo e as cores certas
+    if (elSaldo) {
+        elSaldo.className = 'val'; // Limpa
+        elSaldo.classList.add(saldo >= 0 ? 'text-blue' : 'text-rose');
+    }
+    
+    if (elLiquido) {
+        elLiquido.className = 'val big'; // Limpa e mantém o destaque
+        elLiquido.classList.add(liquido >= 0 ? 'text-emerald' : 'text-rose');
+    }
+    // Se o modal de extrato estiver aberto, ele precisa atualizar junto!
+    if (document.getElementById('modal-extrato').classList.contains('active') || 
+        document.getElementById('modal-extrato').style.display === 'flex') {
+        filtrarExtrato();
+    }
     if (elSaidas) elSaidas.className = `val ${sai > ent? 'text-rose' : 'text-orange'}`;
     if (elCartoes) elCartoes.className = `val ${fat > saldo? 'text-rose' : 'text-orange'}`;
     aplicarVisualSaldoProjetado();
