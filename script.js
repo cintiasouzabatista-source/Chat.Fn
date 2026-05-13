@@ -237,7 +237,82 @@ function lerArquivoExtrato(event) {
     event.target.value = '';
 }
 
- if (importadas > 0) {
+function importarCSV(texto) {
+    console.log('CSV Nubank recebido:', texto.substring(0, 300));
+    addMensagem('Processando CSV do Nubank...', 'system');
+
+    const linhas = texto.split('\n');
+    let importadas = 0;
+    let erros = 0;
+    let comecouTransacoes = false;
+
+    linhas.forEach((linha, idx) => {
+        linha = linha.trim();
+        if (!linha) return;
+
+        if (linha.includes('RELEASE_DATE')) {
+            comecouTransacoes = true;
+            return;
+        }
+        if (!comecouTransacoes) return;
+
+        const cols = linha.split('\t').map(c => c.trim());
+        if (cols.length < 4) { erros++; return; }
+
+        try {
+            let data = cols[0]; // RELEASE_DATE
+            let desc = cols[1]; // TRANSACTION_TYPE
+            let valor = cols[3]; // TRANSACTION_NET_AMOUNT - ÍNDICE CORRETO
+
+            // Data: 01-04-2026 -> 01/04/2026
+            data = data.replace(/-/g, '/');
+            let partesData = data.split('/');
+            if (partesData.length!== 3) { erros++; return; }
+            if (partesData[2].length === 2) partesData[2] = '20' + partesData[2];
+
+            const dataISO = new Date(partesData[2], partesData[1] - 1, partesData[0]).toISOString();
+            if (isNaN(new Date(dataISO).getTime())) { erros++; return; }
+
+            // Valor: 6.521,87 ou -16,68
+            valor = valor.replace(/\./g, '').replace(',', '.');
+            valor = parseFloat(valor);
+            if (isNaN(valor)) { erros++; console.log('Valor inválido na linha:', linha); return; }
+
+            let tipoFinal = valor > 0? 'entrada' : 'saida';
+            valor = Math.abs(valor);
+
+            if (valor === 0) { erros++; return; }
+
+            const id = Date.now() + Math.random() + idx;
+            dados.push({
+                id: id,
+                descricao: cap(desc),
+                valor: valor,
+                tipo: tipoFinal,
+                metodo: 'conta',
+                banco: contas[0]?.nome || 'Nubank',
+                data: dataISO,
+                texto: linha,
+                categoria: identificarCategoria(desc, tipoFinal)
+            });
+            importadas++;
+        } catch (e) {
+            console.error('Erro linha:', idx, e, linha);
+            erros++;
+        }
+    });
+
+    if (importadas > 0) {
+        salvar();
+        atualizar();
+        fecharModal('modal-importar');
+        addMensagem(`${importadas} transações importadas do Nubank`, 'system');
+        if (erros > 0) addMensagem(`${erros} linhas ignoradas`, 'system');
+    } else {
+        addMensagem('Nenhuma transação válida encontrada', 'system');
+        console.log('CSV completo:', texto);
+    }
+}
 
 function importarOFX(texto) {
     const transacoes = texto.match(/<STMTTRN>[\s\S]*?<\/STMTTRN>/g);
