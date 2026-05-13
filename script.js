@@ -237,70 +237,7 @@ function lerArquivoExtrato(event) {
     event.target.value = '';
 }
 
-function importarCSV(texto) {
-    console.log('CSV recebido:', texto.substring(0, 300));
-    addMensagem('Processando CSV...', 'system');
-    const linhas = texto.split('\n');
-    let importadas = 0;
-    let erros = 0;
-    if (linhas.length < 2) {
-        addMensagem('CSV vazio ou sem dados', 'system');
-        return;
-    }
-    const primeiraLinha = linhas[0];
-    const separador = primeiraLinha.includes(';')? ';' : ',';
-    linhas.forEach((linha, idx) => {
-        if (idx === 0 ||!linha.trim()) return;
-        const cols = linha.split(separador).map(c => c.trim().replace(/^"|"$/g, ''));
-        if (cols.length < 3) { erros++; return; }
-        try {
-            let data = cols[0];
-            let desc = cols[1];
-            let valor = cols[2];
-            let tipo = cols[3] || null;
-            data = data.replace(/-/g, '/');
-            let partesData = data.split('/');
-            if (partesData.length!== 3) { erros++; return; }
-            if (partesData[2].length === 2) partesData[2] = '20' + partesData[2];
-            const dataISO = new Date(partesData[2], partesData[1] - 1, partesData[0]).toISOString();
-            if (isNaN(new Date(dataISO).getTime())) { erros++; return; }
-            valor = parseFloat(valor.replace(/R\$\s?/g, '').replace(/\./g, '').replace(',', '.'));
-            if (isNaN(valor)) { erros++; return; }
-            let tipoFinal = 'saida';
-            if (tipo) {
-                tipoFinal = tipo.toUpperCase().match(/C|CRÉD|CRED|\+|RECEB/)? 'entrada' : 'saida';
-            } else {
-                tipoFinal = valor > 0? 'entrada' : 'saida';
-                valor = Math.abs(valor);
-            }
-            const id = Date.now() + Math.random() + idx;
-            dados.push({
-                id: id,
-                descricao: cap(desc),
-                valor: valor,
-                tipo: tipoFinal,
-                metodo: 'conta',
-                banco: contas[0]?.nome || 'Principal',
-                data: dataISO,
-                texto: linha,
-                categoria: identificarCategoria(desc, tipoFinal)
-            });
-            importadas++;
-        } catch (e) {
-            console.error('Erro linha:', idx, e);
-            erros++;
-        }
-    });
-    if (importadas > 0) {
-        salvar();
-        atualizar();
-        fecharModal('modal-importar');
-        addMensagem(`${importadas} transações importadas do CSV`, 'system');
-        if (erros > 0) addMensagem(`${erros} linhas com erro`, 'system');
-    } else {
-        addMensagem('Nenhuma transação válida no CSV', 'system');
-    }
-}
+ if (importadas > 0) {
 
 function importarOFX(texto) {
     const transacoes = texto.match(/<STMTTRN>[\s\S]*?<\/STMTTRN>/g);
