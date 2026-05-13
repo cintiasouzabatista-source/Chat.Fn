@@ -22,18 +22,10 @@ let editandoId = null;
 // UTILITÁRIOS
 const formatar = v => {
     v = Number(v) || 0;
-    return valoresOcultos ? 'R$ ••••' : `R$ ${v.toFixed(2).replace('.', ',')}`;
+    return valoresOcultos? 'R$ ••••' : `R$ ${v.toFixed(2).replace('.', ',')}`;
 };
 
-const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
-
-// Exemplo de lógica para o componente de card
-const [valorBanco, setValorBanco] = useState(0);
-const saldoApp = -1016.00; // Valor que vem da sua lógica atual
-const diferenca = saldoApp - valorBanco;
-
-// Definição de cor dinâmica para o feedback visual
-const corDiferenca = diferenca === 0 ? 'text-green-500' : 'text-red-500';
+const cap = s => s? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
 const CATEGORIAS = {
     entrada: {
@@ -61,24 +53,35 @@ function salvar() {
 }
 
 function identificarCategoria(desc, tipo = 'saida') {
-    if (!desc) return tipo === 'entrada' ? 'Outras Receitas' : 'Outras Despesas';
+    if (!desc) return tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
     const d = desc.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const categorias = CATEGORIAS[tipo];
     for (const [categoria, palavras] of Object.entries(categorias)) {
         if (palavras.some(p => d.includes(p))) return categoria;
     }
-    return tipo === 'entrada' ? 'Outras Receitas' : 'Outras Despesas';
+    return tipo === 'entrada'? 'Outras Receitas' : 'Outras Despesas';
+}
+
+// MODAIS
+function abrirModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) modal.style.display = 'flex';
+}
+
+function fecharModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) modal.style.display = 'none';
 }
 
 // SEGURANÇA (PIN)
 function initPin() {
     const telaPin = document.getElementById('tela-pin');
     const PIN_SALVO = localStorage.getItem('bankday_pin');
-    const EH_PRIMEIRO = !PIN_SALVO;
+    const EH_PRIMEIRO =!PIN_SALVO;
 
     if (!telaPin) return;
-    document.getElementById('pin-titulo').textContent = EH_PRIMEIRO ? 'Crie seu PIN' : 'Digite seu PIN';
-    
+    document.getElementById('pin-titulo').textContent = EH_PRIMEIRO? 'Crie seu PIN' : 'Digite seu PIN';
+
     const inputs = document.querySelectorAll('.pin-input');
     inputs.forEach((input, idx) => {
         input.value = '';
@@ -118,15 +121,17 @@ function liberarApp() {
 // PROCESSAMENTO DE MENSAGENS
 function processarMensagem() {
     const input = document.getElementById("user-input");
-    if (!input || !input.value.trim()) return;
-    
+    if (!input ||!input.value.trim()) return;
+
     const textoOriginal = input.value.trim();
     const texto = textoOriginal.toLowerCase();
     input.value = "";
 
-    const tipo = (texto.includes('recebi') || texto.includes('ganhei')) ? 'entrada' : 'saida';
+    if (!contas.length) contas = [{nome: 'Principal', saldoInicial: 0}];
+
+    const tipo = (texto.includes('recebi') || texto.includes('ganhei'))? 'entrada' : 'saida';
     const valorMatch = texto.match(/\d+(?:[.,]\d+)?/);
-    
+
     if (!valorMatch) {
         addMensagem("Valor não identificado. Ex: 'cafe 15'", 'system');
         return;
@@ -145,7 +150,7 @@ function processarMensagem() {
         data: new Date().toISOString(),
         categoria: identificarCategoria(desc, tipo)
     });
-    
+
     addMensagem(textoOriginal, 'user', identificarCategoria(desc, tipo));
     salvar();
     atualizar();
@@ -155,14 +160,14 @@ function processarMensagem() {
 function atualizar() {
     const mes = mesAtual.getMonth();
     const ano = mesAtual.getFullYear();
-    
+
     const dadosMes = dados.filter(d => {
         const dt = new Date(d.data);
         return dt.getMonth() === mes && dt.getFullYear() === ano;
     });
 
     const ent = dadosMes.filter(d => d.tipo === 'entrada').reduce((s, d) => s + d.valor, 0);
-    const sai = dadosMes.filter(d => d.tipo === 'saida' && d.metodo !== 'cartao').reduce((s, d) => s + d.valor, 0);
+    const sai = dadosMes.filter(d => d.tipo === 'saida' && d.metodo!== 'cartao').reduce((s, d) => s + d.valor, 0);
     const fat = dadosMes.filter(d => d.tipo === 'saida' && d.metodo === 'cartao').reduce((s, d) => s + d.valor, 0);
 
     const saldo = ent - sai;
@@ -190,7 +195,7 @@ function addMensagem(texto, tipo = 'system', info = '') {
     div.innerHTML = `
         <div class="msg-bubble">
             <p>${texto}</p>
-            ${info ? `<span class="msg-badge">${info}</span>` : ''}
+            ${info? `<span class="msg-badge">${info}</span>` : ''}
         </div>
     `;
     chat.appendChild(div);
@@ -200,7 +205,7 @@ function addMensagem(texto, tipo = 'system', info = '') {
 function toggleTheme() {
     document.body.classList.toggle('light-mode');
     const isLight = document.body.classList.contains('light-mode');
-    localStorage.setItem('bankday_tema', isLight ? 'light' : 'dark');
+    localStorage.setItem('bankday_tema', isLight? 'light' : 'dark');
 }
 
 // IMPORTAÇÃO CSV/OFX
@@ -432,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         liberarApp();
     }
-    
+
     document.getElementById('user-input')?.addEventListener('keydown', e => e.key === 'Enter' && processarMensagem());
     document.getElementById('btn-enviar')?.addEventListener('click', processarMensagem);
 });
