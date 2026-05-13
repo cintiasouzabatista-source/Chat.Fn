@@ -45,6 +45,26 @@ const CATEGORIAS = {
 };
 
 // PERSISTÊNCIA
+function ajustarSaldo() {
+    const saldoReal = parseFloat(prompt('Qual saldo tá no banco hoje?'));
+    const saldoApp = /* calcula saldo atual */;
+    const diff = saldoReal - saldoApp;
+    if (diff!== 0) {
+        dados.push({
+            id: Date.now(),
+            descricao: 'Ajuste de saldo',
+            valor: Math.abs(diff),
+            tipo: diff > 0? 'entrada' : 'saida',
+            metodo: 'conta',
+            banco: contas[0]?.nome,
+            data: new Date().toISOString(),
+            categoria: 'Outras Receitas'
+        });
+        salvar();
+        atualizar();
+    }
+}
+
 function salvar() {
     localStorage.setItem('bankday', JSON.stringify(dados));
     localStorage.setItem('bankday_contas', JSON.stringify(contas));
