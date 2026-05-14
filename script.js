@@ -322,7 +322,6 @@ function finalizarCadastro() {
     mostrarApp();
 }
 
-// ===== EXTRATO =====
 function filtrarExtrato(tipo = '') {
     const lista = document.getElementById('lista-extrato');
     const filtroTipo = tipo || document.getElementById('filtro-tipo')?.value || '';
@@ -340,11 +339,14 @@ function filtrarExtrato(tipo = '') {
         }
     }
 
+    // Ordena do mais novo pro mais antigo
+    dadosFiltrados.sort((a, b) => new Date(b.data) - new Date(a.data));
+
     lista.innerHTML = dadosFiltrados.map(d => `
-        <div class="extrato-item">
+        <div class="extrato-item" onclick="abrirEditarTransacao(${d.id})">
             <div class="extrato-item-info">
                 <p class="extrato-item-titulo">${d.descricao}</p>
-                <p class="extrato-item-meta">${new Date(d.data).toLocaleDateString()} - ${d.categoria}</p>
+                <p class="extrato-item-meta">${new Date(d.data).toLocaleDateString()} - ${d.categoria} - ${d.banco}</p>
             </div>
             <div class="extrato-item-valor text-${d.tipo === 'entrada'? 'emerald' : 'rose'}">
                 ${d.tipo === 'entrada'? '+' : '-'} R$ ${d.valor.toFixed(2)}
@@ -355,7 +357,6 @@ function filtrarExtrato(tipo = '') {
     const total = dadosFiltrados.reduce((s, d) => s + (d.tipo === 'entrada'? d.valor : -d.valor), 0);
     document.getElementById('total-extrato').textContent = `Total: R$ ${total.toFixed(2)}`;
 }
-
 // ===== OUTRAS FUNÇÕES =====
 function toggleTheme() {
     document.body.classList.toggle('light-mode');
@@ -404,6 +405,80 @@ function resetarApp() {
     }
 }
 
+// ===== EDITAR/DELETAR TRANSAÇÃO =====
+let transacaoEditando = null;
+
+function abrirEditarTransacao(id) {
+    transacaoEditando = dados.find(d => d.id === id);
+    if (!transacaoEditando) return;
+
+    document.getElementById('edit-desc').value = transacaoEditando.descricao;
+    document.getElementById('edit-valor').value = transacaoEditando.valor;
+    document.getElementById('edit-data').value = new Date(transacaoEditando.data).toISOString().split('T')[0];
+    document.getElementById('edit-tipo').value = transacaoEditando.tipo;
+    document.getElementById('edit-metodo').value = transacaoEditando.metodo;
+
+    atualizarCategorias();
+    atualizarContasModal();
+
+    document.getElementById('edit-categoria').value = transacaoEditando.categoria;
+    document.getElementById('edit-banco').value = transacaoEditando.banco;
+
+    abrirModal('modal-editar');
+}
+
+function salvarEdicao() {
+    if (!transacaoEditando) return;
+
+    transacaoEditando.descricao = document.getElementById('edit-desc').value;
+    transacaoEditando.valor = parseFloat(document.getElementById('edit-valor').value);
+    transacaoEditando.data = new Date(document.getElementById('edit-data').value).toISOString();
+    transacaoEditando.tipo = document.getElementById('edit-tipo').value;
+    transacaoEditando.metodo = document.getElementById('edit-metodo').value;
+    transacaoEditando.categoria = document.getElementById('edit-categoria').value;
+    transacaoEditando.banco = document.getElementById('edit-banco').value;
+
+    salvar();
+    atualizar();
+    filtrarExtrato();
+    fecharModal('modal-editar');
+    addMensagem(`Lançamento editado: ${transacaoEditando.descricao}`, 'system');
+    transacaoEditando = null;
+}
+
+function deletarTransacao() {
+    if (!transacaoEditando) return;
+    if (!confirm('Apagar esse lançamento?')) return;
+
+    dados = dados.filter(d => d.id!== transacaoEditando.id);
+    salvar();
+    atualizar();
+    filtrarExtrato();
+    fecharModal('modal-editar');
+    addMensagem(`Lançamento apagado: ${transacaoEditando.descricao}`, 'system');
+    transacaoEditando = null;
+}
+
+function atualizarCategorias() {
+    const tipo = document.getElementById('edit-tipo').value;
+    const select = document.getElementById('edit-categoria');
+
+    const categoriasEntrada = ['Salário', 'Freelance', 'Vendas', 'Investimentos', 'Outros'];
+    const categoriasSaida = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Assinaturas', 'Outras Despesas'];
+
+    const categorias = tipo === 'entrada'? categoriasEntrada : categoriasSaida;
+
+    select.innerHTML = categorias.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function atualizarContasModal() {
+    const metodo = document.getElementById('edit-metodo').value;
+    const select = document.getElementById('edit-banco');
+
+    const opcoes = metodo === 'cartao'? cartoes : contas;
+
+    select.innerHTML = opcoes.map(o => `<option value="${o.nome}">${o.nome}</option>`).join('');
+}
 // Stubs que ainda faltam implementar
 function toggleProjetado() { alert('Em breve'); }
 function lerArquivoExtrato(e) { alert('Em breve'); }
