@@ -458,88 +458,114 @@ function executarImportacao() {
 
 let html5QrCode = null;
 
-function abrirScan() {
-    document.getElementById('modal-scan').style.display = 'flex';
-    html5QrCode = new Html5Qrcode("reader");
+async function abrirScan() {
+    const modal = document.getElementById('modal-scan');
+    if (modal) modal.style.display = 'flex';
 
-    html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-            processarQRCode(decodedText);
-            fecharScan();
-        },
-        (error) => {
-            // ignora erros de leitura
-        }
-    ).catch(err => {
-        alert('Erro ao abrir câmera: ' + err);
+    // Evita criar múltiplas instâncias
+    if (html5QrCode === null) {
+        html5QrCode = new Html5Qrcode("reader");
+    }
+
+    const config = { 
+        fps: 10, 
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0 
+    };
+
+    try {
+        await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+                processarQRCode(decodedText);
+                fecharScan();
+            },
+            (error) => { /* ignora ruído de leitura */ }
+        );
+    } catch (err) {
+        console.error(err);
+        alert('Erro: Certifique-se de estar usando HTTPS e dar permissão à câmera.');
         fecharScan();
-    });
+    }
 }
 
-
 function fecharScan() {
-    if (html5QrCode) {
+    const modal = document.getElementById('modal-scan');
+    
+    if (html5QrCode && html5QrCode.isScanning) {
         html5QrCode.stop().then(() => {
-            document.getElementById('modal-scan').style.display = 'none';
-            html5QrCode = null;
-        }).catch(() => {
-            document.getElementById('modal-scan').style.display = 'none';
+            if (modal) modal.style.display = 'none';
+        }).catch(err => {
+            console.error("Erro ao parar:", err);
+            if (modal) modal.style.display = 'none';
         });
     } else {
-        document.getElementById('modal-scan').style.display = 'none';
+        if (modal) modal.style.display = 'none';
     }
 }
 
 function processarQRCode(texto) {
-    console.log('QR Code lido:', texto);
-
-    if (texto.startsWith('000201')) {
+    // 000201 é o início padrão do Pix Copy and Paste
+    if (texto.includes('000201')) {
         const boleto = parsePixQRCode(texto);
-        if (boleto) {
-            const confirmar = confirm(`Boleto detectado:\n\nBeneficiário: ${boleto.beneficiario}\nValor: R$ ${boleto.valor.toFixed(2)}\n\nLançar como despesa?`);
+        if (boleto && boleto.valor > 0) {
+            const confirmar = confirm(`Pix Detectado:\n\nBeneficiário: ${boleto.beneficiario}\nValor: R$ ${boleto.valor.toFixed(2)}\n\nLançar no sistema?`);
+            
             if (confirmar) {
-                if (!contas.length) contas = [{nome: 'Principal'}];
+                // Garante que existe uma conta para vincular
+                const contaNome = (contas && contas.length > 0) ? contas[0].nome : 'Principal';
 
-                dados.push({
+                const novaTransacao = {
                     id: Date.now(),
-                    descricao: `Boleto ${boleto.beneficiario}`,
+                    descricao: `Pix: ${boleto.beneficiario}`,
                     valor: boleto.valor,
                     tipo: 'saida',
                     metodo: 'conta',
-                    banco: contas[0]?.nome || 'Principal',
-                    data: new Date().toISOString(),
-                    categoria: 'Outras Despesas',
-                    texto: texto
-                });
+                    banco: contaNome,
+                    data: new Date().toISOString().split('T')[0], // Apenas a data YYYY-MM-DD
+                    categoria: 'Moradia', // Ou uma categoria padrão que você use
+                    texto: 'Lançamento via QR Code'
+                };
+
+                dados.push(novaTransacao);
                 salvar();
                 atualizar();
-                addMensagem(`Boleto lançado: R$ ${boleto.valor.toFixed(2)}`, 'system');
+                
+                // Se você tiver a função de mensagem no chat:
+                if (typeof addMensagem === 'function') {
+                    addMensagem(`Lançado: R$ ${boleto.valor.toFixed(2)} (${boleto.beneficiario})`, 'system');
+                }
             }
         } else {
-            alert('QR Code Pix não reconhecido');
+            alert('Pix lido, mas não foi possível extrair o valor (Pix Estático sem valor definido).');
         }
     } else {
-        alert('QR Code não é de boleto Pix');
+        alert('Este QR Code não é um Pix válido.');
     }
 }
 
 function parsePixQRCode(qr) {
     try {
-        const valorMatch = qr.match(/54(\d{2})(\d+\.?\d*)/);
-        const valor = valorMatch? parseFloat(valorMatch[2]) : 0;
+        // Busca o campo 54 (Valor) - O padrão é 54 + 2 dígitos de tamanho + valor
+        // Esta regex é mais resiliente para o padrão Pix
+        const valorMatch = qr.match(/54\d{2}([\d.]+)/);
+        const valor = valorMatch ? parseFloat(valorMatch[1]) : 0;
 
-        const nomeMatch = qr.match(/59(\d{2})([^0-9]{2,})/);
-        const beneficiario = nomeMatch? nomeMatch[2].substring(0, parseInt(nomeMatch[1])) : 'Desconhecido';
-
-        if (valor > 0) {
-            return { valor, beneficiario };
+        // Busca o campo 59 (Nome do Beneficiário)
+        const nomeMatch = qr.match(/59(\d{2})(.+)/);
+        let beneficiario = 'Desconhecido';
+        
+        if (nomeMatch) {
+            const tamanhoNome = parseInt(nomeMatch[1]);
+            beneficiario = nomeMatch[2].substring(0, tamanhoNome);
         }
+
+        return { valor, beneficiario };
     } catch (e) {
-        console.error('Erro parse QR:', e);
+        console.error('Erro no parse:', e);
+        return null;
     }
-    return null;
 }
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', () => {
