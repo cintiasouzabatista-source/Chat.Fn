@@ -1228,3 +1228,65 @@ body.light-mode .btn-upload{
     width: 22px;
     font-size: 18px;
 }
+
+/* Menu Mais corrigido */
+.menu-mais {
+    position: fixed;
+    bottom: 65px; /* sobe acima da nav */
+    right: 10px;
+    left: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 8px;
+    z-index: 999; /* abaixo do footer */
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.menu-mais.hidden {
+    display: none;
+}
+
+.menu-mais-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding: 18px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 17px;
+    border-radius: 12px;
+    text-align: left;
+}
+
+.menu-mais-item:active {
+    background: rgba(255,255,255,0.1);
+}
+
+.menu-mais-item i {
+    width: 24px;
+    font-size: 20px;
+    color: var(--primary);
+}
+
+/* Garante que footer fica por cima */
+.chat-footer {
+    position: relative;
+    z-index: 1000;
+    background: var(--bg);
+}
+
+/* Nav fica por baixo do menu */
+nav {
+    position: relative;
+    z-index: 998;
+}
+
+/* Remove Importar Extrato do menu */
+.menu-mais-item:has(.fa-file-import) {
+    display: none;
+}
