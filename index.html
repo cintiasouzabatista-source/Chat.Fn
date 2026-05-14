@@ -137,7 +137,7 @@
             </button>
         </nav>
 
-        <!-- Menu Mais que abre de baixo -->
+        <!-- Menu Mais -->
         <div id="menu-mais" class="menu-mais hidden">
             <button onclick="abrirModalCartao(); fecharMenuMais()" class="menu-mais-item">
                 <i class="fas fa-credit-card"></i> Cadastrar Cartão
@@ -145,7 +145,6 @@
             <button onclick="abrirModal('modal-contas'); fecharMenuMais()" class="menu-mais-item">
                 <i class="fas fa-university"></i> Cadastrar Conta
             </button>
-         
             <button onclick="toggleProjetado(); fecharMenuMais()" class="menu-mais-item">
                 <i class="fas fa-chart-line"></i> Projeção
             </button>
@@ -169,27 +168,6 @@
                 <p style="text-align:center; padding: 10px; font-size: 12px; color: #64748b;">
                     Aponte para o QR Code do boleto Pix
                 </p>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-importar" class="modal">
-        <div class="modal-content">
-            <div class="modal-head">
-                <h3>Importar extrato</h3>
-                <button onclick="fecharModal('modal-importar')"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <input type="file" id="arquivo-extrato" accept=".csv,.ofx" style="display:none" onchange="lerArquivoExtrato(event)">
-                <button onclick="document.getElementById('arquivo-extrato').click()" class="btn-upload">
-                    <i class="fas fa-file-upload"></i> Selecionar arquivo CSV/OFX
-                </button>
-                <div class="divider-text">ou cole o texto abaixo</div>
-                <textarea id="import-texto" placeholder="DD/MM/AAAA;DESCRIÇÃO;VALOR;TIPO" rows="6"></textarea>
-                <div class="modal-actions">
-                    <button onclick="fecharModal('modal-importar')" class="btn-cancelar">Cancelar</button>
-                    <button onclick="executarImportacao()" class="btn-save">Importar</button>
-                </div>
             </div>
         </div>
     </div>
