@@ -1088,3 +1088,57 @@ body.light-mode .divider-text::after{
 body.light-mode .btn-upload{
     background:#3b82f6;
 }
+
+/* --- AJUSTE DO RODAPÉ DO CHAT --- */
+.chat-footer {
+    position: fixed;
+    bottom: 60px; /* Exatamente acima da sua nav */
+    left: 0;
+    right: 0;
+    background: #1e293b;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 75; /* Acima de quase tudo para garantir clique */
+    border-top: 1px solid #334155;
+    height: 65px;
+}
+
+.chat-footer input {
+    flex: 1;
+    background: #0f172a;
+    color: white;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    border: 1px solid #334155;
+}
+
+/* O BOTÃO DE SCAN */
+.btn-scan {
+    width: 45px;
+    height: 45px;
+    background: #334155;
+    color: #25d366; /* Verde Pix */
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0; /* IMPEDIR QUE SUMA */
+    transition: all 0.2s;
+}
+
+.btn-scan:active {
+    transform: scale(0.9);
+    background: #475569;
+}
+
+/* AJUSTE PARA AS MENSAGENS NÃO FICAREM ATRÁS DO RODAPÉ */
+#chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    padding-bottom: 140px; /* Espaço para o footer + nav */
+}
