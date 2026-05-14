@@ -1162,3 +1162,68 @@ body.light-mode.divider-text::after {
     text-align: center;
     /* adicione seu estilo de cor aqui */
 }
+
+.chat-footer {
+    position: fixed;
+    bottom: 60px;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    background: #1e293b;
+    border-top: 1px solid #334155;
+    display: flex;
+    gap: 8px;
+    z-index: 50;
+}
+
+.light-mode .chat-footer {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.btn-scan {
+    background: #2563eb;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+}
+
+.btn-scan:active {
+    background: #1d4ed8;
+}
+
+#user-input {
+    flex: 1;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px;
+    color: #f1f5f9;
+    font-size: 16px;
+}
+
+.light-mode #user-input {
+    background: white;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+}
+
+#btn-enviar {
+    background: #2563eb;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 18px;
+    min-width: 48px;
+}
+
+#btn-enviar:active {
+    background: #1d4ed8;
+}
