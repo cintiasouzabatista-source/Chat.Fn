@@ -36,7 +36,7 @@
             <button id="btn-esqueci" onclick="esqueciPin()">Esqueceu o PIN?</button>
         </div>
     </div>
-  
+
     <div id="modal-onboarding" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -112,18 +112,15 @@
 
         <main id="chat-box"></main>
 
-   <footer class="chat-footer">
-    <button onclick="abrirScan()" class="btn-scan" title="Escanear Pix">
-        <i class="fas fa-qrcode"></i>
-    </button>
-    <input id="user-input" type="text" placeholder="Ex: cafe 15 | recebi 500">
-    <button id="btn-enviar">
-        <i class="fas fa-paper-plane"></i>
-    </button>
-    <button onclick="toggleMenuMais()" class="btn-mais" title="Mais opções">
-        <i class="fas fa-ellipsis-h"></i>
-    </button>
-</footer>
+        <footer class="chat-footer">
+            <button onclick="abrirScan()" class="btn-scan" title="Escanear Pix">
+                <i class="fas fa-qrcode"></i>
+            </button>
+            <input id="user-input" type="text" placeholder="Ex: cafe 15 | recebi 500">
+            <button id="btn-enviar">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </footer>
 
         <nav>
             <button class="nav-item active" onclick="trocarAba('chat', event)">
@@ -135,24 +132,30 @@
             <button class="nav-item" onclick="trocarAba('graficos', event)">
                 <i class="fas fa-chart-bar"></i><span>Gráficos</span>
             </button>
+            <button class="nav-item" onclick="abrirMenuMais(event)">
+                <i class="fas fa-ellipsis-h"></i><span>Mais</span>
+            </button>
         </nav>
 
-        <!-- Menu Mais que abre de baixo pra cima -->
+        <!-- Menu Mais que abre de baixo -->
         <div id="menu-mais" class="menu-mais hidden">
-            <button onclick="abrirModalCartao(); toggleMenuMais()" class="menu-mais-item">
+            <button onclick="abrirModalCartao(); fecharMenuMais()" class="menu-mais-item">
                 <i class="fas fa-credit-card"></i> Cadastrar Cartão
             </button>
-            <button onclick="abrirModal('modal-contas'); toggleMenuMais()" class="menu-mais-item">
+            <button onclick="abrirModal('modal-contas'); fecharMenuMais()" class="menu-mais-item">
                 <i class="fas fa-university"></i> Cadastrar Conta
             </button>
-            <button onclick="abrirModal('modal-importar'); toggleMenuMais()" class="menu-mais-item">
+            <button onclick="abrirModal('modal-importar'); fecharMenuMais()" class="menu-mais-item">
                 <i class="fas fa-file-import"></i> Importar Extrato
             </button>
-            <button onclick="toggleProjetado(); toggleMenuMais()" class="menu-mais-item">
+            <button onclick="toggleProjetado(); fecharMenuMais()" class="menu-mais-item">
                 <i class="fas fa-chart-line"></i> Projeção
             </button>
-            <button onclick="resetarTransacoes(); toggleMenuMais()" class="menu-mais-item">
+            <button onclick="resetarTransacoes(); fecharMenuMais()" class="menu-mais-item">
                 <i class="fas fa-broom"></i> Limpar Lançamentos
+            </button>
+            <button onclick="resetarApp(); fecharMenuMais()" class="menu-mais-item text-rose">
+                <i class="fas fa-trash"></i> Resetar App
             </button>
         </div>
     </div>
