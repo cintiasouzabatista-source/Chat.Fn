@@ -117,15 +117,15 @@
 
     <main id="chat-box"></main>
 
-   <footer class="chat-footer">
-    <button onclick="abrirScan()" class="btn-scan">
-        <i class="fas fa-qrcode"></i>
-    </button>
-    <input id="user-input" type="text" placeholder="Ex: cafe 15 | recebi 500">
-    <button id="btn-enviar" onclick="processarMensagem()">
-        <i class="fas fa-paper-plane"></i>
-    </button>
-</footer>
+    <footer class="chat-footer">
+        <button onclick="abrirScan()" class="btn-scan">
+            <i class="fas fa-qrcode"></i>
+        </button>
+        <input id="user-input" type="text" placeholder="Ex: cafe 15 | recebi 500">
+        <button id="btn-enviar" onclick="processarMensagem()">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </footer>
 
     <nav>
         <button class="nav-item active" onclick="trocarAba('chat', event)">
@@ -149,7 +149,7 @@
     </div>
 </div>
 
-<!-- MODAL SCAN - FORA DE QUALQUER BOTÃO -->
+<!-- MODAL SCAN -->
 <div id="modal-scan" class="modal">
     <div class="modal-content max-w-md">
         <div class="flex justify-between items-center mb-4">
@@ -233,16 +233,16 @@
             <button onclick="fecharModal('modal-graficos')"><i class="fas fa-times"></i></button>
         </div>
         <div class="grafico-header">
-    <h4 id="grafico-mes"></h4>
-    <div class="grafico-tabs">
-        <button id="btn-categoria" onclick="trocarGrafico('categoria')" class="tab-active">Categoria</button>
-        <button id="btn-tipo" onclick="trocarGrafico('tipo')">Tipo</button>
-        <button id="btn-conta" onclick="trocarGrafico('conta')">Conta</button>
-        <button id="btn-receita" onclick="trocarGrafico('receita')">Receita</button>
-        <button id="btn-fluxo" onclick="trocarGrafico('fluxo')">Fluxo</button>
-    </div>
-</div> <!-- FECHA AQUI -->
-<div class="chart-container">
+            <h4 id="grafico-mes"></h4>
+            <div class="grafico-tabs">
+                <button id="btn-categoria" onclick="trocarGrafico('categoria')" class="tab-active">Categoria</button>
+                <button id="btn-tipo" onclick="trocarGrafico('tipo')">Tipo</button>
+                <button id="btn-conta" onclick="trocarGrafico('conta')">Conta</button>
+                <button id="btn-receita" onclick="trocarGrafico('receita')">Receita</button>
+                <button id="btn-fluxo" onclick="trocarGrafico('fluxo')">Fluxo</button>
+            </div>
+        </div>
+        <div class="chart-container">
             <canvas id="grafico-canvas"></canvas>
         </div>
         <div id="grafico-legenda" class="grafico-legenda"></div>
