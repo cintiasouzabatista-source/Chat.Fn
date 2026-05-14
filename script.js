@@ -5,6 +5,9 @@ let cartoes = JSON.parse(localStorage.getItem('cartoes') || '[]');
 let mesAtual = new Date().getMonth();
 let anoAtual = new Date().getFullYear();
 let html5QrCode = null;
+let transacaoEditando = null;
+let chartInstance = null;
+let mostrarProjetado = false;
 
 // ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,7 +18,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     atualizarMes();
     atualizar();
+    setupInput();
 });
+
+function setupInput() {
+    const input = document.getElementById('user-input');
+    const btn = document.getElementById('btn-enviar');
+    if (input) {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                processarMensagem();
+            }
+        });
+    }
+    if (btn) {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            processarMensagem();
+        });
+    }
+}
 
 function mostrarTelaPin() {
     document.getElementById('tela-pin').style.display = 'flex';
@@ -53,7 +76,7 @@ function setupPinInputs() {
             }
         });
     });
-    inputs[0].focus();
+    if (inputs[0]) inputs[0].focus();
 }
 
 function verificarPin() {
@@ -194,7 +217,7 @@ function interpretarTexto(texto) {
 
     const descricao = match[1].trim();
     const valor = parseFloat(match[2].replace(',', '.'));
-    const tipo = texto.toLowerCase().includes('recebi') || texto.toLowerCase().includes('salario')? 'entrada' : 'saida';
+    const tipo = /recebi|salario|entrada/i.test(texto)? 'entrada' : 'saida';
 
     if (!contas.length) contas = [{nome: 'Principal', saldo: 0}];
 
@@ -213,6 +236,7 @@ function interpretarTexto(texto) {
 
 function addMensagem(texto, tipo) {
     const chat = document.getElementById('chat-box');
+    if (!chat) return;
     const msg = document.createElement('div');
     msg.className = `msg ${tipo}`;
     msg.innerHTML = `<div class="msg-bubble"><p>${texto}</p></div>`;
@@ -255,11 +279,17 @@ function atualizar() {
     document.getElementById('card-saldo').textContent = `R$ ${saldo.toFixed(2)}`;
     document.getElementById('card-cartoes').textContent = `R$ ${cartao.toFixed(2)}`;
     document.getElementById('card-liquido').textContent = `R$ ${saldo.toFixed(2)}`;
+
+    if (document.getElementById('modal-graficos').style.display === 'flex') {
+        trocarGrafico('categoria');
+    }
 }
 
 // ===== MODAIS =====
 function abrirModal(id) {
     document.getElementById(id).style.display = 'flex';
+    if (id === 'modal-extrato') filtrarExtrato();
+    if (id === 'modal-graficos') trocarGrafico('categoria');
 }
 
 function fecharModal(id) {
@@ -268,6 +298,7 @@ function fecharModal(id) {
 
 function abrirExtrato(tipo) {
     abrirModal('modal-extrato');
+    document.getElementById('filtro-tipo').value = tipo;
     filtrarExtrato(tipo);
 }
 
@@ -322,6 +353,7 @@ function finalizarCadastro() {
     mostrarApp();
 }
 
+// ===== EXTRATO =====
 function filtrarExtrato(tipo = '') {
     const lista = document.getElementById('lista-extrato');
     const filtroTipo = tipo || document.getElementById('filtro-tipo')?.value || '';
@@ -339,7 +371,6 @@ function filtrarExtrato(tipo = '') {
         }
     }
 
-    // Ordena do mais novo pro mais antigo
     dadosFiltrados.sort((a, b) => new Date(b.data) - new Date(a.data));
 
     lista.innerHTML = dadosFiltrados.map(d => `
@@ -357,57 +388,8 @@ function filtrarExtrato(tipo = '') {
     const total = dadosFiltrados.reduce((s, d) => s + (d.tipo === 'entrada'? d.valor : -d.valor), 0);
     document.getElementById('total-extrato').textContent = `Total: R$ ${total.toFixed(2)}`;
 }
-// ===== OUTRAS FUNÇÕES =====
-function toggleTheme() {
-    document.body.classList.toggle('light-mode');
-    const icon = document.getElementById('theme-icon');
-    icon.className = document.body.classList.contains('light-mode')? 'fas fa-sun' : 'fas fa-moon';
-}
-
-function toggleVisibility() {
-    const icon = document.getElementById('eye-icon');
-    const oculto = icon.className.includes('fa-eye-slash');
-    icon.className = oculto? 'fas fa-eye' : 'fas fa-eye-slash';
-    document.querySelectorAll('.val').forEach(el => {
-        el.style.filter = oculto? 'none' : 'blur(8px)';
-    });
-}
-
-function toggleMenu() {
-    document.getElementById('menuDropdown').classList.toggle('hidden');
-}
-
-function trocarAba(aba, e) {
-    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    e.currentTarget.classList.add('active');
-    if (aba === 'extrato') abrirModal('modal-extrato');
-    if (aba === 'graficos') abrirModal('modal-graficos');
-}
-
-function salvar() {
-    localStorage.setItem('dados', JSON.stringify(dados));
-    localStorage.setItem('contas', JSON.stringify(contas));
-    localStorage.setItem('cartoes', JSON.stringify(cartoes));
-}
-
-function resetarTransacoes() {
-    if (confirm('Apagar todas as transações?')) {
-        dados = [];
-        salvar();
-        atualizar();
-    }
-}
-
-function resetarApp() {
-    if (confirm('Resetar app completo?')) {
-        localStorage.clear();
-        location.reload();
-    }
-}
 
 // ===== EDITAR/DELETAR TRANSAÇÃO =====
-let transacaoEditando = null;
-
 function abrirEditarTransacao(id) {
     transacaoEditando = dados.find(d => d.id === id);
     if (!transacaoEditando) return;
@@ -467,99 +449,209 @@ function atualizarCategorias() {
     const categoriasSaida = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Assinaturas', 'Outras Despesas'];
 
     const categorias = tipo === 'entrada'? categoriasEntrada : categoriasSaida;
-
     select.innerHTML = categorias.map(c => `<option value="${c}">${c}</option>`).join('');
 }
 
 function atualizarContasModal() {
     const metodo = document.getElementById('edit-metodo').value;
     const select = document.getElementById('edit-banco');
-
     const opcoes = metodo === 'cartao'? cartoes : contas;
-
     select.innerHTML = opcoes.map(o => `<option value="${o.nome}">${o.nome}</option>`).join('');
 }
 
-// ===== FIX INPUT =====
-document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('user-input');
-    const btn = document.getElementById('btn-enviar');
+// ===== GRÁFICOS =====
+function trocarGrafico(tipo) {
+    const ctx = document.getElementById('grafico');
+    if (!ctx) return;
 
-    // Enter pra enviar
-    input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            processarMensagem();
+    const dadosMes = dados.filter(d => {
+        const data = new Date(d.data);
+        return data.getMonth() === mesAtual && data.getFullYear() === anoAtual && d.tipo === 'saida';
+    });
+
+    let labels = [], valores = [], titulo = '';
+
+    if (tipo === 'categoria') {
+        titulo = 'Gastos por Categoria';
+        const porCat = {};
+        dadosMes.forEach(d => {
+            porCat[d.categoria] = (porCat[d.categoria] || 0) + d.valor;
+        });
+        labels = Object.keys(porCat);
+        valores = Object.values(porCat);
+    } else if (tipo === 'cartao') {
+        titulo = 'Gastos por Cartão';
+        const porCartao = {};
+        dadosMes.filter(d => d.metodo === 'cartao').forEach(d => {
+            porCartao[d.banco] = (porCartao[d.banco] || 0) + d.valor;
+        });
+        labels = Object.keys(porCartao);
+        valores = Object.values(porCartao);
+    } else if (tipo === 'banco') {
+        titulo = 'Gastos por Conta';
+        const porBanco = {};
+        dadosMes.filter(d => d.metodo === 'conta').forEach(d => {
+            porBanco[d.banco] = (porBanco[d.banco] || 0) + d.valor;
+        });
+        labels = Object.keys(porBanco);
+        valores = Object.values(porBanco);
+    }
+
+    document.getElementById('grafico-titulo').textContent = titulo;
+
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: valores,
+                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+// ===== IMPORTAR CSV/OFX =====
+function lerArquivoExtrato(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        document.getElementById('import-texto').value = e.target.result;
+    };
+    reader.readAsText(file);
+}
+
+function executarImportacao() {
+    const texto = document.getElementById('import-texto').value;
+    if (!texto) return;
+
+    const linhas = texto.split('\n');
+    let importados = 0;
+
+    linhas.forEach(linha => {
+        // Formato: DATA;DESCRICAO;VALOR;TIPO
+        const partes = linha.split(';');
+        if (partes.length >= 3) {
+            const data = new Date(partes[0]);
+            const descricao = partes[1];
+            const valor = parseFloat(partes[2].replace(',', '.'));
+            const tipo = partes[3] || (valor < 0? 'saida' : 'entrada');
+
+            if (!isNaN(valor) && descricao) {
+                dados.push({
+                    id: Date.now() + importados,
+                    descricao: descricao,
+                    valor: Math.abs(valor),
+                    tipo: tipo,
+                    metodo: 'conta',
+                    banco: contas[0]?.nome || 'Principal',
+                    data: data.toISOString(),
+                    categoria: 'Importado',
+                    texto: linha
+                });
+                importados++;
+            }
         }
     });
 
-    // Click no botão
-    btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        processarMensagem();
-    });
-});
-
-// Garante que a função existe
-function processarMensagem() {
-    const input = document.getElementById('user-input');
-    const texto = input.value.trim();
-    if (!texto) return;
-
-    addMensagem(texto, 'user');
-    input.value = '';
-
-    const lancamento = interpretarTexto(texto);
-    if (lancamento) {
-        dados.push(lancamento);
+    if (importados > 0) {
         salvar();
         atualizar();
-        addMensagem(`Lançado: ${lancamento.descricao} R$ ${lancamento.valor.toFixed(2)}`, 'system');
+        alert(`${importados} lançamentos importados!`);
+        fecharModal('modal-importar');
     } else {
-        addMensagem('Não entendi. Ex: "mercado 150" ou "recebi 2000"', 'system');
+        alert('Nenhum lançamento válido encontrado. Use formato: DATA;DESCRICAO;VALOR');
     }
 }
 
-function addMensagem(texto, tipo) {
-    const chat = document.getElementById('chat-box');
-    if (!chat) return;
-    const msg = document.createElement('div');
-    msg.className = `msg ${tipo}`;
-    msg.innerHTML = `<div class="msg-bubble"><p>${texto}</p></div>`;
-    chat.appendChild(msg);
-    chat.scrollTop = chat.scrollHeight;
+// ===== SALDO PROJETADO =====
+function toggleProjetado() {
+    mostrarProjetado =!mostrarProjetado;
+    const btn = document.getElementById('btn-projetado');
+    btn.classList.toggle('active');
+
+    if (mostrarProjetado) {
+        // Calcula média dos últimos 3 meses
+        let totalMeses = 0, somaSaldo = 0;
+        for (let i = 1; i <= 3; i++) {
+            let mesCalc = mesAtual - i;
+            let anoCalc = anoAtual;
+            if (mesCalc < 0) {
+                mesCalc += 12;
+                anoCalc--;
+            }
+            const dadosMesPassado = dados.filter(d => {
+                const data = new Date(d.data);
+                return data.getMonth() === mesCalc && data.getFullYear() === anoCalc;
+            });
+            const saldoMes = dadosMesPassado.reduce((s, d) => s + (d.tipo === 'entrada'? d.valor : -d.valor), 0);
+            somaSaldo += saldoMes;
+            totalMeses++;
+        }
+        const media = totalMeses > 0? somaSaldo / totalMeses : 0;
+        const saldoAtual = parseFloat(document.getElementById('card-saldo').textContent.replace('R$ ', ''));
+        document.getElementById('card-liquido').textContent = `R$ ${(saldoAtual + media).toFixed(2)}`;
+        addMensagem(`Projeção: saldo atual + média dos últimos 3 meses = R$ ${media.toFixed(2)}`, 'system');
+    } else {
+        atualizar();
+    }
 }
 
-function interpretarTexto(texto) {
-    const regex = /(.+?)\s+(\d+[.,]?\d*)/;
-    const match = texto.match(regex);
-    if (!match) return null;
-
-    const descricao = match[1].trim();
-    const valor = parseFloat(match[2].replace(',', '.'));
-    const tipo = /recebi|salario|entrada/i.test(texto)? 'entrada' : 'saida';
-
-    if (!contas.length) contas = [{nome: 'Principal', saldo: 0}];
-
-    return {
-        id: Date.now(),
-        descricao: descricao,
-        valor: valor,
-        tipo: tipo,
-        metodo: 'conta',
-        banco: contas[0].nome,
-        data: new Date().toISOString(),
-        categoria: tipo === 'entrada'? 'Salário' : 'Outras Despesas',
-        texto: texto
-    };
+// ===== UTILITÁRIOS =====
+function toggleTheme() {
+    document.body.classList.toggle('light-mode');
+    const icon = document.getElementById('theme-icon');
+    icon.className = document.body.classList.contains('light-mode')? 'fas fa-sun' : 'fas fa-moon';
 }
 
-// Stubs que ainda faltam implementar
-function toggleProjetado() { alert('Em breve'); }
-function lerArquivoExtrato(e) { alert('Em breve'); }
-function executarImportacao() { alert('Em breve'); }
-function trocarGrafico(t) { alert('Em breve'); }
-function atualizarCategorias() {}
-function atualizarContasModal() {}
-function deletarTransacao() {}
-function salvarEdicao() {}
+function toggleVisibility() {
+    const icon = document.getElementById('eye-icon');
+    const oculto = icon.className.includes('fa-eye-slash');
+    icon.className = oculto? 'fas fa-eye' : 'fas fa-eye-slash';
+    document.querySelectorAll('.val').forEach(el => {
+        el.style.filter = oculto? 'none' : 'blur(8px)';
+    });
+}
+
+function toggleMenu() {
+    document.getElementById('menuDropdown').classList.toggle('hidden');
+}
+
+function trocarAba(aba, e) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    if (aba === 'extrato') abrirModal('modal-extrato');
+    if (aba === 'graficos') abrirModal('modal-graficos');
+}
+
+function salvar() {
+    localStorage.setItem('dados', JSON.stringify(dados));
+    localStorage.setItem('contas', JSON.stringify(contas));
+    localStorage.setItem('cartoes', JSON.stringify(cartoes));
+}
+
+function resetarTransacoes() {
+    if (confirm('Apagar todas as transações?')) {
+        dados = [];
+        salvar();
+        atualizar();
+    }
+}
+
+function resetarApp() {
+    if (confirm('Resetar app completo?')) {
+        localStorage.clear();
+        location.reload();
+    }
+}
