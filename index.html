@@ -139,13 +139,12 @@
             
         </nav>
 
-<!-- Menu Mais -->
 <div id="menu-mais" class="menu-mais hidden">
+    <button onclick="abrirModalConta(); fecharMenuMais()" class="menu-mais-item">
+        <i class="fas fa-university"></i> Cadastrar Conta
+    </button>
     <button onclick="abrirModalCartao(); fecharMenuMais()" class="menu-mais-item">
         <i class="fas fa-credit-card"></i> Cadastrar Cartão
-    </button>
-    <button onclick="abrirModal('modal-contas'); fecharMenuMais()" class="menu-mais-item">
-        <i class="fas fa-university"></i> Cadastrar Conta
     </button>
     <button onclick="toggleProjetado(); fecharMenuMais()" class="menu-mais-item">
         <i class="fas fa-chart-line"></i> Projeção
@@ -157,7 +156,6 @@
         <i class="fas fa-trash"></i> Resetar App
     </button>
 </div>
-
     <div id="modal-scan" class="modal" style="display:none; z-index: 2000;">
         <div class="modal-content">
             <div class="modal-head">
