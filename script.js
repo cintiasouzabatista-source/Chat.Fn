@@ -567,6 +567,18 @@ function parsePixQRCode(qr) {
         return null;
     }
 }
+
+function verificarAcesso() {
+    const modo = localStorage.getItem('bankday_modo');
+    const pinAtivo = localStorage.getItem('bankday_pin_ativo') === 'true'; // Nova flag
+
+    if (modo === 'producao' && pinAtivo) {
+        initPin(); // Só mostra se o usuário escolheu ter PIN
+    } else {
+        liberarApp(); // Entra direto
+    }
+}
+
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('bankday_tema') === 'light') toggleTheme();
