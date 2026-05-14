@@ -761,7 +761,8 @@ function addMensagem(texto, tipo) {
             setTimeout(() => msg.remove(), 500);
         }, 8000);
     }
-}function abrirMenuMais(e) {
+function abrirMenuMais(e) {
+    e.preventDefault();
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     e.currentTarget.classList.add('active');
     document.getElementById('menu-mais').classList.remove('hidden');
@@ -769,5 +770,16 @@ function addMensagem(texto, tipo) {
 
 function fecharMenuMais() {
     document.getElementById('menu-mais').classList.add('hidden');
-    document.querySelectorAll('.nav-item')[0].classList.add('active');
+    document.querySelectorAll('.nav-item')[0].classList.add('active'); // Volta pro Chat
 }
+
+// Fecha menu se clicar fora
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('menu-mais');
+    const btnMais = document.querySelector('.nav-item:last-child');
+    if (menu &&!menu.classList.contains('hidden')) {
+        if (!menu.contains(e.target) &&!btnMais.contains(e.target)) {
+            fecharMenuMais();
+        }
+    }
+});
