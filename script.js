@@ -716,3 +716,19 @@ function fecharMenuMais() {
     document.getElementById('menu-mais').classList.add('hidden');
     document.querySelectorAll('.nav-item')[0].classList.add('active');
 }
+
+function resetarTransacoes() {
+    if (confirm('Apagar todas as transações? Contas e cartões serão mantidos.')) {
+        dados = [];
+        salvar();
+        atualizar();
+        addMensagem('Todas as transações foram apagadas', 'system');
+    }
+}
+
+function resetarApp() {
+    if (confirm('RESETAR TUDO? Isso vai apagar contas, cartões e todas as transações. Essa ação não pode ser desfeita.')) {
+        localStorage.clear();
+        location.reload();
+    }
+}
