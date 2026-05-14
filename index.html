@@ -16,6 +16,7 @@
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="data:,">
@@ -65,12 +66,27 @@
             <p>Como você quer começar?</p>
         </div>
         <div class="modal-body">
+            <button onclick="abrirScan()" class="bg-blue-600 p-3 rounded-lg">
+    <i class="fas fa-qrcode"></i>
+</button>
             <button onclick="selecionarModo('teste')" class="btn-onboard bg-amber">
                 <i class="fas fa-flask"></i>
                 <div>
                     <p class="btn-title">Testar por 48h</p>
                     <p class="btn-desc">Explore sem compromisso</p>
                 </div>
+                <div id="modal-scan" class="modal">
+    <div class="modal-content max-w-md">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold">Escanear QR Code</h3>
+            <button onclick="fecharScan()" class="text-slate-400">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div id="reader" class="w-full rounded-lg overflow-hidden"></div>
+        <p class="text-xs text-slate-400 mt-3 text-center">Aponte para o QR Code do boleto Pix</p>
+    </div>
+</div>
             </button>
             <button onclick="selecionarModo('producao')" class="btn-onboard bg-emerald">
                 <i class="fas fa-check-circle"></i>
