@@ -463,10 +463,9 @@ function abrirScan() {
     html5QrCode = new Html5Qrcode("reader");
 
     html5QrCode.start(
-        { facingMode: "environment" }, // câmera traseira
+        { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
-            // QR Code lido com sucesso
             processarQRCode(decodedText);
             fecharScan();
         },
@@ -495,16 +494,17 @@ function fecharScan() {
 function processarQRCode(texto) {
     console.log('QR Code lido:', texto);
 
-    // QR Code Pix começa com 000201
     if (texto.startsWith('000201')) {
-        const dados = parsePixQRCode(texto);
-        if (dados) {
-            const confirmar = confirm(`Boleto detectado:\n\nBeneficiário: ${dados.beneficiario}\nValor: R$ ${dados.valor.toFixed(2)}\n\nLançar como despesa?`);
+        const boleto = parsePixQRCode(texto); // RENOMEADO PRA BOLETO
+        if (boleto) {
+            const confirmar = confirm(`Boleto detectado:\n\nBeneficiário: ${boleto.beneficiario}\nValor: R$ ${boleto.valor.toFixed(2)}\n\nLançar como despesa?`);
             if (confirmar) {
-                dados.push({
+                if (!contas.length) contas = [{nome: 'Principal'}]; // GARANTE QUE TEM CONTA
+
+                dados.push({ // AGORA É O ARRAY GLOBAL CERTO
                     id: Date.now(),
-                    descricao: `Boleto ${dados.beneficiario}`,
-                    valor: dados.valor,
+                    descricao: `Boleto ${boleto.beneficiario}`,
+                    valor: boleto.valor,
                     tipo: 'saida',
                     metodo: 'conta',
                     banco: contas[0]?.nome || 'Principal',
@@ -514,7 +514,7 @@ function processarQRCode(texto) {
                 });
                 salvar();
                 atualizar();
-                addMensagem(`Boleto lançado: R$ ${dados.valor.toFixed(2)}`, 'system');
+                addMensagem(`Boleto lançado: R$ ${boleto.valor.toFixed(2)}`, 'system');
             }
         } else {
             alert('QR Code Pix não reconhecido');
@@ -526,11 +526,9 @@ function processarQRCode(texto) {
 
 function parsePixQRCode(qr) {
     try {
-        // Pega valor - campo 54
         const valorMatch = qr.match(/54(\d{2})(\d+\.?\d*)/);
         const valor = valorMatch? parseFloat(valorMatch[2]) : 0;
 
-        // Pega nome beneficiário - campo 59
         const nomeMatch = qr.match(/59(\d{2})([^0-9]{2,})/);
         const beneficiario = nomeMatch? nomeMatch[2].substring(0, parseInt(nomeMatch[1])) : 'Desconhecido';
 
