@@ -761,4 +761,13 @@ function addMensagem(texto, tipo) {
             setTimeout(() => msg.remove(), 500);
         }, 8000);
     }
+}function abrirMenuMais(e) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    document.getElementById('menu-mais').classList.remove('hidden');
+}
+
+function fecharMenuMais() {
+    document.getElementById('menu-mais').classList.add('hidden');
+    document.querySelectorAll('.nav-item')[0].classList.add('active');
 }
