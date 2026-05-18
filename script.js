@@ -21,34 +21,34 @@ document.addEventListener('DOMContentLoaded', () => {
     atualizar();
     setupInput();
     setupPinInputs();
+    verificarModoTeste();
 });
 
 // ===== PIN =====
 function setupPinInputs() {
     const inputs = document.querySelectorAll('.pin-input');
     if (!inputs.length) return;
-    
+
     inputs.forEach((input, idx) => {
         input.addEventListener('input', (e) => {
-            const val = e.target.value;
+            const val = e.target.value.replace(/\D/g, '');
+            e.target.value = val;
             if (val && idx < inputs.length - 1) {
                 inputs[idx + 1].focus();
             }
-            // Verifica quando digitou os 4
             const pinCompleto = Array.from(inputs).every(i => i.value);
             if (pinCompleto) {
                 setTimeout(() => verificarPin(), 100);
             }
         });
-        
+
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Backspace' &&!e.target.value && idx > 0) {
                 inputs[idx - 1].focus();
                 inputs[idx - 1].value = '';
             }
         });
-        
-        // Limpa erro ao digitar
+
         input.addEventListener('focus', () => {
             document.getElementById('pin-erro')?.classList.add('hidden');
         });
@@ -59,22 +59,17 @@ function verificarPin() {
     const inputs = document.querySelectorAll('.pin-input');
     const pin = Array.from(inputs).map(i => i.value).join('');
     const pinSalvo = localStorage.getItem('pin');
-    
+
     if (pin.length!== 4) return;
-    
+
     if (!pinSalvo) {
-        // Primeiro acesso - salva o PIN
         localStorage.setItem('pin', pin);
         mostrarOnboarding();
         inputs.forEach(i => i.value = '');
     } else if (pin === pinSalvo) {
-        // PIN correto
-        document.getElementById('tela-pin').style.display = 'none';
-        document.getElementById('app-content').style.display = 'flex';
-        atualizar();
+        mostrarApp();
         inputs.forEach(i => i.value = '');
     } else {
-        // PIN errado
         const erro = document.getElementById('pin-erro');
         erro.textContent = 'PIN incorreto';
         erro.classList.remove('hidden');
@@ -98,45 +93,18 @@ function mostrarOnboarding() {
     document.getElementById('modal-onboarding').style.display = 'flex';
 }
 
-function resetarApp() {
-    if (confirm('Isso vai apagar TUDO. Confirma?')) {
-        localStorage.clear();
-        location.reload();
-    }
-}
-function verificarPin() {
-    const inputs = document.querySelectorAll('.pin-input');
-    const pin = Array.from(inputs).map(i => i.value).join('');
-    const pinSalvo = localStorage.getItem('pin');
-    if (!pinSalvo) {
-        localStorage.setItem('pin', pin);
-        mostrarOnboarding();
-    } else if (pin === pinSalvo) {
-        mostrarApp();
-    } else {
-        document.getElementById('pin-erro').textContent = 'PIN incorreto';
-        document.getElementById('pin-erro').classList.remove('hidden');
-        inputs.forEach(i => i.value = '');
-        inputs[0].focus();
-    }
-}
-
-function mostrarTelaPin() {
-    document.getElementById('tela-pin').style.display = 'flex';
-    document.getElementById('app-content').style.display = 'none';
-    setTimeout(() => document.querySelector('.pin-input')?.focus(), 100);
-}
-
-function mostrarOnboarding() {
-    document.getElementById('tela-pin').style.display = 'none';
-    document.getElementById('modal-onboarding').style.display = 'flex';
-}
-
 function mostrarApp() {
     document.getElementById('tela-pin').style.display = 'none';
     document.getElementById('modal-onboarding').style.display = 'none';
     document.getElementById('app-content').style.display = 'flex';
     atualizar();
+}
+
+function resetarApp() {
+    if (confirm('Isso vai apagar TUDO. Confirma?')) {
+        localStorage.clear();
+        location.reload();
+    }
 }
 
 // ===== ONBOARDING =====
@@ -152,6 +120,17 @@ function selecionarModo(modo) {
         abrirModalConta();
     } else {
         mostrarApp();
+    }
+}
+
+function verificarModoTeste() {
+    const modo = localStorage.getItem('modo');
+    if (modo === 'teste') {
+        const expira = parseInt(localStorage.getItem('teste_expira'));
+        if (Date.now() > expira) {
+            alert('Período de teste expirou. App será resetado.');
+            resetarApp();
+        }
     }
 }
 
@@ -189,31 +168,22 @@ function interpretarTexto(texto) {
     if (!matchValor) return null;
     const valor = parseFloat(matchValor[1].replace(',', '.'));
     let descricao = texto.replace(matchValor[0], '').trim();
-    
-    // SAÍDA: Comprei/Paguei/Parcelei/Quitei/Gastei/Transferi
-    const regexSaida = /(comprei|paguei|parcelei|quitei|gastei|transferi)/i;
-    // ENTRADA: Recebi
-    const regexEntrada = /(recebi)/i;
-    // SALDO INICIAL
+
+    const regexEntrada = /(recebi|salario|salário|pagamento)/i;
     const regexSaldo = /(saldo inicial)/i;
-    
     const tipo = regexEntrada.test(texto)? 'entrada' : 'saida';
-    
-    // Parcelado: "em 12x" ou "12x"
+
     const regexParcela = /(\d+)\s*x/i;
     const matchParcela = texto.match(regexParcela);
     const parcelas = matchParcela? parseInt(matchParcela[1]) : 1;
-    
-    // Cartão ou Conta
+
     const metodo = /cartao|credito|cartão/i.test(texto)? 'cartao' : 'conta';
-    
-    // Detecta banco/cartão mencionado
+
     let banco = metodo === 'cartao'? (cartoes[0]?.nome || 'Cartão') : (contas[0]?.nome || 'Conta');
     [...contas,...cartoes].forEach(item => {
         if (texto.toLowerCase().includes(item.nome.toLowerCase())) banco = item.nome;
     });
-    
-    // Categoria automática
+
     const categorias = {
         'mercado': 'Alimentação', 'cafe': 'Alimentação', 'almoço': 'Alimentação',
         'uber': 'Transporte', 'gasolina': 'Transporte', 'onibus': 'Transporte',
@@ -228,7 +198,7 @@ function interpretarTexto(texto) {
     Object.keys(categorias).forEach(key => {
         if (descricao.toLowerCase().includes(key)) categoria = categorias[key];
     });
-    
+
     if (regexSaldo.test(texto)) {
         if (!contas.length) contas.push({nome: 'Principal', saldo: 0, id: Date.now()});
         contas[0].saldo = valor;
@@ -236,7 +206,7 @@ function interpretarTexto(texto) {
         atualizar();
         return null;
     }
-    
+
     if (parcelas > 1) {
         const valorParcela = valor / parcelas;
         for (let i = 0; i < parcelas; i++) {
@@ -261,7 +231,7 @@ function interpretarTexto(texto) {
         addMensagem(`Parcelado: ${descricao} em ${parcelas}x de R$ ${valorParcela.toFixed(2)}`, 'system');
         return null;
     }
-    
+
     return {
         id: Date.now(),
         descricao: descricao || (tipo === 'entrada'? 'Receita' : 'Despesa'),
@@ -340,8 +310,310 @@ function atualizar() {
     const saldo = entradas - saidas;
     const saldoContas = contas.reduce((s, c) => s + c.saldo, 0);
     const liquido = saldoContas + saldo;
-    
-    document.getElementById('card-entradas').textContent = `R$ ${entradas.toFixed(2)}`;
-    document.getElementById('card-saidas').textContent = `R$ ${saidas.toFixed(2)}`;
-    document.getElementById('card-saldo').textContent = `R$ ${saldo.toFixed(2)}`;
-    document.getElementById('card-cartoes').textContent = `R$ ${cartao.to
+
+    const fmt = (val) => ocultarValores? 'R$ ••••' : `R$ ${val.toFixed(2)}`;
+
+    document.getElementById('card-entradas').textContent = fmt(entradas);
+    document.getElementById('card-saidas').textContent = fmt(saidas);
+    document.getElementById('card-saldo').textContent = fmt(saldo);
+    document.getElementById('card-cartoes').textContent = fmt(cartao);
+    document.getElementById('card-liquido').textContent = fmt(liquido);
+}
+
+function toggleVisibility() {
+    ocultarValores =!ocultarValores;
+    document.getElementById('eye-icon').className = ocultarValores? 'fas fa-eye-slash' : 'fas fa-eye';
+    atualizar();
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('light');
+    const isLight = document.body.classList.contains('light');
+    document.getElementById('theme-icon').className = isLight? 'fas fa-sun' : 'fas fa-moon';
+    localStorage.setItem('theme', isLight? 'light' : 'dark');
+}
+
+// ===== MODAIS =====
+function abrirModal(id) {
+    document.getElementById(id).style.display = 'flex';
+}
+
+function fecharModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+function abrirExtrato(tipo = '') {
+    abrirModal('modal-extrato');
+    if (tipo) document.getElementById('filtro-tipo').value = tipo;
+    filtrarExtrato();
+}
+
+function abrirGraficos() {
+    abrirModal('modal-graficos');
+    trocarGrafico('categoria');
+}
+
+function abrirModalConta() {
+    abrirModal('modal-contas');
+    renderTempContas();
+}
+
+function abrirModalCartao() {
+    abrirModal('modal-cartao');
+    renderTempCartoes();
+}
+
+// ===== EXTRATO =====
+function filtrarExtrato() {
+    const tipo = document.getElementById('filtro-tipo').value;
+    const categoria = document.getElementById('filtro-categoria').value;
+    const lista = document.getElementById('lista-extrato');
+
+    let filtrados = dados.filter(d => {
+        const data = new Date(d.data);
+        return data.getMonth() === mesAtual && data.getFullYear() === anoAtual;
+    });
+
+    if (tipo) filtrados = filtrados.filter(d => d.tipo === tipo || (tipo === 'cartao' && d.metodo === 'cartao'));
+    if (categoria) filtrados = filtrados.filter(d => d.categoria === categoria);
+
+    const categorias = [...new Set(dados.map(d => d.categoria))];
+    document.getElementById('filtro-categoria').innerHTML = '<option value="">Todas categorias</option>' +
+        categorias.map(c => `<option value="${c}">${c}</option>`).join('');
+
+    lista.innerHTML = filtrados.length? filtrados.map(d => `
+        <div class="extrato-item" onclick="abrirEditarTransacao(${d.id})">
+            <div>
+                <p class="extrato-desc">${d.descricao}</p>
+                <p class="extrato-meta">${d.categoria} • ${d.banco} • ${new Date(d.data).toLocaleDateString('pt-BR')}</p>
+            </div>
+            <p class="extrato-valor ${d.tipo}">${d.tipo === 'entrada'? '+' : '-'}R$ ${d.valor.toFixed(2)}</p>
+        </div>
+    `).join('') : '<p class="empty">Nenhum lançamento</p>';
+
+    const total = filtrados.reduce((s, d) => s + (d.tipo === 'entrada'? d.valor : -d.valor), 0);
+    document.getElementById('total-extrato').textContent = `Total: R$ ${total.toFixed(2)}`;
+}
+
+// ===== GRÁFICOS =====
+function trocarGrafico(tipo) {
+    document.querySelectorAll('.grafico-tabs button').forEach(b => b.classList.remove('tab-active'));
+    event?.target.classList.add('tab-active');
+
+    const dadosMes = dados.filter(d => {
+        const data = new Date(d.data);
+        return data.getMonth() === mesAtual && data.getFullYear() === anoAtual && d.tipo === 'saida';
+    });
+
+    let labels = [], valores = [];
+    if (tipo === 'categoria') {
+        const porCat = {};
+        dadosMes.forEach(d => porCat[d.categoria] = (porCat[d.categoria] || 0) + d.valor);
+        labels = Object.keys(porCat);
+        valores = Object.values(porCat);
+    } else if (tipo === 'cartao') {
+        const porCartao = {};
+        dadosMes.filter(d => d.metodo === 'cartao').forEach(d => porCartao[d.banco] = (porCartao[d.banco] || 0) + d.valor);
+        labels = Object.keys(porCartao);
+        valores = Object.values(porCartao);
+    } else {
+        const porConta = {};
+        dadosMes.filter(d => d.metodo === 'conta').forEach(d => porConta[d.banco] = (porConta[d.banco] || 0) + d.valor);
+        labels = Object.keys(porConta);
+        valores = Object.values(porConta);
+    }
+
+    if (chartInstance) chartInstance.destroy();
+    const ctx = document.getElementById('grafico').getContext('2d');
+    chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: valores,
+                backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+// ===== CONTAS/CARTÕES =====
+let tempContas = [];
+let tempCartoes = [];
+
+function addTempConta() {
+    const nome = document.getElementById('conta-nome').value.trim();
+    const saldo = parseFloat(document.getElementById('conta-saldo').value) || 0;
+    if (!nome) return alert('Nome obrigatório');
+    tempContas.push({nome, saldo, id: Date.now()});
+    document.getElementById('conta-nome').value = '';
+    document.getElementById('conta-saldo').value = '';
+    renderTempContas();
+}
+
+function renderTempContas() {
+    document.getElementById('lista-contas-temp').innerHTML = tempContas.map((c, i) => `
+        <div class="temp-item">
+            <span>${c.nome} - R$ ${c.saldo.toFixed(2)}</span>
+            <button onclick="tempContas.splice(${i}, 1); renderTempContas()"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+}
+
+function salvarContas() {
+    contas = [...contas,...tempContas];
+    tempContas = [];
+    salvar();
+    atualizar();
+    fecharModal('modal-contas');
+}
+
+function addTempCartao() {
+    const nome = document.getElementById('cartao-nome').value.trim();
+    const limite = parseFloat(document.getElementById('cartao-limite').value) || 0;
+    const fechamento = parseInt(document.getElementById('cartao-fechamento').value);
+    const vencimento = parseInt(document.getElementById('cartao-vencimento').value);
+    if (!nome) return alert('Nome obrigatório');
+    tempCartoes.push({nome, limite, fechamento, vencimento, id: Date.now()});
+    document.getElementById('cartao-nome').value = '';
+    document.getElementById('cartao-limite').value = '';
+    document.getElementById('cartao-fechamento').value = '';
+    document.getElementById('cartao-vencimento').value = '';
+    renderTempCartoes();
+}
+
+function renderTempCartoes() {
+    document.getElementById('lista-cartoes-temp').innerHTML = tempCartoes.map((c, i) => `
+        <div class="temp-item">
+            <span>${c.nome} - Limite R$ ${c.limite.toFixed(2)}</span>
+            <button onclick="tempCartoes.splice(${i}, 1); renderTempCartoes()"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+}
+
+function salvarCartoes() {
+    cartoes = [...cartoes,...tempCartoes];
+    tempCartoes = [];
+    salvar();
+    atualizar();
+    fecharModal('modal-cartao');
+}
+
+// ===== EDITAR TRANSAÇÃO =====
+function abrirEditarTransacao(id) {
+    transacaoEditando = dados.find(d => d.id === id);
+    if (!transacaoEditando) return;
+
+    document.getElementById('edit-desc').value = transacaoEditando.descricao;
+    document.getElementById('edit-valor').value = transacaoEditando.valor;
+    document.getElementById('edit-data').value = transacaoEditando.data.split('T')[0];
+    document.getElementById('edit-tipo').value = transacaoEditando.tipo;
+    document.getElementById('edit-metodo').value = transacaoEditando.metodo;
+
+    atualizarCategorias();
+    atualizarContasModal();
+    document.getElementById('edit-categoria').value = transacaoEditando.categoria;
+    document.getElementById('edit-banco').value = transacaoEditando.banco;
+
+    abrirModal('modal-editar');
+}
+
+function atualizarCategorias() {
+    const tipo = document.getElementById('edit-tipo').value;
+    const cats = tipo === 'entrada'
+       ? ['Salário','Freelance','Investimentos','Outros']
+        : ['Alimentação','Transporte','Moradia','Lazer','Saúde','Educação','Assinaturas','Parcelado','Outras Despesas'];
+    document.getElementById('edit-categoria').innerHTML = cats.map(c => `<option>${c}</option>`).join('');
+}
+
+function atualizarContasModal() {
+    const metodo = document.getElementById('edit-metodo').value;
+    const lista = metodo === 'cartao'? cartoes : contas;
+    document.getElementById('edit-banco').innerHTML = lista.map(c => `<option>${c.nome}</option>`).join('');
+}
+
+function salvarEdicao() {
+    if (!transacaoEditando) return;
+    transacaoEditando.descricao = document.getElementById('edit-desc').value;
+    transacaoEditando.valor = parseFloat(document.getElementById('edit-valor').value);
+    transacaoEditando.data = new Date(document.getElementById('edit-data').value).toISOString();
+    transacaoEditando.tipo = document.getElementById('edit-tipo').value;
+    transacaoEditando.metodo = document.getElementById('edit-metodo').value;
+    transacaoEditando.categoria = document.getElementById('edit-categoria').value;
+    transacaoEditando.banco = document.getElementById('edit-banco').value;
+    salvar();
+    atualizar();
+    fecharModal('modal-editar');
+    transacaoEditando = null;
+}
+
+function deletarTransacao() {
+    if (!transacaoEditando) return;
+    if (confirm('Excluir lançamento?')) {
+        dados = dados.filter(d => d.id!== transacaoEditando.id);
+        salvar();
+        atualizar();
+        fecharModal('modal-editar');
+        transacaoEditando = null;
+    }
+}
+
+// ===== MENU MAIS =====
+function abrirMenuMais(e) {
+    e.stopPropagation();
+    document.getElementById('menu-mais').classList.toggle('hidden');
+}
+
+function fecharMenuMais() {
+    document.getElementById('menu-mais').classList.add('hidden');
+}
+
+function toggleProjetado() {
+    mostrarProjetado =!mostrarProjetado;
+    atualizar();
+}
+
+function resetarTransacoes() {
+    if (confirm('Limpar todos lançamentos do mês?')) {
+        dados = dados.filter(d => {
+            const data = new Date(d.data);
+            return!(data.getMonth() === mesAtual && data.getFullYear() === anoAtual);
+        });
+        salvar();
+        atualizar();
+    }
+}
+
+// ===== ABAS =====
+function trocarAba(aba, e) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    e?.currentTarget.classList.add('active');
+    if (aba === 'chat') {
+        document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+    }
+}
+
+// ===== PERSISTÊNCIA =====
+function salvar() {
+    localStorage.setItem('dados', JSON.stringify(dados));
+    localStorage.setItem('contas', JSON.stringify(contas));
+    localStorage.setItem('cartoes', JSON.stringify(cartoes));
+}
+
+// ===== CLICK FORA =====
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.menu-mais') &&!e.target.closest('.nav-item')) {
+        fecharMenuMais();
+    }
+});
+
+// ===== TEMA INICIAL =====
+if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light');
+    document.getElementById('theme-icon').className = 'fas fa-sun';
+}
