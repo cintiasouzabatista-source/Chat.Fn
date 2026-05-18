@@ -671,3 +671,17 @@ function resetarTransacoes() {
         fecharMenuMais();
     }
 }
+
+// ===== CLICK FORA =====
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.menu-mais') &&!e.target.closest('.nav-item')) {
+        fecharMenuMais();
+    }
+});
+
+// ===== TEMA INICIAL =====
+if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light');
+    const el = document.getElementById('theme-icon');
+    if (el) el.className = 'fas fa-sun';
+}
