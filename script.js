@@ -637,25 +637,6 @@ function salvar() {
     localStorage.setItem('cartoes', JSON.stringify(cartoes));
 }
 
-// ===== RESET COMPLETO =====
-function resetarApp() {
-    if (confirm('ATENÇÃO: Isso vai apagar TUDO\n\n• Todas as transações\n• Contas e cartões\n• PIN de acesso\n\nTem certeza que deseja resetar o app?')) {
-        localStorage.clear();
-        location.reload();
-    }
-}
-
-function resetarTransacoes() {
-    if (confirm('Limpar todos lançamentos deste mês?')) {
-        dados = dados.filter(d => {
-            const data = new Date(d.data);
-            return!(data.getMonth() === mesAtual && data.getFullYear() === anoAtual);
-        });
-        salvar();
-        atualizar();
-        addMensagem('Lançamentos do mês apagados', 'system');
-        fecharMenuMais();
-    }
 
 
 // ===== CLICK FORA =====
