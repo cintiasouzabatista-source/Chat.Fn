@@ -7,6 +7,14 @@
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "orientation": "portrait",
+  "categories": ["finance", "productivity"],
+  "screenshots": [
+    {
+      "src": "./screenshot1.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    }
+  ],
   "icons": [
     {
       "src": "./icon-192x192.png",
