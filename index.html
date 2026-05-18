@@ -2,74 +2,54 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BankDay</title>
-
-    <meta name="theme-color" content="#25d366">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="BankDay Pro">
-    <link rel="manifest" href="./manifest.json" crossorigin="use-credentials">
-    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <meta name="theme-color" content="#0f172a">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="data:,">
 </head>
-<body>
+<body class="dark">
 
+    <!-- TELA PIN -->
     <div id="tela-pin" class="tela-full">
         <div class="pin-box">
             <div class="pin-icon"><i class="fas fa-lock"></i></div>
-            <h2 id="pin-titulo">Digite seu PIN</h2>
-            <p id="pin-subtitulo">Para acessar o app</p>
-            <div class="pin-inputs">
-                <input type="password" maxlength="1" class="pin-input" inputmode="numeric">
-                <input type="password" maxlength="1" class="pin-input" inputmode="numeric">
-                <input type="password" maxlength="1" class="pin-input" inputmode="numeric">
-                <input type="password" maxlength="1" class="pin-input" inputmode="numeric">
-            </div>
-            <p id="pin-erro" class="hidden text-rose"></p>
-            <button id="btn-esqueci" onclick="esqueciPin()">Esqueceu o PIN?</button>
+            <h2>Digite seu PIN</h2>
+            <form id="form-pin" onsubmit="return false;">
+                <div class="pin-inputs">
+                    <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
+                    <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
+                    <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
+                    <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
+                </div>
+            </form>
+            <p id="pin-erro" class="hidden"></p>
+            <button onclick="resetarApp()">Esqueceu o PIN?</button>
         </div>
     </div>
 
+    <!-- ONBOARDING -->
     <div id="modal-onboarding" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-icon bg-blue"><i class="fas fa-rocket"></i></div>
                 <h3>Bem-vindo ao BankDay</h3>
-                <p>Como você quer começar?</p>
+                <p>Como quer começar?</p>
             </div>
             <div class="modal-body">
-                <button onclick="abrirScan()" class="btn-onboard bg-blue-600">
-                    <i class="fas fa-qrcode"></i>
-                    <div>
-                        <p class="btn-title">Escanear QR Code</p>
-                        <p class="btn-desc">Ler boleto Pix</p>
-                    </div>
-                </button>
-                <button onclick="selecionarModo('teste')" class="btn-onboard bg-amber">
+                <button onclick="selecionarModo('teste')" class="btn-onboard">
                     <i class="fas fa-flask"></i>
-                    <div>
-                        <p class="btn-title">Testar por 48h</p>
-                        <p class="btn-desc">Explore sem compromisso</p>
-                    </div>
+                    <div><p>Testar por 48h</p><span>Explore sem compromisso</span></div>
                 </button>
-                <button onclick="selecionarModo('producao')" class="btn-onboard bg-emerald">
+                <button onclick="selecionarModo('producao')" class="btn-onboard">
                     <i class="fas fa-check-circle"></i>
-                    <div>
-                        <p class="btn-title">Usar pra valer</p>
-                        <p class="btn-desc">Cadastre suas contas reais</p>
-                    </div>
+                    <div><p>Usar pra valer</p><span>Cadastre suas contas reais</span></div>
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- APP -->
     <div id="app-content" style="display:none;">
         <header>
             <div class="header-top">
@@ -88,186 +68,130 @@
 
             <div class="cards-grid">
                 <div onclick="abrirExtrato('entrada')" class="card-item">
-                    <p>Entradas</p>
-                    <p id="card-entradas" class="val text-emerald">R$ 0,00</p>
+                    <p>ENTRADAS</p><p id="card-entradas" class="val text-emerald">R$ 0,00</p>
                 </div>
                 <div onclick="abrirExtrato('saida')" class="card-item">
-                    <p>Saídas</p>
-                    <p id="card-saidas" class="val text-orange">R$ 0,00</p>
+                    <p>SAÍDAS</p><p id="card-saidas" class="val text-orange">R$ 0,00</p>
                 </div>
                 <div onclick="abrirExtrato('saldo')" class="card-item">
-                    <p>Saldo</p>
-                    <p id="card-saldo" class="val text-blue">R$ 0,00</p>
+                    <p>SALDO</p><p id="card-saldo" class="val text-blue">R$ 0,00</p>
                 </div>
                 <div onclick="abrirExtrato('cartao')" class="card-item">
-                    <p>Fatura</p>
-                    <p id="card-cartoes" class="val text-rose">R$ 0,00</p>
+                    <p>FATURA</p><p id="card-cartoes" class="val text-rose">R$ 0,00</p>
                 </div>
-                <div onclick="abrirExtrato('saldo')" class="card-liquido">
-                    <p>Saldo Final</p>
-                    <p id="card-liquido" class="val text-emerald big">R$ 0,00</p>
+                <div onclick="abrirExtrato('liquido')" class="card-liquido">
+                    <p>LÍQUIDO</p><p id="card-liquido" class="val big">R$ 0,00</p>
                 </div>
-                
             </div>
         </header>
 
         <main id="chat-box"></main>
 
         <footer class="chat-footer">
-            <button onclick="abrirScan()" class="btn-scan" title="Escanear Pix">
-                <i class="fas fa-qrcode"></i>
-            </button>
-            <input id="user-input" type="text" placeholder="Ex: cafe 15 | recebi 500">
-            <button id="btn-enviar">
-                <i class="fas fa-paper-plane"></i>
-            </button>
+            <button onclick="iniciarVoz()" class="btn-mic" title="Falar"><i class="fas fa-microphone"></i></button>
+            <input id="user-input" type="text" placeholder="Ex: cafe 15 | recebi 500 | saldo inicial 1000">
+            <button id="btn-enviar"><i class="fas fa-paper-plane"></i></button>
         </footer>
 
         <nav>
             <button class="nav-item active" onclick="trocarAba('chat', event)">
                 <i class="fas fa-comment"></i><span>Chat</span>
             </button>
-            <button class="nav-item" onclick="trocarAba('extrato', event)">
+            <button class="nav-item" onclick="abrirExtrato()">
                 <i class="fas fa-list"></i><span>Extrato</span>
             </button>
-            <button class="nav-item" onclick="trocarAba('graficos', event)">
+            <button class="nav-item" onclick="abrirGraficos()">
                 <i class="fas fa-chart-bar"></i><span>Gráficos</span>
             </button>
             <button class="nav-item" onclick="abrirMenuMais(event)">
                 <i class="fas fa-ellipsis-h"></i><span>Mais</span>
             </button>
-            
         </nav>
 
-<div id="menu-mais" class="menu-mais hidden">
-    <button onclick="abrirModalContas(); fecharMenuMais()" class="menu-mais-item">
-        <i class="fas fa-wallet"></i> Contas e Cartões
-    </button>
-    <button onclick="toggleProjetado(); fecharMenuMais()" class="menu-mais-item">
-        <i class="fas fa-chart-line"></i> Projeção
-    </button>
-    <button onclick="resetarTransacoes(); fecharMenuMais()" class="menu-mais-item">
-        <i class="fas fa-broom"></i> Limpar Lançamentos
-    </button>
-    <button onclick="resetarApp(); fecharMenuMais()" class="menu-mais-item text-rose">
-        <i class="fas fa-trash"></i> Resetar App
-    </button>
-</div>
-        <div id="modal-scan" class="modal" style="display:none; z-index: 2000;">
-        <div class="modal-content">
-            <div class="modal-head">
-                <h3>Escanear QR Code Pix</h3>
-                <button onclick="fecharScan()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body" style="padding: 0;">
-                <div id="reader" style="width: 100%; background: #000;"></div>
-                <p style="text-align:center; padding: 10px; font-size: 12px; color: #64748b;">
-                    Aponte para o QR Code do boleto Pix
-                </p>
-            </div>
+        <!-- MENU MAIS -->
+        <div id="menu-mais" class="menu-mais hidden">
+            <button onclick="abrirModalConta(); fecharMenuMais()" class="menu-mais-item">
+                <i class="fas fa-university"></i> Cadastrar Conta
+            </button>
+            <button onclick="abrirModalCartao(); fecharMenuMais()" class="menu-mais-item">
+                <i class="fas fa-credit-card"></i> Cadastrar Cartão
+            </button>
+            <button onclick="toggleProjetado(); fecharMenuMais()" class="menu-mais-item">
+                <i class="fas fa-chart-line"></i> Projeção Líquido
+            </button>
+            <button onclick="resetarTransacoes(); fecharMenuMais()" class="menu-mais-item">
+                <i class="fas fa-broom"></i> Limpar Lançamentos
+            </button>
+            <button onclick="resetarApp(); fecharMenuMais()" class="menu-mais-item text-rose">
+                <i class="fas fa-trash"></i> Resetar App
+            </button>
         </div>
     </div>
 
+    <!-- MODAIS -->
     <div id="modal-extrato" class="modal">
         <div class="modal-content full">
-            <div class="modal-head">
-                <h3>Extrato</h3>
-                <button onclick="fecharModal('modal-extrato')"><i class="fas fa-times"></i></button>
-            </div>
+            <div class="modal-head"><h3>Extrato</h3><button onclick="fecharModal('modal-extrato')"><i class="fas fa-times"></i></button></div>
             <div class="modal-filters">
-                <select id="filtro-tipo" onchange="filtrarExtrato()">
-                    <option value="">Todos</option>
-                    <option value="entrada">Entradas</option>
-                    <option value="saida">Saídas</option>
-                    <option value="cartao">Cartão</option>
-                </select>
-                <select id="filtro-categoria" onchange="filtrarExtrato()">
-                    <option value="">Todas categorias</option>
-                </select>
+                <select id="filtro-tipo" onchange="filtrarExtrato()"><option value="">Todos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select>
+                <select id="filtro-categoria" onchange="filtrarExtrato()"><option value="">Todas categorias</option></select>
             </div>
             <div id="lista-extrato" class="modal-list"></div>
-            <div class="modal-footer">
-                <p id="total-extrato"></p>
-            </div>
+            <div class="modal-footer"><p id="total-extrato"></p></div>
         </div>
     </div>
 
     <div id="modal-graficos" class="modal">
         <div class="modal-content full">
-            <div class="modal-head">
-                <h3 id="grafico-titulo">Gráficos</h3>
-                <button onclick="fecharModal('modal-graficos')"><i class="fas fa-times"></i></button>
-            </div>
+            <div class="modal-head"><h3 id="grafico-titulo">Gráficos</h3><button onclick="fecharModal('modal-graficos')"><i class="fas fa-times"></i></button></div>
             <div class="grafico-tabs">
                 <button onclick="trocarGrafico('categoria')" class="tab-active">Categoria</button>
                 <button onclick="trocarGrafico('cartao')">Cartão</button>
                 <button onclick="trocarGrafico('banco')">Conta</button>
             </div>
-            <div class="chart-container">
-                <canvas id="grafico"></canvas>
-            </div>
+            <div class="chart-container"><canvas id="grafico"></canvas></div>
         </div>
     </div>
 
     <div id="modal-contas" class="modal">
         <div class="modal-content">
-            <div class="modal-head">
-                <h3>Contas & Cartões</h3>
-                <button onclick="fecharModal('modal-contas')"><i class="fas fa-times"></i></button>
-            </div>
+            <div class="modal-head"><h3>Nova Conta</h3><button onclick="fecharModal('modal-contas')"><i class="fas fa-times"></i></button></div>
             <div class="modal-body">
-                <h4>Suas Contas</h4>
                 <div id="lista-contas-temp" class="list-temp"></div>
-                <input type="text" id="conta-nome" placeholder="Ex: Nubank">
+                <input type="text" id="conta-nome" placeholder="Nome - Ex: Nubank">
                 <input type="number" id="conta-saldo" placeholder="Saldo inicial" step="0.01">
-                <button onclick="addTempConta()" class="btn-add">+ Adicionar Conta</button>
-
-                <h4 style="margin-top:20px">Seus Cartões</h4>
-                <div id="lista-cartoes-temp" class="list-temp"></div>
-                <input type="text" id="cartao-nome" placeholder="Ex: Nubank">
-                <input type="number" id="cartao-fechamento" placeholder="Dia fechamento" min="1" max="31">
-                <input type="number" id="cartao-vencimento" placeholder="Dia vencimento" min="1" max="31">
-                <button onclick="addTempCartao()" class="btn-add">+ Adicionar Cartão</button>
-
-                <button onclick="finalizarCadastro()" class="btn-save" style="margin-top:20px">Salvar Tudo</button>
+                <button onclick="addTempConta()" class="btn-add">+ Adicionar</button>
+                <button onclick="salvarContas()" class="btn-save">Salvar</button>
             </div>
         </div>
     </div>
 
-    
+    <div id="modal-cartao" class="modal">
+        <div class="modal-content">
+            <div class="modal-head"><h3>Novo Cartão</h3><button onclick="fecharModal('modal-cartao')"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <div id="lista-cartoes-temp" class="list-temp"></div>
+                <input type="text" id="cartao-nome" placeholder="Nome - Ex: Nubank">
+                <input type="number" id="cartao-limite" placeholder="Limite - Ex: 5000">
+                <input type="number" id="cartao-fechamento" placeholder="Dia fechamento" min="1" max="31">
+                <input type="number" id="cartao-vencimento" placeholder="Dia vencimento" min="1" max="31">
+                <button onclick="addTempCartao()" class="btn-add">+ Adicionar</button>
+                <button onclick="salvarCartoes()" class="btn-save">Salvar</button>
+            </div>
+        </div>
+    </div>
 
     <div id="modal-editar" class="modal">
         <div class="modal-content">
-            <div class="modal-head">
-                <h3>Editar Transação</h3>
-                <button onclick="fecharModal('modal-editar')"><i class="fas fa-times"></i></button>
-            </div>
+            <div class="modal-head"><h3>Editar</h3><button onclick="fecharModal('modal-editar')"><i class="fas fa-times"></i></button></div>
             <div class="modal-body">
                 <div class="form-group"><label>Descrição</label><input type="text" id="edit-desc"></div>
                 <div class="form-group"><label>Valor</label><input type="number" id="edit-valor" step="0.01"></div>
                 <div class="form-group"><label>Data</label><input type="date" id="edit-data"></div>
-                <div class="form-group">
-                    <label>Tipo</label>
-                    <select id="edit-tipo" onchange="atualizarCategorias()">
-                        <option value="entrada">Entrada</option>
-                        <option value="saida">Saída</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Método</label>
-                    <select id="edit-metodo" onchange="atualizarContasModal()">
-                        <option value="conta">Conta</option>
-                        <option value="cartao">Cartão</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Categoria</label>
-                    <select id="edit-categoria"></select>
-                </div>
-                <div class="form-group">
-                    <label>Banco/Cartão</label>
-                    <select id="edit-banco"></select>
-                </div>
+                <div class="form-group"><label>Tipo</label><select id="edit-tipo" onchange="atualizarCategorias()"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></div>
+                <div class="form-group"><label>Método</label><select id="edit-metodo" onchange="atualizarContasModal()"><option value="conta">Conta</option><option value="cartao">Cartão</option></select></div>
+                <div class="form-group"><label>Categoria</label><select id="edit-categoria"></select></div>
+                <div class="form-group"><label>Banco/Cartão</label><select id="edit-banco"></select></div>
                 <div class="modal-actions">
                     <button onclick="deletarTransacao()" class="btn-delete">Excluir</button>
                     <button onclick="salvarEdicao()" class="btn-save">Salvar</button>
