@@ -12,23 +12,23 @@
 </head>
 <body class="dark">
 
-    <!-- TELA PIN -->
-    <div id="tela-pin" class="tela-full">
-        <div class="pin-box">
-            <div class="pin-icon"><i class="fas fa-lock"></i></div>
-            <h2>Digite seu PIN</h2>
-            <form id="form-pin" onsubmit="return false;">
-                <div class="pin-inputs">
-                    <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
-                    <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
-                    <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
-                    <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
-                </div>
-            </form>
-            <p id="pin-erro" class="hidden"></p>
-            <button onclick="resetarApp()">Esqueceu o PIN?</button>
-        </div>
+<!-- TELA PIN -->
+<div id="tela-pin" class="tela-full">
+    <div class="pin-box">
+        <div class="pin-icon"><i class="fas fa-lock"></i></div>
+        <h2>Digite seu PIN</h2>
+        <form id="form-pin" onsubmit="return false;">
+            <div class="pin-inputs">
+                <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
+                <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
+                <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
+                <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
+            </div>
+        </form>
+        <p id="pin-erro" class="hidden"></p>
+        <button onclick="resetarApp()">Esqueceu o PIN?</button>
     </div>
+</div>
 
     <!-- ONBOARDING -->
     <div id="modal-onboarding" class="modal">
