@@ -430,8 +430,8 @@ function abrirExtrato(tipo = '') {
 }
 
 function abrirGraficos() {
-    abrirModal('modal-graficos');
-    trocarGrafico('categoria');
+    document.getElementById('modal-graficos').classList.add('active');
+    trocarGrafico('categoria'); // força carregar o primeiro
 }
 
 function abrirModalConta() {
