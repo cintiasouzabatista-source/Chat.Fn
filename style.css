@@ -172,3 +172,17 @@ nav{flex-shrink:0;display:flex;background:var(--bg2);border-top:1px solid var(--
 #menu-mais button:hover {
     background: var(--bg-hover);
 }
+
+#menu-mais {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    min-width: 320px;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+#menu-mais button {
+    padding: 10px 12px;
+    font-size: 13px;
+}
