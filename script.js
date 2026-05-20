@@ -722,3 +722,22 @@ if (localStorage.getItem('theme') === 'light') {
     const el = document.getElementById('theme-icon');
     if (el) el.className = 'fas fa-sun';
 }
+
+// Instala e cacheia
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('Cache aberto, salvando arquivos...');
+        // Cache um por um pra não falhar tudo se 1 der erro
+        return Promise.all(
+          urlsToCache.map(url => {
+            return cache.add(url).catch(err => {
+              console.warn('Falha ao cachear:', url, err);
+            });
+          })
+        );
+      })
+      .then(() => self.skipWaiting())
+  );
+});
