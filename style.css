@@ -114,3 +114,14 @@ nav{flex-shrink:0;display:flex;background:var(--bg2);border-top:1px solid var(--
     25% { transform: translateX(-5px); }
     75% { transform: translateX(5px); }
 }
+
+.menu-mais button.btn-danger {
+    color: #ef4444;
+    border-top: 1px solid #374151;
+    margin-top: 8px;
+    padding-top: 12px;
+}
+
+.menu-mais button.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
