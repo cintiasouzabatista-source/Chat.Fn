@@ -169,18 +169,14 @@ function interpretarTexto(texto) {
     [...contas,...cartoes].forEach(item => {
         if (textoLimpo.includes(item.nome.toLowerCase())) {
             banco = item.nome;
-            // Remove o nome do banco do texto pra não ir pra descrição
             textoLimpo = textoLimpo.replace(new RegExp(`\\b${item.nome.toLowerCase()}\\b`, 'g'), '');
         }
     });
 
     // ===== DESCRIÇÃO LIMPA =====
     let desc = textoLimpo;
-
-    // 1. Remove valor
     desc = desc.replace(matchValor[0], '');
 
-    // 2. Remove palavras-chave de ação
     const palavrasAcao = [
         'comprei','paguei','parcelei','quitei','gastei','transferi',
         'recebi','salario','salário','pagamento','de','do','da','no','na','em','por',
@@ -191,10 +187,7 @@ function interpretarTexto(texto) {
         desc = desc.replace(regex, '');
     });
 
-    // 3. Limpa espaços duplos e sobras
     desc = desc.replace(/\s+/g, ' ').trim();
-
-    // 4. Primeira letra maiúscula + fallback
     desc = desc? desc.charAt(0).toUpperCase() + desc.slice(1) : 'Lançamento';
 
     // ===== TIPO =====
@@ -255,9 +248,55 @@ function interpretarTexto(texto) {
     let categoria = tipo === 'entrada'? 'Outros' : 'Outras Despesas';
     Object.keys(categorias).forEach(keys => {
         const regex = new RegExp(keys, 'i');
-        if (regex.test(texto.toLowerCase())) categoria = categorias[keys];
+        if (regex.test(texto.toLowerCase())) categoria = categorias[keys]; // <-- LINHA CORRIGIDA
     });
 
+    // ===== CONTA FIXA AUTOMÁTICA =====
+    const regexContaFixa = /(aluguel|luz|energia|agua|internet|condominio|netflix|spotify|mensalidade)/i;
+    const contaFixa = regexContaFixa.test(texto.toLowerCase());
+
+    return {
+        id: Date.now(),
+        descricao: desc,
+        valor: valor,
+        tipo: tipo,
+        metodo: metodo,
+        banco: banco,
+        data: new Date().toISOString(),
+        categoria: categoria,
+        texto: texto,
+        contaFixa: contaFixa
+    };
+}
+
+salvar();
+        atualizar();
+        addMensagem(`Parcelado: ${desc} em ${parcelas}x de R$ ${valorParcela.toFixed(2)}`, 'system');
+        return null;
+    }
+
+    // ===== CATEGORIA AUTOMÁTICA =====
+    const categorias = {
+        'mercado|supermercado|feira|cafe|lanche|padaria|almoço|jantar|ifood|rappi': 'Alimentação',
+        'uber|99|taxi|gasolina|combustivel|onibus|metro|pedagio': 'Transporte',
+        'aluguel|condominio|luz|energia|energia elétrica|agua|internet|iptu': 'Moradia',
+        'cinema|bar|festa|show|netflix|spotify|prime|disney': 'Lazer',
+        'farmacia|medico|hospital|remedio|plano|dentista': 'Saúde',
+        'curso|faculdade|livro|escola|mensalidade': 'Educação',
+        'salario|freelance|pix recebido|rendimento': 'Salário'
+    };
+    let categoria = tipo === 'entrada'? 'Outros' : 'Outras Despesas';
+   // ERRADO - linha ~303
+Object.keys(categorias).forEach(keys => {
+    const regex = new RegExp(keys, 'i');
+    if (regex.test(texto.toLowerCase())) categoria = categorias;
+});
+
+// CERTO
+Object.keys(categorias).forEach(keys => {
+    const regex = new RegExp(keys, 'i');
+    if (regex.test(texto.toLowerCase())) categoria = categorias[keys];
+});
     // ===== CONTA FIXA AUTOMÁTICA =====
     const regexContaFixa = /(aluguel|luz|energia|agua|internet|condominio|netflix|spotify|mensalidade)/i;
     const contaFixa = regexContaFixa.test(texto.toLowerCase());
