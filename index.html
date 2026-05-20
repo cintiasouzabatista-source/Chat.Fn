@@ -22,15 +22,18 @@
     <div class="pin-box">
         <div class="pin-icon"><i class="fas fa-lock"></i></div>
         <h2>Digite seu PIN</h2>
-  <div id="form-pin">
-    <div class="pin-inputs">
-        <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
-        <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
-        <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
-        <input type="password" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="one-time-code">
+        <div id="form-pin">
+            <div class="pin-inputs">
+                <input type="tel" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="off">
+                <input type="tel" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="off">
+                <input type="tel" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="off">
+                <input type="tel" maxlength="1" class="pin-input" inputmode="numeric" autocomplete="off">
+            </div>
+        </div>
+        <p id="pin-erro" class="hidden"></p>
+        <button onclick="resetarApp()">Esqueceu o PIN?</button>
     </div>
 </div>
-
     <!-- ONBOARDING -->
     <div id="modal-onboarding" class="modal">
         <div class="modal-content">
