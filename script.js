@@ -72,6 +72,7 @@ function enviarMensagem() {
         addMensagem('Não entendi. Tenta: cafe 15 | recebi 500', 'bot');
     }
 }
+
 function verificarPin() {
     const inputs = document.querySelectorAll('.pin-input');
     const pin = Array.from(inputs).map(i => i.value).join('');
