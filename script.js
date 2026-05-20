@@ -248,7 +248,7 @@ function interpretarTexto(texto) {
     let categoria = tipo === 'entrada'? 'Outros' : 'Outras Despesas';
     Object.keys(categorias).forEach(keys => {
         const regex = new RegExp(keys, 'i');
-        if (regex.test(texto.toLowerCase())) categoria = categorias[keys]; // <-- LINHA CORRIGIDA
+        if (regex.test(texto.toLowerCase())) categoria = categorias[keys]; // LINHA CORRIGIDA
     });
 
     // ===== CONTA FIXA AUTOMÁTICA =====
@@ -268,7 +268,6 @@ function interpretarTexto(texto) {
         contaFixa: contaFixa
     };
 }
-
 salvar();
         atualizar();
         addMensagem(`Parcelado: ${desc} em ${parcelas}x de R$ ${valorParcela.toFixed(2)}`, 'system');
