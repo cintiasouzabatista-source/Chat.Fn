@@ -172,7 +172,25 @@ function interpretarTexto(texto) {
             textoLimpo = textoLimpo.replace(new RegExp(`\\b${item.nome.toLowerCase()}\\b`, 'g'), '');
         }
     });
+const retorno = {
+        id: Date.now(),
+        descricao: desc,
+        valor: valor,
+        tipo: tipo,
+        metodo: metodo,
+        banco: banco,
+        data: new Date().toISOString(),
+        categoria: categoria,
+        texto: texto,
+        contaFixa: contaFixa
+    };
 
+    if (contaFixa) {
+        setTimeout(() => replicarContasFixas(), 100);
+    }
+
+    return retorno;
+    
     // ===== DESCRIÇÃO LIMPA =====
     let desc = textoLimpo;
     desc = desc.replace(matchValor[0], '');
@@ -623,8 +641,82 @@ function fecharMenuMais() {
 
 function toggleProjetado() {
     mostrarProjetado =!mostrarProjetado;
+
+    if (mostrarProjetado) {
+        const dadosMes = dados.filter(d => {
+            const data = new Date(d.data);
+            return data.getMonth() === mesAtual && data.getFullYear() === anoAtual;
+        });
+        const entradas = dadosMes.filter(d => d.tipo === 'entrada').reduce((s, d) => s + d.valor, 0);
+        const saidas = dadosMes.filter(d => d.tipo === 'saida').reduce((s, d) => s + d.valor, 0);
+        const saldoMes = entradas - saidas;
+
+        if (saldoMes > 0) {
+            // Joga pro próximo mês
+            let proximoMes = mesAtual + 1;
+            let proximoAno = anoAtual;
+            if (proximoMes > 11) { proximoMes = 0; proximoAno++; }
+
+            const dataProximo = new Date(proximoAno, proximoMes, 1);
+
+            // Remove projeção antiga se existir
+            dados = dados.filter(d => d.descricao!== 'Saldo mês anterior');
+
+            dados.push({
+                id: Date.now(),
+                descricao: 'Saldo mês anterior',
+                valor: saldoMes,
+                tipo: 'entrada',
+                metodo: 'conta',
+                banco: contas[0]?.nome || 'Principal',
+                data: dataProximo.toISOString(),
+                categoria: 'Projeção',
+                texto: 'projeção automática',
+                contaFixa: false
+            });
+            salvar();
+            addMensagem(`Projeção: R$ ${saldoMes.toFixed(2)} lançado em ${proximoMes + 1}/${proximoAno}`, 'system');
+        }
+    } else {
+        // Remove projeções
+        dados = dados.filter(d => d.descricao!== 'Saldo mês anterior');
+        salvar();
+        addMensagem('Projeção removida', 'system');
+    }
+
     atualizar();
-    addMensagem(mostrarProjetado? 'Projeção ativada: descontando contas fixas futuras' : 'Projeção desativada', 'system');
+}
+function replicarContasFixas() {
+    const contasFixas = dados.filter(d => d.contaFixa === true);
+    const mesesParaFrente = 12; // replica 12 meses pra frente
+
+    contasFixas.forEach(fixa => {
+        const dataOriginal = new Date(fixa.data);
+        const dia = dataOriginal.getDate();
+
+        for (let i = 1; i <= mesesParaFrente; i++) {
+            const novaData = new Date(dataOriginal);
+            novaData.setMonth(novaData.getMonth() + i);
+
+            // Verifica se já existe essa conta fixa nesse mês
+            const jaExiste = dados.some(d => {
+                const dData = new Date(d.data);
+                return d.descricao === fixa.descricao
+                    && dData.getMonth() === novaData.getMonth()
+                    && dData.getFullYear() === novaData.getFullYear()
+                    && d.contaFixa === true;
+            });
+
+            if (!jaExiste) {
+                dados.push({
+                   ...fixa,
+                    id: Date.now() + i,
+                    data: novaData.toISOString()
+                });
+            }
+        }
+    });
+    salvar();
 }
 // ===== RESET =====
 function resetarApp() {
