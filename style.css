@@ -129,3 +129,12 @@ nav{flex-shrink:0;display:flex;background:var(--bg2);border-top:1px solid var(--
     max-height: 300px;
     overflow-y: auto;
 }
+
+.pin-input {
+    text-security: disc;
+    -webkit-text-security: disc;
+    -moz-text-security: disc;
+    text-align: center;
+    font-size: 24px;
+    letter-spacing: 0;
+}
