@@ -160,9 +160,22 @@ function interpretarTexto(texto) {
     if (!matchValor) return null;
 
     const valor = parseFloat(matchValor[1].replace(',', '.'));
+    let textoLimpo = texto.toLowerCase();
+
+    // ===== DETECTA BANCO/CARTÃO PRIMEIRO =====
+    const metodo = /cartao|credito|cartão/i.test(texto)? 'cartao' : 'conta';
+    let banco = metodo === 'cartao'? (cartoes[0]?.nome || 'Cartão') : (contas[0]?.nome || 'Conta');
+
+    [...contas,...cartoes].forEach(item => {
+        if (textoLimpo.includes(item.nome.toLowerCase())) {
+            banco = item.nome;
+            // Remove o nome do banco do texto pra não ir pra descrição
+            textoLimpo = textoLimpo.replace(new RegExp(`\\b${item.nome.toLowerCase()}\\b`, 'g'), '');
+        }
+    });
 
     // ===== DESCRIÇÃO LIMPA =====
-    let desc = texto;
+    let desc = textoLimpo;
 
     // 1. Remove valor
     desc = desc.replace(matchValor[0], '');
@@ -178,16 +191,10 @@ function interpretarTexto(texto) {
         desc = desc.replace(regex, '');
     });
 
-    // 3. Remove bancos/cartões mencionados
-    [...contas,...cartoes].forEach(item => {
-        const regex = new RegExp(`\\b${item.nome}\\b`, 'gi');
-        desc = desc.replace(regex, '');
-    });
-
-    // 4. Limpa espaços duplos e sobras
+    // 3. Limpa espaços duplos e sobras
     desc = desc.replace(/\s+/g, ' ').trim();
 
-    // 5. Primeira letra maiúscula + fallback
+    // 4. Primeira letra maiúscula + fallback
     desc = desc? desc.charAt(0).toUpperCase() + desc.slice(1) : 'Lançamento';
 
     // ===== TIPO =====
@@ -219,13 +226,14 @@ function interpretarTexto(texto) {
                 descricao: `${desc} ${i+1}/${parcelas}`,
                 valor: valorParcela,
                 tipo: tipo,
-                metodo: /cartao|credito|cartão/i.test(texto)? 'cartao' : 'conta',
-                banco: [...contas,...cartoes].find(b => texto.toLowerCase().includes(b.nome.toLowerCase()))?.nome || (contas[0]?.nome || 'Conta'),
+                metodo: metodo,
+                banco: banco,
                 data: dataParcela.toISOString(),
                 categoria: 'Parcelado',
                 texto: texto,
                 parcela: i+1,
-                totalParcelas: parcelas
+                totalParcelas: parcelas,
+                contaFixa: false
             });
         }
         salvar();
@@ -233,6 +241,40 @@ function interpretarTexto(texto) {
         addMensagem(`Parcelado: ${desc} em ${parcelas}x de R$ ${valorParcela.toFixed(2)}`, 'system');
         return null;
     }
+
+    // ===== CATEGORIA AUTOMÁTICA =====
+    const categorias = {
+        'mercado|supermercado|feira|cafe|lanche|padaria|almoço|jantar|ifood|rappi': 'Alimentação',
+        'uber|99|taxi|gasolina|combustivel|onibus|metro|pedagio': 'Transporte',
+        'aluguel|condominio|luz|energia|energia elétrica|agua|internet|iptu': 'Moradia',
+        'cinema|bar|festa|show|netflix|spotify|prime|disney': 'Lazer',
+        'farmacia|medico|hospital|remedio|plano|dentista': 'Saúde',
+        'curso|faculdade|livro|escola|mensalidade': 'Educação',
+        'salario|freelance|pix recebido|rendimento': 'Salário'
+    };
+    let categoria = tipo === 'entrada'? 'Outros' : 'Outras Despesas';
+    Object.keys(categorias).forEach(keys => {
+        const regex = new RegExp(keys, 'i');
+        if (regex.test(texto.toLowerCase())) categoria = categorias[keys];
+    });
+
+    // ===== CONTA FIXA AUTOMÁTICA =====
+    const regexContaFixa = /(aluguel|luz|energia|agua|internet|condominio|netflix|spotify|mensalidade)/i;
+    const contaFixa = regexContaFixa.test(texto.toLowerCase());
+
+    return {
+        id: Date.now(),
+        descricao: desc,
+        valor: valor,
+        tipo: tipo,
+        metodo: metodo,
+        banco: banco,
+        data: new Date().toISOString(),
+        categoria: categoria,
+        texto: texto,
+        contaFixa: contaFixa
+    };
+}
 
     // ===== MÉTODO E BANCO =====
     const metodo = /cartao|credito|cartão/i.test(texto)? 'cartao' : 'conta';
@@ -540,6 +582,7 @@ function abrirEditarTransacao(id) {
     document.getElementById('edit-data').value = transacaoEditando.data.split('T')[0];
     document.getElementById('edit-tipo').value = transacaoEditando.tipo;
     document.getElementById('edit-metodo').value = transacaoEditando.metodo;
+    document.getElementById('edit-conta-fixa').checked = transacaoEditando.contaFixa || false;
 
     atualizarCategorias();
     atualizarContasModal();
@@ -547,20 +590,6 @@ function abrirEditarTransacao(id) {
     document.getElementById('edit-banco').value = transacaoEditando.banco;
 
     abrirModal('modal-editar');
-}
-
-function atualizarCategorias() {
-    const tipo = document.getElementById('edit-tipo').value;
-    const cats = tipo === 'entrada'
-      ? ['Salário','Freelance','Investimentos','Outros']
-        : ['Alimentação','Transporte','Moradia','Lazer','Saúde','Educação','Assinaturas','Parcelado','Outras Despesas'];
-    document.getElementById('edit-categoria').innerHTML = cats.map(c => `<option>${c}</option>`).join('');
-}
-
-function atualizarContasModal() {
-    const metodo = document.getElementById('edit-metodo').value;
-    const lista = metodo === 'cartao'? cartoes : contas;
-    document.getElementById('edit-banco').innerHTML = lista.map(c => `<option>${c.nome}</option>`).join('');
 }
 
 function salvarEdicao() {
@@ -572,12 +601,12 @@ function salvarEdicao() {
     transacaoEditando.metodo = document.getElementById('edit-metodo').value;
     transacaoEditando.categoria = document.getElementById('edit-categoria').value;
     transacaoEditando.banco = document.getElementById('edit-banco').value;
+    transacaoEditando.contaFixa = document.getElementById('edit-conta-fixa').checked;
     salvar();
     atualizar();
     fecharModal('modal-editar');
     transacaoEditando = null;
 }
-
 function deletarTransacao() {
     if (!transacaoEditando) return;
     if (confirm('Excluir lançamento?')) {
