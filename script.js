@@ -248,96 +248,13 @@ function interpretarTexto(texto) {
     let categoria = tipo === 'entrada'? 'Outros' : 'Outras Despesas';
     Object.keys(categorias).forEach(keys => {
         const regex = new RegExp(keys, 'i');
-        if (regex.test(texto.toLowerCase())) categoria = categorias[keys]; // LINHA CORRIGIDA
-    });
-
-    // ===== CONTA FIXA AUTOMÁTICA =====
-    const regexContaFixa = /(aluguel|luz|energia|agua|internet|condominio|netflix|spotify|mensalidade)/i;
-    const contaFixa = regexContaFixa.test(texto.toLowerCase());
-
-    return {
-        id: Date.now(),
-        descricao: desc,
-        valor: valor,
-        tipo: tipo,
-        metodo: metodo,
-        banco: banco,
-        data: new Date().toISOString(),
-        categoria: categoria,
-        texto: texto,
-        contaFixa: contaFixa
-    };
-}
-salvar();
-        atualizar();
-        addMensagem(`Parcelado: ${desc} em ${parcelas}x de R$ ${valorParcela.toFixed(2)}`, 'system');
-        return null;
-    }
-
-    // ===== CATEGORIA AUTOMÁTICA =====
-    const categorias = {
-        'mercado|supermercado|feira|cafe|lanche|padaria|almoço|jantar|ifood|rappi': 'Alimentação',
-        'uber|99|taxi|gasolina|combustivel|onibus|metro|pedagio': 'Transporte',
-        'aluguel|condominio|luz|energia|energia elétrica|agua|internet|iptu': 'Moradia',
-        'cinema|bar|festa|show|netflix|spotify|prime|disney': 'Lazer',
-        'farmacia|medico|hospital|remedio|plano|dentista': 'Saúde',
-        'curso|faculdade|livro|escola|mensalidade': 'Educação',
-        'salario|freelance|pix recebido|rendimento': 'Salário'
-    };
-    let categoria = tipo === 'entrada'? 'Outros' : 'Outras Despesas';
-   // ERRADO - linha ~303
-Object.keys(categorias).forEach(keys => {
-    const regex = new RegExp(keys, 'i');
-    if (regex.test(texto.toLowerCase())) categoria = categorias;
-});
-
-// CERTO
-Object.keys(categorias).forEach(keys => {
-    const regex = new RegExp(keys, 'i');
-    if (regex.test(texto.toLowerCase())) categoria = categorias[keys];
-});
-    // ===== CONTA FIXA AUTOMÁTICA =====
-    const regexContaFixa = /(aluguel|luz|energia|agua|internet|condominio|netflix|spotify|mensalidade)/i;
-    const contaFixa = regexContaFixa.test(texto.toLowerCase());
-
-    return {
-        id: Date.now(),
-        descricao: desc,
-        valor: valor,
-        tipo: tipo,
-        metodo: metodo,
-        banco: banco,
-        data: new Date().toISOString(),
-        categoria: categoria,
-        texto: texto,
-        contaFixa: contaFixa
-    };
-}
-
-    // ===== MÉTODO E BANCO =====
-    const metodo = /cartao|credito|cartão/i.test(texto)? 'cartao' : 'conta';
-    let banco = metodo === 'cartao'? (cartoes[0]?.nome || 'Cartão') : (contas[0]?.nome || 'Conta');
-    [...contas,...cartoes].forEach(item => {
-        if (texto.toLowerCase().includes(item.nome.toLowerCase())) banco = item.nome;
-    });
-
-    // ===== CATEGORIA AUTOMÁTICA =====
-    const categorias = {
-        'mercado|supermercado|feira': 'Alimentação',
-        'cafe|lanche|padaria|almoço|jantar|ifood|rappi': 'Alimentação',
-        'uber|99|taxi|gasolina|combustivel|onibus|metro': 'Transporte',
-        'aluguel|condominio|luz|energia|agua|internet': 'Moradia',
-        'cinema|bar|festa|show|netflix|spotify|prime': 'Lazer',
-        'farmacia|medico|hospital|remedio|plano': 'Saúde',
-        'curso|faculdade|livro|escola': 'Educação',
-        'salario|freelance|pix recebido|rendimento': 'Salário'
-    };
-    let categoria = tipo === 'entrada'? 'Outros' : 'Outras Despesas';
-    Object.keys(categorias).forEach(keys => {
-        const regex = new RegExp(keys, 'i');
         if (regex.test(texto.toLowerCase())) categoria = categorias[keys];
     });
 
+    // ===== CONTA FIXA AUTOMÁTICA =====
+    const regexContaFixa = /(aluguel|luz|energia|agua|internet|condominio|netflix|spotify|mensalidade)/i;
+    const contaFixa = regexContaFixa.test(texto.toLowerCase());
+
     return {
         id: Date.now(),
         descricao: desc,
@@ -347,7 +264,8 @@ Object.keys(categorias).forEach(keys => {
         banco: banco,
         data: new Date().toISOString(),
         categoria: categoria,
-        texto: texto
+        texto: texto,
+        contaFixa: contaFixa
     };
 }
 
@@ -630,6 +548,20 @@ function abrirEditarTransacao(id) {
     abrirModal('modal-editar');
 }
 
+function atualizarCategorias() {
+    const tipo = document.getElementById('edit-tipo').value;
+    const categorias = tipo === 'entrada'
+       ? ['Salário', 'Freelance', 'Rendimentos', 'Outros']
+        : ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Parcelado', 'Outras Despesas'];
+    document.getElementById('edit-categoria').innerHTML = categorias.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function atualizarContasModal() {
+    const metodo = document.getElementById('edit-metodo').value;
+    const lista = metodo === 'cartao'? cartoes : contas;
+    document.getElementById('edit-banco').innerHTML = lista.map(i => `<option value="${i.nome}">${i.nome}</option>`).join('');
+}
+
 function salvarEdicao() {
     if (!transacaoEditando) return;
     transacaoEditando.descricao = document.getElementById('edit-desc').value;
@@ -645,6 +577,7 @@ function salvarEdicao() {
     fecharModal('modal-editar');
     transacaoEditando = null;
 }
+
 function deletarTransacao() {
     if (!transacaoEditando) return;
     if (confirm('Excluir lançamento?')) {
@@ -673,7 +606,7 @@ function toggleProjetado() {
 
 // ===== RESET =====
 function resetarApp() {
-    fecharMenuMais(); // fecha o menu antes
+    fecharMenuMais();
     if (confirm('ATENÇÃO: Isso vai apagar TUDO\n\n• Todas as transações\n• Contas e cartões\n• PIN de acesso\n\nTem certeza que deseja resetar o app?')) {
         localStorage.clear();
         location.reload();
@@ -722,22 +655,3 @@ if (localStorage.getItem('theme') === 'light') {
     const el = document.getElementById('theme-icon');
     if (el) el.className = 'fas fa-sun';
 }
-
-// Instala e cacheia
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Cache aberto, salvando arquivos...');
-        // Cache um por um pra não falhar tudo se 1 der erro
-        return Promise.all(
-          urlsToCache.map(url => {
-            return cache.add(url).catch(err => {
-              console.warn('Falha ao cachear:', url, err);
-            });
-          })
-        );
-      })
-      .then(() => self.skipWaiting())
-  );
-});
